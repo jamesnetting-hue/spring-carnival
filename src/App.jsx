@@ -1916,7 +1916,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
                 </div>
                 {race.status==="upcoming"&&bal>0&&(
                   <div className="sy" style={{fontSize:11,color:C.red,fontWeight:600}}>⚠ Must spend {fmt(bal)} more</div>
-                }
+                )}
               </div>
             );
           })}
