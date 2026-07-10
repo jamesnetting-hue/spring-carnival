@@ -163,12 +163,12 @@ const C = {
 const silkCol = n => ["#dc2626","#1d4ed8","#15803d","#92400e","#7c3aed","#0e7490","#be185d","#d97706","#065f46","#1e3a8a","#9f1239","#0f766e","#b45309","#374151"][(n-1)%14];
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:${C.bg};-webkit-font-smoothing:antialiased;font-size:16px}
 .cg{font-family:'Merriweather',Georgia,serif}
-.sy{font-family:'Inter',system-ui,sans-serif}
-input,button,select,textarea{font-family:'Inter',system-ui,sans-serif}
+.sy{font-family:'Merriweather',Georgia,serif}
+input,button,select,textarea{font-family:'Merriweather',Georgia,serif}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}
 
 /* Cards & surfaces */
@@ -184,7 +184,7 @@ input,button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 .inp-sm::placeholder{color:${C.muted}}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.02em;transition:all .15s;font-family:'Inter',sans-serif}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.02em;transition:all .15s;font-family:'Merriweather',Georgia,serif}
 .btn-gold{background:${C.accent};color:#fff;box-shadow:0 2px 6px rgba(30,92,30,.25)}
 .btn-gold:hover:not(:disabled){background:${C.accentL};transform:translateY(-1px);box-shadow:0 4px 14px rgba(30,92,30,.35)}
 .btn-gold:disabled{opacity:.35;cursor:not-allowed}
@@ -194,12 +194,12 @@ input,button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 .btn-danger:hover{background:#fef2f2}
 
 /* Nav tabs */
-.tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;border:none;background:transparent;color:rgba(255,255,255,.65);transition:all .15s;font-family:'Inter',sans-serif}
+.tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;border:none;background:transparent;color:rgba(255,255,255,.65);transition:all .15s;font-family:'Merriweather',Georgia,serif}
 .tab.on{background:rgba(255,255,255,.18);color:#fff;font-weight:700}
 .tab:hover:not(.on){background:rgba(255,255,255,.1);color:rgba(255,255,255,.9)}
 
 /* Badges */
-.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;font-family:'Inter',sans-serif}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;font-family:'Merriweather',Georgia,serif}
 
 /* Divider */
 .divider{height:1px;background:${C.border};margin:14px 0}
@@ -216,7 +216,7 @@ input,button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 
 /* Toggle */
 .tog{display:flex;border:2px solid ${C.border};border-radius:10px;overflow:hidden;background:#fff}
-.topt{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;border:none;background:transparent;color:${C.muted};font-family:'Inter',sans-serif}
+.topt{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;border:none;background:transparent;color:${C.muted};font-family:'Merriweather',Georgia,serif}
 .topt.on{background:${C.accent};color:#fff}
 .topt:hover:not(.on){background:${C.surface}}
 
@@ -666,7 +666,7 @@ export default function App() {
   const selectedRace = races.find(r=>r.id===raceId);
 
   return (
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"'Inter',system-ui,sans-serif",width:"100%"}}>
+    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"'Merriweather',Georgia,serif",width:"100%"}}>
       <style>{CSS}</style>
 
       {loading&&(
@@ -678,7 +678,7 @@ export default function App() {
       )}
 
       {toast&&(
-        <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"'Inter',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
+        <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"'Merriweather',Georgia,serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
           {toast.msg}
         </div>
       )}
@@ -773,7 +773,7 @@ function PinPad({ value, onChange, maxLen=4 }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
         {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
           <button key={i} onClick={()=>k==="⌫"?del():k===""?null:press(k)}
-            style={{padding:"13px 0",borderRadius:10,border:k?`2px solid ${C.border}`:"none",background:k==="⌫"?"#fff2f2":k?"#fff":"transparent",color:k==="⌫"?C.red:C.text,fontSize:k==="⌫"?17:20,fontWeight:700,cursor:k?"pointer":"default",transition:"all .12s",fontFamily:"'Inter',sans-serif",boxShadow:k?"0 1px 4px rgba(0,0,0,.07)":"none"}}
+            style={{padding:"13px 0",borderRadius:10,border:k?`2px solid ${C.border}`:"none",background:k==="⌫"?"#fff2f2":k?"#fff":"transparent",color:k==="⌫"?C.red:C.text,fontSize:k==="⌫"?17:20,fontWeight:700,cursor:k?"pointer":"default",transition:"all .12s",fontFamily:"'Merriweather',Georgia,serif",boxShadow:k?"0 1px 4px rgba(0,0,0,.07)":"none"}}
             onMouseEnter={e=>{if(k&&k!=="⌫"){e.currentTarget.style.background="#f0f5f0";e.currentTarget.style.borderColor=C.accent;e.currentTarget.style.color=C.accent;}}}
             onMouseLeave={e=>{if(k&&k!=="⌫"){e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.text;}}}
           >{k}</button>
@@ -1040,6 +1040,9 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {race.raceTime&&race.status==="upcoming"&&(
                           <p className="sy" style={{fontSize:11,marginTop:3,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
                         )}
+                        {race.oddsAsOf&&race.status==="upcoming"&&(
+                          <p className="sy" style={{fontSize:11,marginTop:2,color:C.muted}}>Odds as of: {race.oddsAsOf}</p>
+                        )}
                         {race.status==="closed"&&(
                           <p className="sy" style={{fontSize:11,marginTop:3,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
                         )}
@@ -1113,7 +1116,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [sel,setSel]=useState({});      // {pos: horseNumber} for each position
   const [stakeStr,setStakeStr]=useState("");
   const [boxed,setBoxed]=useState(false);
-  const [showForm,setShowForm]=useState(false);
+  
 
   const def=BET_TYPES.find(t=>t.id===betType);
   const om=getOddsMap(race.horses);
@@ -1176,7 +1179,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const standardUnit = 1.00;
   const totalCost = stake; // stake IS the total now
   const unitStake = combos > 0 ? parseFloat((stake / combos).toFixed(2)) : stake;
-  const avgPotential = combos>0 ? parseFloat((allCombos.reduce((s,h)=>s+def.multiplier(h,om)*unitStake,0)/combos).toFixed(2)) : 0;
 
   const isReady=()=>{
     if(stake<=0) return false;
@@ -1213,6 +1215,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         </div>
         <h2 className="cg" style={{fontSize:28,fontWeight:700,marginBottom:3}}>{race.name}</h2>
         <p className="sy soft" style={{fontSize:11}}>{race.venue} · {race.distance} · {new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
+        {race.oddsAsOf&&<p className="sy" style={{fontSize:11,marginTop:3,color:C.muted}}>Odds as of: {race.oddsAsOf}</p>}
         <div style={{marginTop:8,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
           <span className="sy" style={{fontSize:12}}>
             <span className="soft">Budget: </span>
@@ -1228,17 +1231,14 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           {raceBalance===0&&(
             <span className="badge sy" style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBd}`}}>✓ Full $24 spent</span>
           )}
-          <button className="sy" style={{fontSize:11,color:C.soft,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowForm(f=>!f)}>
-            {showForm?"Hide":"Show"} form guide
-          </button>
         </div>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
         {/* Field */}
         <div>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px${showForm?" auto":""}` : `26px 1fr 66px 58px${showForm?" auto":""}`,gap:8,padding:"4px 12px",marginBottom:4}}>
-            {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),...(showForm?["Form"]:[""])].map((h,i)=>(
+          <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px" auto"` : `26px 1fr 66px 58px" auto"`,gap:8,padding:"4px 12px",marginBottom:4}}>
+            {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),..."Form"].map((h,i)=>(
               <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:i>1&&i<4?"center":"left"}}>{h}</span>
             ))}
           </div>
@@ -1249,7 +1249,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             const isSel=posLabels.length>0;
             return (
               <div key={h.number} className={`hrow${scr?" scr":" clickable"}${isSel?" sel":""}`}
-                style={{gridTemplateColumns:isMobile?`22px 1fr 58px${showForm?" auto":""}` : `26px 1fr 66px 58px${showForm?" auto":""}`,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent"}}
+                style={{gridTemplateColumns:isMobile?`22px 1fr 58px" auto"` : `26px 1fr 66px 58px" auto"`,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent"}}
                 onClick={()=>{
                   if(scr) return;
                   if(betType==="win"||betType==="place") toggleHorse(0,h.number);
@@ -1289,13 +1289,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 </div>
                 <div className="cg gold" style={{textAlign:"center",fontWeight:700,fontSize:16}}>${h.winOdds.toFixed(1)}</div>
                 <div className="sy soft" style={{textAlign:"center",fontSize:12}}>${h.placeOdds.toFixed(1)}</div>
-                {showForm&&(
+                {
                   <div style={{display:"flex",gap:3,alignItems:"center"}}>
                     {h.form.map((f,fi)=>(
                       <span key={fi} style={{width:15,height:15,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{f}</span>
                     ))}
                   </div>
-                )}
+                }
               </div>
             );
           })}
@@ -1420,27 +1420,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span className="sy" style={{fontSize:12,color:C.text}}>{fmt(parseFloat((stake/combos).toFixed(2)))}</span>
                     </div>
                   </>
-                )}
+                }
                 {(betType==="trifecta"||betType==="firstfour")&&combos>1&&(
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:"rgba(26,86,160,.07)",borderRadius:5}}>
                     <span className="sy" style={{fontSize:10,fontWeight:700,color:C.accent}}>Flexi %</span>
                     <span className="sy" style={{fontSize:13,fontWeight:700,color:C.accent}}>{parseFloat(((stake/combos)/1*100).toFixed(1))}%</span>
                   </div>
-                )}
+                }
                 <div style={{display:"flex",justifyContent:"space-between",borderTop:combos>1?`1px solid rgba(26,86,160,.12)`:"none",paddingTop:combos>1?7:0,marginTop:combos>1?2:0}}>
                   <span className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em"}}>Total Stake</span>
                   <span className="cg" style={{fontSize:20,fontWeight:700,color:C.text}}>{fmt(stake)}</span>
                 </div>
                 {stake>raceBalance&&<p className="sy" style={{fontSize:10,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
-                {avgPotential>0&&(
-                  <div style={{borderTop:`1px solid rgba(26,86,160,.12)`,marginTop:6,paddingTop:6,display:"flex",justifyContent:"space-between"}}>
-                    <span className="sy soft" style={{fontSize:10}}>Avg potential payout</span>
-                    <span className="sy" style={{fontSize:12,fontWeight:700,color:C.green}}>{fmt(avgPotential)}</span>
-                  </div>
-                )}
                 {(betType==="trifecta"||betType==="firstfour")&&combos>1&&(
                   <p className="sy" style={{fontSize:10,color:C.soft,marginTop:6,lineHeight:1.5}}>
-                    💡 Your ${fmt(stake)} stake is split across {combos} combinations ({fmt(parseFloat((stake/combos).toFixed(2)))} each). Flexi % = {parseFloat(((stake/combos)/1*100).toFixed(0))}% of the full dividend.
+                    💡 Your {fmt(stake)} stake is split across {combos} combinations ({fmt(parseFloat((stake/combos).toFixed(2)))} each). Flexi % = {parseFloat(((stake/combos)/1*100).toFixed(0))}% of the full dividend.
                   </p>
                 )}
               </div>
@@ -1922,7 +1916,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
                 </div>
                 {race.status==="upcoming"&&bal>0&&(
                   <div className="sy" style={{fontSize:11,color:C.red,fontWeight:600}}>⚠ Must spend {fmt(bal)} more</div>
-                )}
+                }
               </div>
             );
           })}
@@ -1980,7 +1974,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [resetPinVal2, setResetPinVal2] = useState("");
   const [resetPinErr, setResetPinErr] = useState("");
   const [showAddRace, setShowAddRace] = useState(false);
-  const [newRace, setNewRace] = useState({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:""});
+  const [newRace, setNewRace] = useState({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:"",oddsAsOf:""});
   const [newRaceErr, setNewRaceErr] = useState("");
   const [addHorseFor, setAddHorseFor] = useState(null);
   const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});
@@ -2009,13 +2003,14 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       raceTime: newRace.raceTime,
       distance: newRace.distance.trim(),
       raceNum: newRace.raceNum.trim() || "Group 1",
+      oddsAsOf: newRace.oddsAsOf.trim(),
       grade: "Group 1",
       status: "upcoming",
       horses: [],
       result: null,
     };
     onAddRace(race);
-    setNewRace({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:""});
+    setNewRace({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:"",oddsAsOf:""});
     setNewRaceErr("");
     setShowAddRace(false);
   };
@@ -2326,7 +2321,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           onClick={()=>{
                             const r=races.find(x=>x.id===race.id);
                             setEditRaceFor(race.id);
-                            setEditRaceForm({name:r.name,venue:r.venue,date:r.date,distance:r.distance,raceNum:r.raceNum,raceTime:r.raceTime||""});
+                            setEditRaceForm({name:r.name,venue:r.venue,date:r.date,distance:r.distance,raceNum:r.raceNum,raceTime:r.raceTime||"",oddsAsOf:r.oddsAsOf||""});
                           }}>
                           ✏️ Edit Race
                         </button>
@@ -2680,6 +2675,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   <input className="inp sy" placeholder="e.g. Race 7" value={newRace.raceNum} onChange={e=>setNewRace(p=>({...p,raceNum:e.target.value}))}/>
                 </div>
               </div>
+              <div>
+                <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Odds As Of <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="e.g. Thursday 10am" value={newRace.oddsAsOf} onChange={e=>setNewRace(p=>({...p,oddsAsOf:e.target.value}))}/>
+              </div>
             </div>
             {newRaceErr&&<p className="sy" style={{color:C.red,fontSize:12,marginBottom:10}}>{newRaceErr}</p>}
             <p className="sy soft" style={{fontSize:11,marginBottom:14}}>Once created, you can add horses via the race card in Race Management.</p>
@@ -2724,6 +2723,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
               <div>
                 <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Race No.</label>
                 <input className="inp sy" placeholder="e.g. Race 7" value={editRaceForm.raceNum||""} onChange={e=>setEditRaceForm(p=>({...p,raceNum:e.target.value}))}/>
+              </div>
+              <div>
+                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Odds As Of <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="e.g. Thursday 10am" value={editRaceForm.oddsAsOf||""} onChange={e=>setEditRaceForm(p=>({...p,oddsAsOf:e.target.value}))}/>
               </div>
             </div>
             <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:14}} onClick={()=>{
