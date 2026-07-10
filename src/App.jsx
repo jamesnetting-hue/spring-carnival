@@ -829,39 +829,18 @@ function AuthScreen({onRegister, onLogin, accounts}) {
   );
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 50%,#1a3a1a 100%)`}}>
-
-      {/* Left panel — branding (hidden on mobile) */}
-      <div className="desktop-nav" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:48,minWidth:0,minHeight:"100vh"}}>
-        <div style={{fontSize:72,marginBottom:16}}>🏇</div>
-        <h1 className="cg" style={{fontSize:56,fontWeight:900,color:"#fff",lineHeight:1.05,textAlign:"center"}}>Spring Carnival</h1>
-        <p className="sy" style={{fontSize:15,marginTop:12,color:"rgba(255,255,255,.7)",letterSpacing:".14em",textTransform:"uppercase",textAlign:"center"}}>Group 1 Tipping Competition</p>
-        <div style={{marginTop:40,display:"flex",flexDirection:"column",gap:12,maxWidth:320}}>
-          {["$24 virtual budget per race","Win, Place, Trifecta & First Four","Real TAB dividends for payouts","Live leaderboard all season"].map(f=>(
-            <div key={f} style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:C.goldL,flexShrink:0}}/>
-              <span className="sy" style={{fontSize:14,color:"rgba(255,255,255,.8)"}}>{f}</span>
-            </div>
-          ))}
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 50%,#1a3a1a 100%)`}}>
+      <div style={{width:"100%",maxWidth:520}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:60,marginBottom:8}}>🏇</div>
+          <h1 className="cg" style={{fontSize:52,fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
+          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.7)",letterSpacing:".16em",textTransform:"uppercase"}}>Group 1 Tipping Competition</p>
         </div>
-      </div>
-
-      {/* Right panel — auth card */}
-      <div style={{width:"100%",maxWidth:460,display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"rgba(0,0,0,.15)",minHeight:"100vh"}}>
-        <div style={{width:"100%"}}>
-
-          {/* Mobile only — title */}
-          <div className="mobile-nav" style={{textAlign:"center",marginBottom:24,display:"flex",flexDirection:"column",alignItems:"center"}}>
-            <div style={{fontSize:52,marginBottom:8}}>🏇</div>
-            <h1 className="cg" style={{fontSize:38,fontWeight:900,color:"#fff"}}>Spring Carnival</h1>
-            <p className="sy" style={{fontSize:12,marginTop:6,color:"rgba(255,255,255,.7)",letterSpacing:".14em",textTransform:"uppercase"}}>Group 1 Tipping</p>
+        <div className="card fu">
+          <div className="tog" style={{marginBottom:20}}>
+            <button className={`topt${tab==="login"?" on":""}`} onClick={()=>resetAll("login")}>Sign In</button>
+            <button className={`topt${tab==="register"?" on":""}`} onClick={()=>resetAll("register")}>Create Account</button>
           </div>
-
-          <div className="card fu">
-            <div className="tog" style={{marginBottom:20}}>
-              <button className={`topt${tab==="login"?" on":""}`} onClick={()=>resetAll("login")}>Sign In</button>
-              <button className={`topt${tab==="register"?" on":""}`} onClick={()=>resetAll("register")}>Create Account</button>
-            </div>
 
           {tab==="login"&&(
             <>
@@ -958,7 +937,6 @@ function AuthScreen({onRegister, onLogin, accounts}) {
               )}
             </>
           )}
-          </div>
         </div>
       </div>
     </div>
