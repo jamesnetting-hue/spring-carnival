@@ -1420,13 +1420,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span className="sy" style={{fontSize:12,color:C.text}}>{fmt(parseFloat((stake/combos).toFixed(2)))}</span>
                     </div>
                   </>
-                }
+                )}
                 {(betType==="trifecta"||betType==="firstfour")&&combos>1&&(
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:"rgba(26,86,160,.07)",borderRadius:5}}>
                     <span className="sy" style={{fontSize:10,fontWeight:700,color:C.accent}}>Flexi %</span>
                     <span className="sy" style={{fontSize:13,fontWeight:700,color:C.accent}}>{parseFloat(((stake/combos)/1*100).toFixed(1))}%</span>
                   </div>
-                }
+                )}
                 <div style={{display:"flex",justifyContent:"space-between",borderTop:combos>1?`1px solid rgba(26,86,160,.12)`:"none",paddingTop:combos>1?7:0,marginTop:combos>1?2:0}}>
                   <span className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em"}}>Total Stake</span>
                   <span className="cg" style={{fontSize:20,fontWeight:700,color:C.text}}>{fmt(stake)}</span>
