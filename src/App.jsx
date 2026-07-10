@@ -266,6 +266,7 @@ export default function App() {
   const [showBetslip, setShowBetslip] = useState(false);
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [seasonMessage, setSeasonMessage] = useState({ enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" });
 
   // Load all data from Supabase on startup + restore session
   useEffect(() => {
@@ -729,12 +730,12 @@ export default function App() {
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
       {screen!=="auth"&&<main style={{maxWidth:980,margin:"0 auto",padding:"22px 14px 80px 14px"}}>
-        {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}}/>}
+        {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races}/>}
         {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
         {screen==="profile"&&<ProfileScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} toast={showToast}/>}
+        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast}/>}
       </main>}
 
       {showBetslip&&(
@@ -971,7 +972,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
 
 
 // ─── LOBBY ────────────────────────────────────────────────────────────────────
-function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect}) {
+function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,seasonMessage}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const myBets = bets.filter(b=>b.playerId===account?.id);
@@ -985,6 +986,19 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect}) {
           <h2 className="cg" style={{fontSize:28,fontWeight:700}}>Race Calendar</h2>
           <span className="sy soft" style={{fontSize:11}}>{races.filter(r=>r.status==="upcoming").length} races remaining</span>
         </div>
+
+        {/* Season message — shown when no races or admin enables it */}
+        {(races.length===0 || seasonMessage?.enabled) && (
+          <div className="card" style={{textAlign:"center",padding:isMobile?"32px 20px":"52px 40px",borderLeft:`4px solid ${C.accent}`}}>
+            <div style={{fontSize:52,marginBottom:14}}>🏇</div>
+            <h3 className="cg" style={{fontSize:isMobile?20:26,fontWeight:700,marginBottom:8,color:C.accent}}>
+              {seasonMessage?.text || "No races have been added yet. Check back soon — the season is coming!"}
+            </h3>
+            <p className="sy" style={{fontSize:14,color:C.soft,marginTop:8}}>
+              Check back soon for upcoming Group 1 races.
+            </p>
+          </div>
+        )}
         {Object.entries(grouped).map(([date,dayRaces])=>{
           return (
             <div key={date} style={{marginBottom:24}}>
@@ -1955,7 +1969,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
 }
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
-function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onDeleteRace, onEditRace, onEditHorse, toast}) {
+function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast}) {
   const [inputs, setInputs] = useState({});
   const [adminPinEntry, setAdminPinEntry] = useState("");
   const [adminTab, setAdminTab] = useState("races");
@@ -2258,6 +2272,27 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <p className="sy soft" style={{fontSize:12}}>Click horses into finishing order, enter TAB dividends, then settle.</p>
             <button className="btn btn-gold sy" style={{fontSize:12,padding:"8px 16px",flexShrink:0}} onClick={()=>setShowAddRace(true)}>+ Add Race</button>
+          </div>
+
+          {/* Season message toggle */}
+          <div className="card" style={{marginBottom:16,background:"rgba(30,92,30,.04)",border:`1px solid rgba(30,92,30,.15)`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <p className="sy" style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:2}}>📢 Calendar Message</p>
+                <p className="sy soft" style={{fontSize:12}}>Show a message to players when no races are listed. Toggle on to activate.</p>
+              </div>
+              <button onClick={()=>onSeasonMessage(p=>({...p,enabled:!p.enabled}))}
+                style={{flexShrink:0,width:52,height:28,borderRadius:14,border:"none",background:seasonMessage?.enabled?C.accent:C.border,cursor:"pointer",position:"relative",transition:"background .2s"}}>
+                <div style={{position:"absolute",top:3,left:seasonMessage?.enabled?26:3,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
+              </button>
+            </div>
+            {seasonMessage?.enabled&&(
+              <div style={{marginTop:12}}>
+                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Message shown to players</label>
+                <textarea className="inp sy" rows={2} value={seasonMessage?.text||""} onChange={e=>onSeasonMessage(p=>({...p,text:e.target.value}))} style={{fontSize:13,resize:"none"}}/>
+                <p className="sy soft" style={{fontSize:11,marginTop:4}}>✓ This message is showing on the Race Calendar right now.</p>
+              </div>
+            )}
           </div>
 
           {races.length===0&&(
