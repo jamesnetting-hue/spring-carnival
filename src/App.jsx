@@ -155,9 +155,9 @@ const C = {
   blue:"#1d4ed8",   blueBg:"rgba(29,78,216,0.07)",   blueBd:"rgba(29,78,216,0.25)",
 
   // Text
-  text:"#0f1a0f",    // near-black with green tint — very readable
-  soft:"#4a5c4a",    // medium green-grey
-  muted:"#8a9e8a",   // light for placeholders
+  text:"#111111",    // near-black — maximum readability
+  soft:"#333333",    // dark grey — still clearly readable
+  muted:"#666666",   // medium grey — for placeholders only
 };
 
 const silkCol = n => ["#dc2626","#1d4ed8","#15803d","#92400e","#7c3aed","#0e7490","#be185d","#d97706","#065f46","#1e3a8a","#9f1239","#0f766e","#b45309","#374151"][(n-1)%14];
@@ -1252,7 +1252,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 onClick={()=>{
                   if(scr) return;
                   if(betType==="win"||betType==="place") toggleHorse(0,h.number);
-                  // trifecta/firstfour: handled by position buttons
+                  if((betType==="trifecta"||betType==="firstfour")&&boxed) toggleHorse(0,h.number);
                 }}>
                 <div style={{width:22,height:22,borderRadius:"50%",background:scr?"#e5e7eb":silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{h.number}</div>
                 <div>
@@ -1265,24 +1265,17 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   </div>
                   <div className="sy soft" style={{fontSize:10,marginTop:1}}>{h.jockey} · {h.trainer}</div>
                   {/* Position buttons for trifecta/firstfour unboxed */}
-                  {!scr&&(betType==="trifecta"||betType==="firstfour")&&(
+                  {!scr&&(betType==="trifecta"||betType==="firstfour")&&!boxed&&(
                     <div style={{display:"flex",gap:4,marginTop:5,flexWrap:"wrap"}}>
-                      {boxed?(
-                        <button className="sy" style={{fontSize:9,padding:"2px 8px",borderRadius:5,border:`1px solid ${(sel[0]||[]).includes(h.number)?C.accent:C.borderMid}`,background:(sel[0]||[]).includes(h.number)?C.accentGlow:"transparent",color:(sel[0]||[]).includes(h.number)?C.accent:C.muted,cursor:"pointer",fontWeight:700,letterSpacing:".04em"}}
-                          onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
-                          {(sel[0]||[]).includes(h.number)?"✓ Selected":"+ Select"}
-                        </button>
-                      ):(
-                        def.positions.map((pos,pi)=>{
-                          const isThis=(sel[pi]||[]).includes(h.number);
-                          return(
-                            <button key={pi} className="sy" style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:`1px solid ${isThis?C.accent:C.border}`,background:isThis?C.accentGlow:"transparent",color:isThis?C.accent:C.muted,cursor:"pointer",fontWeight:700,letterSpacing:".04em"}}
-                              onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
-                              {pos.label}
-                            </button>
-                          );
-                        })
-                      )}
+                      {def.positions.map((pos,pi)=>{
+                        const isThis=(sel[pi]||[]).includes(h.number);
+                        return(
+                          <button key={pi} className="sy" style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:`1px solid ${isThis?C.accent:C.border}`,background:isThis?C.accentGlow:"transparent",color:isThis?C.accent:C.muted,cursor:"pointer",fontWeight:700,letterSpacing:".04em"}}
+                            onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
+                            {pos.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1335,7 +1328,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{marginBottom:12,minHeight:36}}>
               {betType==="win"||betType==="place"?(
                 (sel[0]||[]).length===0
-                  ? <p className="sy soft" style={{fontSize:11}}>← Tap a horse from the field to select</p>
+                  ? <p className="sy" style={{fontSize:12,color:C.soft}}>
+                      {(betType==="trifecta"||betType==="firstfour")&&boxed
+                        ? "← Tap any horse to include in your boxed selection"
+                        : (betType==="trifecta"||betType==="firstfour")
+                        ? "← Use the position buttons on each horse to assign 1st, 2nd, 3rd..."
+                        : "← Tap a horse from the field to select"}
+                    </p>
                   : <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                       {(sel[0]||[]).map(n=>{
                         const h=race.horses.find(x=>x.number===n);
@@ -1456,32 +1455,30 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             {myBets.length>0&&(
               <>
                 <div className="divider"/>
-                <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:8}}>Your bets on this race</p>
+                <p className="sy" style={{fontSize:11,fontWeight:700,color:C.text,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Your bets on this race</p>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {myBets.map(b=>{
                     const d=BET_TYPES.find(t=>t.id===b.type);
                     const canCancel = b.won===null && race.status==="upcoming";
+                    const horses = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`}).join(" → ");
                     return(
-                      <div key={b.id} style={{padding:"8px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f7",border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:8}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                          <span className="sy" style={{fontSize:12,color:b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
-                            {d?.label} · {fmt(b.stake)}
-                          </span>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <span className="sy" style={{fontSize:12,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft}}>
-                              {b.won===true?`Won ${fmt(b.payout)}`:b.won===false?`Lost ${fmt(b.stake)}`:b.potential?`Pot. ${fmt(b.potential)}`:"Pending"}
-                            </span>
-                            {canCancel&&(
-                              <button className="sy" style={{fontSize:10,padding:"3px 8px",borderRadius:5,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:600}}
-                                onClick={()=>{ if(window.confirm("Cancel this bet? Your stake will be refunded.")) onCancelBet(b.id); }}>
-                                Cancel
-                              </button>
-                            )}
+                      <div key={b.id} style={{padding:"10px 12px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:8}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                          <div>
+                            <span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>{d?.label}</span>
+                            <span className="sy" style={{fontSize:12,color:C.soft}}> · {fmt(b.stake)}</span>
                           </div>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft}}>
+                            {b.won===true?`Won ${fmt(b.payout)}`:b.won===false?`Lost ${fmt(b.stake)}`:"Pending"}
+                          </span>
                         </div>
-                        <div className="sy soft" style={{fontSize:11,marginTop:3}}>
-                          #{b.horses.join(" → ")}
-                        </div>
+                        <div className="sy" style={{fontSize:11,color:C.soft,marginTop:3}}>{horses}</div>
+                        {canCancel&&(
+                          <button className="sy" style={{marginTop:8,fontSize:12,padding:"5px 12px",borderRadius:6,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}}
+                            onClick={()=>{ if(window.confirm("Cancel this bet? Your stake will be refunded.")) onCancelBet(b.id); }}>
+                            Edit / Cancel Bet
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -1528,13 +1525,12 @@ function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfi
                   <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div className="cg" style={{fontSize:15,fontWeight:700,marginBottom:2}}>{race?.name}</div>
-                      <div className="sy soft" style={{fontSize:11}}>{def?.label} · #{b.horses.join(" → #")}</div>
-                      <div style={{display:"flex",gap:10,marginTop:3}}>
-                        <span className="sy" style={{fontSize:11,color:C.accentL}}>Stake: {fmt(b.stake)}</span>
-                        {b.potential>0&&<span className="sy" style={{fontSize:11,color:C.green}}>Pot: {fmt(b.potential)}</span>}
+                      <div className="sy" style={{fontSize:12,color:C.soft}}>{def?.label} · #{b.horses.join(" → #")}</div>
+                      <div style={{marginTop:4}}>
+                        <span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>Stake: {fmt(b.stake)}</span>
                       </div>
                     </div>
-                    <button className="sy" style={{fontSize:18,background:"none",border:"none",cursor:"pointer",color:C.muted,padding:"0 0 0 8px",lineHeight:1}} onClick={()=>onRemove(b.id)}>×</button>
+                    <button className="sy" style={{fontSize:22,background:"none",border:"none",cursor:"pointer",color:C.muted,padding:"0 0 0 8px",lineHeight:1}} onClick={()=>onRemove(b.id)}>×</button>
                   </div>
                 );
               })}
