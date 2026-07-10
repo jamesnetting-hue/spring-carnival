@@ -832,7 +832,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
     <div style={{minHeight:"100vh",display:"flex",background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 50%,#1a3a1a 100%)`}}>
 
       {/* Left panel — branding (hidden on mobile) */}
-      <div className="desktop-nav" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:48,minWidth:0}}>
+      <div className="desktop-nav" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:48,minWidth:0,minHeight:"100vh"}}>
         <div style={{fontSize:72,marginBottom:16}}>🏇</div>
         <h1 className="cg" style={{fontSize:56,fontWeight:900,color:"#fff",lineHeight:1.05,textAlign:"center"}}>Spring Carnival</h1>
         <p className="sy" style={{fontSize:15,marginTop:12,color:"rgba(255,255,255,.7)",letterSpacing:".14em",textTransform:"uppercase",textAlign:"center"}}>Group 1 Tipping Competition</p>
@@ -847,7 +847,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
       </div>
 
       {/* Right panel — auth card */}
-      <div style={{width:"100%",maxWidth:460,display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"rgba(0,0,0,.15)"}}>
+      <div style={{width:"100%",maxWidth:460,display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"rgba(0,0,0,.15)",minHeight:"100vh"}}>
         <div style={{width:"100%"}}>
 
           {/* Mobile only — title */}
