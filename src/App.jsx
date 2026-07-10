@@ -1297,13 +1297,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
 
             {/* Bet type selector */}
-            <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:6}}>Bet Type</p>
-            <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:12}}>
+            <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
               {BET_TYPES.map(t=>(
                 <button key={t.id} onClick={()=>changeType(t.id)} className="sy"
-                  style={{padding:"9px 12px",borderRadius:7,border:`1px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"transparent",color:betType===t.id?C.accentL:C.soft,cursor:"pointer",textAlign:"left",fontSize:12,transition:"all .13s",fontWeight:betType===t.id?700:400}}>
-                  <span style={{fontWeight:700}}>{t.label}</span>
-                  <span style={{opacity:.55,fontSize:10,marginLeft:6}}>— {t.desc}</span>
+                  style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}>
+                  <span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span>
+                  <span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span>
                 </button>
               ))}
             </div>
