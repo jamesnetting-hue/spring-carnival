@@ -1236,9 +1236,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
         {/* Field */}
         <div>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px auto`:`26px 1fr 66px 58px auto`,gap:8,padding:"4px 12px",marginBottom:4}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 70px 60px 100px`,gap:0,padding:"4px 12px",marginBottom:4}}>
             {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
-              <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form")?"center":"left"}}>{h}</span>
+              <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form")?"center":"left",padding:"0 4px"}}>{h}</span>
             ))}
           </div>
 
@@ -1248,7 +1248,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             const isSel=posLabels.length>0;
             return (
               <div key={h.number} className={`hrow${scr?" scr":" clickable"}${isSel?" sel":""}`}
-                style={{gridTemplateColumns:isMobile?`22px 1fr 58px auto`:`26px 1fr 66px 58px auto`,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent"}}
+                style={{gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 70px 60px 100px`,gap:0,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent",padding:"10px 12px"}}
                 onClick={()=>{
                   if(scr) return;
                   if(betType==="win"||betType==="place") toggleHorse(0,h.number);
@@ -1286,9 +1286,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                   )}
                 </div>
-                <div className="cg gold" style={{textAlign:"center",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>${h.winOdds.toFixed(2)}</div>
-                <div className="sy soft" style={{textAlign:"center",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>${h.placeOdds.toFixed(2)}</div>
-                <div style={{display:"flex",gap:3,alignItems:"center",justifyContent:"center",flexWrap:"wrap"}}>
+                <div className="cg gold" style={{fontWeight:700,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>${h.winOdds.toFixed(2)}</div>
+                <div className="sy soft" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>${h.placeOdds.toFixed(2)}</div>
+                <div style={{display:"flex",gap:3,alignItems:"center",justifyContent:"center",flexWrap:"wrap",padding:"0 4px"}}>
                   {h.form&&h.form.length>0 ? h.form.map((f,fi)=>(
                     <span key={fi} style={{width:16,height:16,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{f}</span>
                   )) : <span className="sy soft" style={{fontSize:10}}>—</span>}
