@@ -163,12 +163,11 @@ const C = {
 const silkCol = n => ["#dc2626","#1d4ed8","#15803d","#92400e","#7c3aed","#0e7490","#be185d","#d97706","#065f46","#1e3a8a","#9f1239","#0f766e","#b45309","#374151"][(n-1)%14];
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:${C.bg};-webkit-font-smoothing:antialiased;font-size:16px}
-.cg{font-family:'Merriweather',Georgia,serif}
-.sy{font-family:'Merriweather',Georgia,serif}
-input,button,select,textarea{font-family:'Merriweather',Georgia,serif}
+body{background:${C.bg};-webkit-font-smoothing:antialiased;font-size:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.cg{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:700}
+.sy{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}
 
 /* Cards & surfaces */
@@ -184,7 +183,7 @@ input,button,select,textarea{font-family:'Merriweather',Georgia,serif}
 .inp-sm::placeholder{color:${C.muted}}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.02em;transition:all .15s;font-family:'Merriweather',Georgia,serif}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.02em;transition:all .15s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .btn-gold{background:${C.accent};color:#fff;box-shadow:0 2px 6px rgba(30,92,30,.25)}
 .btn-gold:hover:not(:disabled){background:${C.accentL};transform:translateY(-1px);box-shadow:0 4px 14px rgba(30,92,30,.35)}
 .btn-gold:disabled{opacity:.35;cursor:not-allowed}
@@ -194,12 +193,12 @@ input,button,select,textarea{font-family:'Merriweather',Georgia,serif}
 .btn-danger:hover{background:#fef2f2}
 
 /* Nav tabs */
-.tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;border:none;background:transparent;color:rgba(255,255,255,.65);transition:all .15s;font-family:'Merriweather',Georgia,serif}
+.tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;border:none;background:transparent;color:rgba(255,255,255,.65);transition:all .15s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .tab.on{background:rgba(255,255,255,.18);color:#fff;font-weight:700}
 .tab:hover:not(.on){background:rgba(255,255,255,.1);color:rgba(255,255,255,.9)}
 
 /* Badges */
-.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;font-family:'Merriweather',Georgia,serif}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 
 /* Divider */
 .divider{height:1px;background:${C.border};margin:14px 0}
@@ -216,7 +215,7 @@ input,button,select,textarea{font-family:'Merriweather',Georgia,serif}
 
 /* Toggle */
 .tog{display:flex;border:2px solid ${C.border};border-radius:10px;overflow:hidden;background:#fff}
-.topt{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;border:none;background:transparent;color:${C.muted};font-family:'Merriweather',Georgia,serif}
+.topt{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;border:none;background:transparent;color:${C.muted};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .topt.on{background:${C.accent};color:#fff}
 .topt:hover:not(.on){background:${C.surface}}
 
@@ -666,7 +665,7 @@ export default function App() {
   const selectedRace = races.find(r=>r.id===raceId);
 
   return (
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"'Merriweather',Georgia,serif",width:"100%"}}>
+    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",width:"100%"}}>
       <style>{CSS}</style>
 
       {loading&&(
@@ -678,7 +677,7 @@ export default function App() {
       )}
 
       {toast&&(
-        <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"'Merriweather',Georgia,serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
+        <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
           {toast.msg}
         </div>
       )}
@@ -773,7 +772,7 @@ function PinPad({ value, onChange, maxLen=4 }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
         {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
           <button key={i} onClick={()=>k==="⌫"?del():k===""?null:press(k)}
-            style={{padding:"13px 0",borderRadius:10,border:k?`2px solid ${C.border}`:"none",background:k==="⌫"?"#fff2f2":k?"#fff":"transparent",color:k==="⌫"?C.red:C.text,fontSize:k==="⌫"?17:20,fontWeight:700,cursor:k?"pointer":"default",transition:"all .12s",fontFamily:"'Merriweather',Georgia,serif",boxShadow:k?"0 1px 4px rgba(0,0,0,.07)":"none"}}
+            style={{padding:"13px 0",borderRadius:10,border:k?`2px solid ${C.border}`:"none",background:k==="⌫"?"#fff2f2":k?"#fff":"transparent",color:k==="⌫"?C.red:C.text,fontSize:k==="⌫"?17:20,fontWeight:700,cursor:k?"pointer":"default",transition:"all .12s",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",boxShadow:k?"0 1px 4px rgba(0,0,0,.07)":"none"}}
             onMouseEnter={e=>{if(k&&k!=="⌫"){e.currentTarget.style.background="#f0f5f0";e.currentTarget.style.borderColor=C.accent;e.currentTarget.style.color=C.accent;}}}
             onMouseLeave={e=>{if(k&&k!=="⌫"){e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.text;}}}
           >{k}</button>
@@ -1239,7 +1238,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         <div>
           <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px auto`:`26px 1fr 66px 58px auto`,gap:8,padding:"4px 12px",marginBottom:4}}>
             {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
-              <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:i>1&&i<4?"center":"left"}}>{h}</span>
+              <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form")?"center":"left"}}>{h}</span>
             ))}
           </div>
 
