@@ -701,15 +701,17 @@ export default function App() {
           </header>
 
           {/* ── MOBILE BOTTOM NAV ── */}
-          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"2px solid rgba(255,255,255,.15)",display:"flex",boxShadow:"0 -4px 16px rgba(0,0,0,.25)"}}>
-            {[["lobby","🏇","Races"],["leaderboard","🏆","Standings"],["season","📊","Season"],["profile","👤","Account"],["admin","⚙️","Admin"]].map(([s,icon,l])=>(
-              <button key={s} onClick={()=>setScreen(s)}
-                style={{flex:1,padding:"10px 0 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"transparent",border:"none",cursor:"pointer",color:screen===s||(screen==="race"&&s==="lobby")?"#fff":"rgba(255,255,255,.55)",transition:"all .15s"}}>
-                <span style={{fontSize:20}}>{icon}</span>
-                <span className="sy" style={{fontSize:10,fontWeight:700,letterSpacing:".03em"}}>{l}</span>
-                {(screen===s||(screen==="race"&&s==="lobby"))&&<div style={{width:24,height:3,background:C.goldL,borderRadius:2,marginTop:2}}/>}
-              </button>
-            ))}
+          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)"}}>
+            {[["lobby","Races"],["leaderboard","Standings"],["season","Season"],["profile","Account"],["admin","Admin"]].map(([s,l])=>{
+              const active = screen===s||(screen==="race"&&s==="lobby");
+              return (
+                <button key={s} onClick={()=>setScreen(s)}
+                  style={{flex:1,padding:"12px 0 10px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"transparent",border:"none",cursor:"pointer",position:"relative",transition:"all .15s"}}>
+                  {active&&<div style={{position:"absolute",top:0,left:"20%",right:"20%",height:2,background:C.goldL,borderRadius:"0 0 2px 2px"}}/>}
+                  <span className="sy" style={{fontSize:11,fontWeight:active?700:500,color:active?"#fff":"rgba(255,255,255,.5)",letterSpacing:".02em",transition:"all .15s"}}>{l}</span>
+                </button>
+              );
+            })}
           </nav>
         </>
       )}
