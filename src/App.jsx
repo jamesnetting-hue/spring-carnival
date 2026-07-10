@@ -1213,23 +1213,30 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           {fav&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`}}>FAV: {fav.name} ${fav.winOdds.toFixed(1)}</span>}
         </div>
         <h2 className="cg" style={{fontSize:28,fontWeight:700,marginBottom:3}}>{race.name}</h2>
-        <p className="sy soft" style={{fontSize:11}}>{race.venue} · {race.distance} · {new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
-        {race.oddsAsOf&&<p className="sy" style={{fontSize:11,marginTop:3,color:C.muted}}>Odds as of: {race.oddsAsOf}</p>}
-        <div style={{marginTop:8,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-          <span className="sy" style={{fontSize:12}}>
-            <span className="soft">Budget: </span>
-            <strong style={{color:raceBalance>0?C.accentL:C.green}}>{fmt(raceBalance)} remaining</strong>
-            <span className="soft"> of $24.00</span>
-          </span>
-          {raceBalance===STARTING_BALANCE&&(
-            <span className="badge sy" style={{background:"rgba(240,79,79,.1)",color:C.red,border:`1px solid rgba(240,79,79,.25)`}}>⚠ You must spend all $24</span>
-          )}
-          {raceBalance>0&&raceBalance<STARTING_BALANCE&&(
-            <span className="badge sy" style={{background:"rgba(26,86,160,.08)",color:C.accentL,border:"1px solid rgba(26,86,160,.2)"}}>Must spend {fmt(raceBalance)} more</span>
-          )}
-          {raceBalance===0&&(
-            <span className="badge sy" style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBd}`}}>✓ Full $24 spent</span>
-          )}
+        <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
+
+        {/* Odds as of — prominent */}
+        {race.oddsAsOf&&(
+          <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,padding:"5px 12px",background:"rgba(184,134,11,0.1)",border:`1px solid rgba(184,134,11,0.3)`,borderRadius:6}}>
+            <span style={{fontSize:14}}>🕐</span>
+            <span className="sy" style={{fontSize:13,fontWeight:600,color:C.gold}}>Odds as of {race.oddsAsOf}</span>
+          </div>
+        )}
+
+        {/* Budget — bold and impossible to miss */}
+        <div style={{marginTop:10,padding:"12px 16px",borderRadius:10,background:raceBalance===0?"rgba(21,128,61,0.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,0.07)":"rgba(30,92,30,0.06)",border:`2px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.accent}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div>
+            <span className="sy" style={{fontSize:15,fontWeight:800,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
+              {raceBalance===0?"✓ Full $24 spent!":raceBalance===STARTING_BALANCE?`⚠ You must spend all $24.00`:`$${raceBalance.toFixed(2)} remaining to bet`}
+            </span>
+            {raceBalance>0&&raceBalance<STARTING_BALANCE&&(
+              <p className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>You must spend your full $24 budget on this race</p>
+            )}
+            {raceBalance===STARTING_BALANCE&&(
+              <p className="sy" style={{fontSize:12,color:C.red,marginTop:2}}>Every player must place bets totalling exactly $24 on this race</p>
+            )}
+          </div>
+          <div className="cg" style={{fontSize:22,fontWeight:900,color:raceBalance===0?C.green:C.accent}}>{fmt(raceBalance)}<span style={{fontSize:13,fontWeight:400,color:C.soft}}> / $24.00</span></div>
         </div>
       </div>
 
