@@ -1022,32 +1022,33 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     onClick={()=>race.status==="upcoming"&&onSelect(race.id)}>
                     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
                       <div style={{flex:1}}>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:7}}>
-                          <span className="badge sy" style={{background:C.accentGlow,color:C.accent,border:"1px solid rgba(26,86,160,.2)"}}>{race.grade}</span>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+                          <span className="badge sy" style={{background:C.accentGlow,color:C.accent,border:`1px solid ${C.accent}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.grade}</span>
                           <span className="badge sy" style={{
                             background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,
                             color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,
-                            border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`
+                            border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`,
+                            fontSize:13,padding:"5px 12px",fontWeight:700
                           }}>{race.status==="closed"?"🔒 Closed":race.status}</span>
-                          <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`}}>{race.raceNum}</span>
-                          {rb.length>0&&<span className="badge sy" style={{background:C.accentGlow,color:C.accent,border:"1px solid rgba(26,86,160,.2)"}}>✓ {rb.length} bet{rb.length>1?"s":""}</span>}
-                          {account&&race.status==="upcoming"&&<span className="badge sy" style={{background:raceBal>0?"rgba(26,86,160,.08)":C.redBg,color:raceBal>0?C.accent:C.red,border:`1px solid ${raceBal>0?"rgba(26,86,160,.18)":C.redBd}`}}>{fmt(raceBal)} left</span>}
+                          <span className="badge sy" style={{background:"#f0f0f0",color:C.text,border:`1px solid ${C.border}`,fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.raceNum}</span>
+                          {rb.length>0&&<span className="badge sy" style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBd}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>✓ {rb.length} bet{rb.length>1?"s":""}</span>}
+                          {account&&race.status==="upcoming"&&<span className="badge sy" style={{background:raceBal>0?C.accentGlow:C.redBg,color:raceBal>0?C.accent:C.red,border:`1px solid ${raceBal>0?C.accent:C.redBd}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{fmt(raceBal)} left</span>}
                         </div>
                         <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:3}}>{race.name}</h3>
-                        <p className="sy soft" style={{fontSize:11}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
-                        {fav&&<p className="sy" style={{fontSize:11,marginTop:2,color:C.soft}}>FAV: {fav.name} <span style={{color:C.accent}}>${fav.winOdds.toFixed(1)}</span></p>}
+                        <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
+                        {fav&&<p className="sy" style={{fontSize:13,marginTop:3,color:C.text}}>FAV: <strong>{fav.name}</strong> <span style={{color:C.accent,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
                         {race.raceTime&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:11,marginTop:3,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
+                          <p className="sy" style={{fontSize:13,marginTop:4,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
                         )}
                         {race.oddsAsOf&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:11,marginTop:2,color:C.muted}}>Odds as of: {race.oddsAsOf}</p>
+                          <p className="sy" style={{fontSize:12,marginTop:3,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
                         )}
                         {race.status==="closed"&&(
-                          <p className="sy" style={{fontSize:11,marginTop:3,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
+                          <p className="sy" style={{fontSize:13,marginTop:4,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
                         )}
                       </div>
                       <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                        {race.status==="upcoming"&&<button className="btn btn-gold sy" style={{fontSize:10,padding:"6px 14px"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet →</button>}
+                        {race.status==="upcoming"&&<button className="btn btn-gold sy" style={{fontSize:16,padding:"14px 24px",borderRadius:12,fontWeight:800,letterSpacing:".02em",boxShadow:"0 4px 12px rgba(30,92,30,.3)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet →</button>}
                         {race.status==="finished"&&race.result&&(
                           <div className="sy" style={{fontSize:11,textAlign:"right"}}>
                             {["first","second","third","fourth"].map((k,i)=>{
