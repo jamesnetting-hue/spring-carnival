@@ -620,9 +620,19 @@ export default function App() {
   };
 
   const deleteRace = (raceId) => {
-    setRaces(p => p.filter(r => r.id !== raceId));
-    sb.update("races", raceId, { status: "deleted" }).catch(()=>{});
-    showToast("Race deleted");
+    const race = races.find(r => r.id === raceId);
+    if (!race) return;
+    if (race.status === "finished") {
+      // Archive finished races — hides from lobby but keeps all bet/win history
+      setRaces(p => p.map(r => r.id !== raceId ? r : {...r, status:"archived"}));
+      sb.update("races", raceId, { status: "archived" });
+      showToast("Race archived — removed from calendar, history kept");
+    } else {
+      // Fully delete upcoming/closed races with no bets
+      setRaces(p => p.filter(r => r.id !== raceId));
+      sb.update("races", raceId, { status: "deleted" });
+      showToast("Race deleted");
+    }
   };
 
   const cancelBet = async (betId) => {
@@ -719,7 +729,7 @@ export default function App() {
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
       {screen!=="auth"&&<main style={{maxWidth:980,margin:"0 auto",padding:"22px 14px 80px 14px"}}>
-        {screen==="lobby"&&<LobbyScreen races={races} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}}/>}
+        {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races}/>}
         {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
@@ -741,13 +751,16 @@ function PinPad({ value, onChange, maxLen=4 }) {
   const del   = () => onChange(value.slice(0, -1));
 
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key >= "0" && e.key <= "9") press(e.key);
-      else if (e.key === "Backspace" || e.key === "Delete") del();
+    const handler = e => {
+      if (e.key >= "0" && e.key <= "9") {
+        if (value.length < maxLen) onChange(value + e.key);
+      } else if (e.key === "Backspace" || e.key === "Delete") {
+        onChange(value.slice(0, -1));
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [value]);
+  }, [value, onChange, maxLen]);
 
   return (
     <div style={{maxWidth:260,margin:"0 auto"}}>
@@ -1618,7 +1631,7 @@ function SeasonScreen({accounts, bets, races}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
 
-  const finishedRaces = races.filter(r => r.status === "finished");
+  const finishedRaces = races.filter(r => r.status === "finished" || r.status === "archived");
 
   // Build per-player season stats
   const playerStats = accounts.map(a => {
