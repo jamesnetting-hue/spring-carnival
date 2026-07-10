@@ -656,7 +656,7 @@ export default function App() {
   const selectedRace = races.find(r=>r.id===raceId);
 
   return (
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"'Syne',system-ui,sans-serif"}}>
+    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"'Inter',system-ui,sans-serif",width:"100%"}}>
       <style>{CSS}</style>
 
       {loading&&(
@@ -715,15 +715,16 @@ export default function App() {
         </>
       )}
 
-      <main style={{maxWidth:980,margin:"0 auto",padding:screen==="auth"?0:"22px 14px 80px 14px"}}>
-        {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
+      {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
+
+      {screen!=="auth"&&<main style={{maxWidth:980,margin:"0 auto",padding:"22px 14px 80px 14px"}}>
         {screen==="lobby"&&<LobbyScreen races={races} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races}/>}
         {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
         {screen==="profile"&&<ProfileScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} toast={showToast}/>}
-      </main>
+      </main>}
 
       {showBetslip&&(
         <BetslipModal pendingBets={pendingBets} races={races} account={liveAccount} getRaceBalance={getRaceBalance} onRemove={removePending} onConfirm={confirmBetslip} onClose={()=>setShowBetslip(false)}/>
