@@ -739,6 +739,16 @@ function PinPad({ value, onChange, maxLen=4 }) {
   const digits = value.split("");
   const press = d => { if (value.length < maxLen) onChange(value + d); };
   const del   = () => onChange(value.slice(0, -1));
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key >= "0" && e.key <= "9") press(e.key);
+      else if (e.key === "Backspace" || e.key === "Delete") del();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [value]);
+
   return (
     <div style={{maxWidth:260,margin:"0 auto"}}>
       <div style={{display:"flex",justifyContent:"center",gap:14,marginBottom:18}}>
@@ -755,6 +765,7 @@ function PinPad({ value, onChange, maxLen=4 }) {
           >{k}</button>
         ))}
       </div>
+      <p className="sy" style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:12}}>You can also type your PIN using the keyboard</p>
     </div>
   );
 }
@@ -2273,6 +2284,12 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                         {race.status !== "finished" && rb.length === 0 && (
                           <button className="sy" style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:600}}
                             onClick={()=>{ if(window.confirm(`Delete "${race.name}"? This cannot be undone.`)) onDeleteRace(race.id); }}>
+                            🗑 Delete
+                          </button>
+                        )}
+                        {race.status === "finished" && (
+                          <button className="sy" style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:600}}
+                            onClick={()=>{ if(window.confirm(`Delete "${race.name}"? All bet history will be removed.`)) onDeleteRace(race.id); }}>
                             🗑 Delete
                           </button>
                         )}
