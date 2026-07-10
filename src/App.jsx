@@ -1286,15 +1286,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                   )}
                 </div>
-                <div className="cg gold" style={{textAlign:"center",fontWeight:700,fontSize:16}}>${h.winOdds.toFixed(1)}</div>
-                <div className="sy soft" style={{textAlign:"center",fontSize:12}}>${h.placeOdds.toFixed(1)}</div>
-                {
-                  <div style={{display:"flex",gap:3,alignItems:"center"}}>
-                    {h.form.map((f,fi)=>(
-                      <span key={fi} style={{width:15,height:15,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{f}</span>
-                    ))}
-                  </div>
-                }
+                <div className="cg gold" style={{textAlign:"center",fontWeight:700,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>${h.winOdds.toFixed(2)}</div>
+                <div className="sy soft" style={{textAlign:"center",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>${h.placeOdds.toFixed(2)}</div>
+                <div style={{display:"flex",gap:3,alignItems:"center",justifyContent:"center",flexWrap:"wrap"}}>
+                  {h.form&&h.form.length>0 ? h.form.map((f,fi)=>(
+                    <span key={fi} style={{width:16,height:16,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{f}</span>
+                  )) : <span className="sy soft" style={{fontSize:10}}>—</span>}
+                </div>
               </div>
             );
           })}
