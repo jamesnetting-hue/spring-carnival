@@ -1910,16 +1910,6 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           })}
         </div>
       </div>
-                <div style={{height:3,background:C.border,borderRadius:2,overflow:"hidden",marginBottom:4}}>
-                  <div style={{height:"100%",width:`${pct}%`,background:race.status==="finished"?C.muted:bal===0?C.green:C.accent,borderRadius:2,transition:"width .3s"}}/>
-                </div>
-                {race.status==="upcoming"&&bal>0&&(
-                  <div className="sy" style={{fontSize:9,color:C.red}}>⚠ Must spend {fmt(bal)} more</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       <div className="tog" style={{marginBottom:14}}>
