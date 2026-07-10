@@ -1910,7 +1910,6 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           })}
         </div>
       </div>
-      </div>
 
       <div className="tog" style={{marginBottom:14}}>
         <button className={`topt${tab==="active"?" on":""}`} onClick={()=>setTab("active")}>Active ({active.length})</button>
