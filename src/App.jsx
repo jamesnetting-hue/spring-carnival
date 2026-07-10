@@ -1237,8 +1237,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
         {/* Field */}
         <div>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px" auto"` : `26px 1fr 66px 58px" auto"`,gap:8,padding:"4px 12px",marginBottom:4}}>
-            {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),..."Form"].map((h,i)=>(
+          <div style={{display:"grid",gridTemplateColumns:isMobile?`22px 1fr 58px auto`:`26px 1fr 66px 58px auto`,gap:8,padding:"4px 12px",marginBottom:4}}>
+            {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
               <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:i>1&&i<4?"center":"left"}}>{h}</span>
             ))}
           </div>
@@ -1249,7 +1249,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             const isSel=posLabels.length>0;
             return (
               <div key={h.number} className={`hrow${scr?" scr":" clickable"}${isSel?" sel":""}`}
-                style={{gridTemplateColumns:isMobile?`22px 1fr 58px" auto"` : `26px 1fr 66px 58px" auto"`,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent"}}
+                style={{gridTemplateColumns:isMobile?`22px 1fr 58px auto`:`26px 1fr 66px 58px auto`,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent"}}
                 onClick={()=>{
                   if(scr) return;
                   if(betType==="win"||betType==="place") toggleHorse(0,h.number);
