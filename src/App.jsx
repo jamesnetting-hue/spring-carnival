@@ -116,7 +116,7 @@ const BET_TYPES = [
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
-const formColor = f => f==="1"?"#16803a":f==="2"?"#1a56a0":f==="3"?"#b8860b":["4","5"].includes(f)?"#9aa0b0":"#d1d5db";
+const formColor = f => f==="1"?"#16803a":f==="2"?"#ca8a04":f==="3"?"#dc2626":"#9ca3af";
 
 // Get how much a player has already staked on a specific race
 function raceStaked(bets, playerId, raceId) {
@@ -1983,7 +1983,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [newRace, setNewRace] = useState({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:""});
   const [newRaceErr, setNewRaceErr] = useState("");
   const [addHorseFor, setAddHorseFor] = useState(null);
-  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:""});
+  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});
   const [horseErr, setHorseErr] = useState("");
   const [bulkImportFor, setBulkImportFor] = useState(null);
   const [bulkText, setBulkText] = useState("");
@@ -2034,12 +2034,11 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       const raw = line.trim();
       if (!raw) return;
 
-      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds;
+      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [];
 
-      // Try pipe-separated format: "1. Name | Jockey | Trainer | 5.00 | 1.95"
+      // Try pipe-separated format: "1. Name | Jockey | Trainer | 5.00 | 1.95 | 1x2x3"
       if (raw.includes("|")) {
         const parts = raw.split("|").map(p => p.trim());
-        // Extract number from first part
         const firstPart = parts[0].replace(/^\d+[\.\)]\s*/, "").trim();
         const numMatch = parts[0].match(/^(\d+)/);
         num = numMatch ? parseInt(numMatch[1]) : existingCount + horses.length + 1;
@@ -2048,6 +2047,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         trainer = parts[2] || "TBA";
         winOdds = parseFloat(parts[3]);
         placeOdds = parseFloat(parts[4]);
+        // Form is optional 6th field — e.g. "1x2x3x4" or "1-2-3"
+        if (parts[5]) form = parts[5].split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean);
       } else {
         // Try to extract from free text — look for numbers at end for odds
         const numMatch = raw.match(/^(\d+)[\.\):\s]+/);
@@ -2089,7 +2090,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         number: num,
         name, jockey, trainer,
         winOdds, placeOdds,
-        form: [], scratched: false,
+        form, scratched: false,
       });
     });
 
@@ -2501,10 +2502,9 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <p className="cg" style={{fontSize:16,fontWeight:700,marginBottom:4}}>{races.find(r=>r.id===bulkImportFor)?.name}</p>
             <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format:</p>
             <div style={{padding:"10px 14px",background:"#f0f4ff",border:`1px solid rgba(26,86,160,.2)`,borderRadius:8,marginBottom:14,fontFamily:"monospace",fontSize:11,color:C.soft,lineHeight:1.8}}>
-              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95<br/>
-              2. Another Horse | J Smith | T Jones | 9.50 | 2.90<br/>
-              <span style={{opacity:.6}}>— or simpler (name + odds only):</span><br/>
-              1. Horse Name | 5.00 | 1.95
+              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3<br/>
+              2. Another Horse | J Smith | T Jones | 9.50 | 2.90 | 4x1x2<br/>
+              <span style={{opacity:.6}}>— form (last column) is optional</span>
             </div>
             <textarea
               className="inp sy"
@@ -2526,9 +2526,12 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <p className="sy" style={{fontSize:12,fontWeight:700,color:C.green,marginBottom:8}}>✓ {bulkPreview.length} horses ready to import:</p>
                 <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
                   {bulkPreview.map((h,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12}}>
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12,gap:8}}>
                       <span className="sy"><strong>#{h.number} {h.name}</strong> <span style={{color:C.soft}}>· {h.jockey} · {h.trainer}</span></span>
-                      <span className="sy" style={{color:C.accent,fontWeight:700,flexShrink:0,marginLeft:10}}>${h.winOdds.toFixed(2)} / ${h.placeOdds.toFixed(2)}</span>
+                      <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+                        {h.form&&h.form.length>0&&<span className="sy" style={{fontSize:11,color:C.soft}}>{h.form.join("-")}</span>}
+                        <span className="sy" style={{color:C.accent,fontWeight:700}}>${h.winOdds.toFixed(2)} / ${h.placeOdds.toFixed(2)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2601,8 +2604,12 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 </div>
               </div>
             </div>
-            {horseErr&&<p className="sy" style={{color:C.red,fontSize:12,marginBottom:10}}>{horseErr}</p>}
-            <div style={{display:"flex",gap:8}}>
+            <div>
+              <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Recent Form <span style={{fontWeight:400,textTransform:"none"}}>(optional — e.g. 1x2x3)</span></label>
+              <input className="inp sy" placeholder="e.g. 1x2x3x4" value={horseForm.form||""} onChange={e=>setHorseForm(p=>({...p,form:e.target.value}))}/>
+            </div>
+            {horseErr&&<p className="sy" style={{color:C.red,fontSize:12,marginTop:6}}>{horseErr}</p>}
+            <div style={{display:"flex",gap:8,marginTop:12}}>
               <button className="btn btn-gold" style={{flex:1,padding:12,fontSize:13}} onClick={()=>{
                 if(!horseForm.name.trim()) return setHorseErr("Horse name is required.");
                 if(!horseForm.winOdds||parseFloat(horseForm.winOdds)<=0) return setHorseErr("Win odds are required.");
@@ -2616,14 +2623,14 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   trainer: horseForm.trainer.trim() || "TBA",
                   winOdds: parseFloat(horseForm.winOdds),
                   placeOdds: parseFloat(horseForm.placeOdds),
-                  form: [],
+                  form: horseForm.form ? horseForm.form.split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean) : [],
                   scratched: false,
                 };
                 onAddHorse(addHorseFor, horse);
-                setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:""});
+                setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});
                 setHorseErr("");
               }}>Add Horse</button>
-              <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>{setAddHorseFor(null);setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:""});setHorseErr("");}}>Done</button>
+              <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>{setAddHorseFor(null);setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});setHorseErr("");}}>Done</button>
             </div>
             <p className="sy soft" style={{fontSize:11,marginTop:10}}>You can keep adding horses one by one. Click Done when the full field is entered.</p>
           </div>
