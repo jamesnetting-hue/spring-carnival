@@ -2150,7 +2150,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const pending = bets.filter(b=>b.won===null);
   const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
   const winRate = settled.length ? Math.round((won.length/settled.length)*100) : 0;
-  const roi = account.totalStaked > 0 ? parseFloat(((profit/account.totalStaked)*100).toFixed(1)) : 0;
+  const settledStaked = settled.reduce((s,b)=>s+b.stake,0);
+  const roi = settledStaked > 0 ? parseFloat(((profit/settledStaked)*100).toFixed(1)) : 0;
 
   // Best and worst bets
   const bestWin = won.length ? won.reduce((b,a)=>(a.payout||0)>(b.payout||0)?a:b) : null;
@@ -2233,7 +2234,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         {[
           ["Win Rate", `${winRate}%`, winRate>=30?C.green:C.red],
           ["ROI", `${roi}%`, roi>=0?C.green:C.red],
-          ["Total Staked", fmt(account.totalStaked), null],
+          ["Total Staked", fmt(settledStaked), null],
           ["Total Returned", fmt(account.totalWon), C.green],
         ].map(([l,v,col])=>(
           <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
@@ -2294,7 +2295,13 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
       )}
 
       {/* ── VISUAL STATS SECTION ── */}
-      {settled.length > 0 && (() => {
+      {settled.length === 0 ? (
+        <div className="card" style={{marginBottom:20,textAlign:"center",padding:"32px 20px",background:"rgba(30,92,30,.03)",border:`1px dashed ${C.border}`}}>
+          <div style={{fontSize:48,marginBottom:12}}>📈</div>
+          <div className="cg" style={{fontSize:18,fontWeight:700,marginBottom:6}}>Your stats will appear here</div>
+          <div className="sy" style={{fontSize:14,color:C.soft}}>Once races are settled you'll see your profit curve, win rate ring, bet type breakdown and race-by-race results.</div>
+        </div>
+      ) : settled.length > 0 && (()=>{
         // Profit curve — cumulative profit over each settled bet
         const profitCurve = [];
         let running = 0;
