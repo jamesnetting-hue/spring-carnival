@@ -1749,25 +1749,6 @@ function LeaderboardScreen({accounts,bets,races}) {
           })}
         </div>
       )}
-
-      <h3 className="cg" style={{fontSize:isMobile?18:20,marginBottom:12}}>Results Log</h3>
-      {!bets.filter(b=>b.won!==null).length?<p className="sy soft">No settled bets yet.</p>:(
-        <div style={{display:"flex",flexDirection:"column",gap:4}}>
-          {[...bets].filter(b=>b.won!==null).reverse().map(bet=>{
-            const a=accounts.find(x=>x.id===bet.playerId), race=races.find(r=>r.id===bet.raceId), td=BET_TYPES.find(t=>t.id===bet.type);
-            return(
-              <div key={bet.id} className="sy" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:bet.won?C.greenBg:C.redBg,border:`1px solid ${bet.won?C.greenBd:C.redBd}`,borderRadius:8,gap:8}}>
-                <div style={{minWidth:0}}>
-                  <span style={{fontWeight:700,fontSize:13}}>{a?.name}</span>
-                  <span style={{color:C.soft,fontSize:12}}> · {race?.name} · {td?.label}</span>
-                  {!isMobile&&<span style={{color:C.muted,fontSize:11}}> · #{bet.horses.join(" → #")}</span>}
-                </div>
-                <div style={{color:bet.won?C.green:C.red,fontWeight:700,flexShrink:0,fontSize:14}}>{bet.won?`+${fmt(bet.payout)}`:`-${fmt(bet.stake)}`}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -2135,9 +2116,36 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
   const settled = bets.filter(b=>b.won!==null);
   const won = bets.filter(b=>b.won===true);
+  const lost = bets.filter(b=>b.won===false);
   const pending = bets.filter(b=>b.won===null);
   const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
   const winRate = settled.length ? Math.round((won.length/settled.length)*100) : 0;
+  const roi = account.totalStaked > 0 ? parseFloat(((profit/account.totalStaked)*100).toFixed(1)) : 0;
+
+  // Best and worst bets
+  const bestWin = won.length ? won.reduce((b,a)=>(a.payout||0)>(b.payout||0)?a:b) : null;
+  const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
+  const biggestLoss = lost.length ? lost.reduce((b,a)=>a.stake>b.stake?a:b) : null;
+  const biggestLossRace = biggestLoss ? races.find(r=>r.id===biggestLoss.raceId) : null;
+
+  // Bet type breakdown
+  const byType = BET_TYPES.map(t=>{
+    const tb = settled.filter(b=>b.type===t.id);
+    const tw = tb.filter(b=>b.won===true);
+    const payout = tw.reduce((s,b)=>s+(b.payout||0),0);
+    const staked = tb.reduce((s,b)=>s+b.stake,0);
+    return { label:t.label, total:tb.length, wins:tw.length, payout, staked, profit:parseFloat((payout-staked).toFixed(2)) };
+  }).filter(t=>t.total>0);
+
+  // Streak — current winning/losing streak
+  const streak = (() => {
+    const s=[...settled].reverse();
+    if(!s.length) return null;
+    const type = s[0].won ? "win" : "loss";
+    let count = 0;
+    for(const b of s){ if((b.won&&type==="win")||(!b.won&&type==="loss")) count++; else break; }
+    return { type, count };
+  })();
 
   // Group bets by race
   const allRaces = [...new Set(bets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)).filter(Boolean);
@@ -2176,15 +2184,84 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Main stats */}
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:16}}>
-        {[["Bets Placed",bets.length],["Win Rate",`${winRate}%`],["Total Won",fmt(account.totalWon)],["Pending",pending.length]].map(([l,v])=>(
+        {[
+          ["Bets Placed", bets.length, null],
+          ["Settled", settled.length, null],
+          ["Wins", won.length, C.green],
+          ["Losses", lost.length||0, C.red],
+        ].map(([l,v,col])=>(
           <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
             <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
-            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:700}}>{v}</div>
+            <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:700,color:col||C.text}}>{v}</div>
           </div>
         ))}
       </div>
+
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:20}}>
+        {[
+          ["Win Rate", `${winRate}%`, winRate>=30?C.green:C.red],
+          ["ROI", `${roi}%`, roi>=0?C.green:C.red],
+          ["Total Staked", fmt(account.totalStaked), null],
+          ["Total Returned", fmt(account.totalWon), C.green],
+        ].map(([l,v,col])=>(
+          <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
+            <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
+            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:700,color:col||C.text}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Highlights row */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10,marginBottom:20}}>
+        {bestWin&&(
+          <div className="card" style={{background:"rgba(21,128,61,.05)",border:`1px solid ${C.greenBd}`}}>
+            <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🌟 Best Win</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{BET_TYPES.find(t=>t.id===bestWin.type)?.label} · {bestWinRace?.name}</div>
+            <div className="sy" style={{fontSize:11,color:C.muted,marginTop:1}}>#{bestWin.horses.join(" → #")}</div>
+          </div>
+        )}
+        {streak&&streak.count>1&&(
+          <div className="card" style={{background:streak.type==="win"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)",border:`1px solid ${streak.type==="win"?C.greenBd:C.redBd}`}}>
+            <div className="sy" style={{fontSize:11,color:streak.type==="win"?C.green:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>{streak.type==="win"?"🔥 Win Streak":"📉 Losing Streak"}</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:streak.type==="win"?C.green:C.red}}>{streak.count} in a row</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>Current {streak.type==="win"?"winning":"losing"} streak</div>
+          </div>
+        )}
+        {biggestLoss&&(
+          <div className="card" style={{background:"rgba(185,28,28,.05)",border:`1px solid ${C.redBd}`}}>
+            <div className="sy" style={{fontSize:11,color:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>💸 Biggest Loss</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:C.red}}>-{fmt(biggestLoss.stake)}</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{BET_TYPES.find(t=>t.id===biggestLoss.type)?.label} · {biggestLossRace?.name}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Bet type breakdown */}
+      {byType.length>0&&(
+        <div style={{marginBottom:20}}>
+          <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:10}}>By Bet Type</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {byType.map(t=>(
+              <div key={t.label} className="card" style={{padding:"12px 16px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <span className="sy" style={{fontSize:14,fontWeight:700}}>{t.label}</span>
+                  <span className="cg" style={{fontSize:16,fontWeight:700,color:t.profit>=0?C.green:C.red}}>{t.profit>=0?"+":""}{fmt(t.profit)}</span>
+                </div>
+                <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                  <span className="sy" style={{fontSize:12,color:C.soft}}>{t.total} bets</span>
+                  <span className="sy" style={{fontSize:12,color:C.green}}>{t.wins} won</span>
+                  <span className="sy" style={{fontSize:12,color:C.red}}>{t.total-t.wins} lost</span>
+                  <span className="sy" style={{fontSize:12,color:C.soft}}>{t.total?Math.round((t.wins/t.total)*100):0}% win rate</span>
+                  <span className="sy" style={{fontSize:12,color:C.soft}}>{fmt(t.staked)} staked</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pending bets */}
       {upcomingRaces.length>0&&(
