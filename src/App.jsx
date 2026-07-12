@@ -11,6 +11,57 @@ function useWindowWidth() {
   return w;
 }
 
+// Countdown hook — returns {h, m, s, urgent, expired}
+function useCountdown(targetDateStr, targetTimeStr) {
+  const getRemaining = () => {
+    if (!targetDateStr || !targetTimeStr) return null;
+    const target = new Date(`${targetDateStr}T${targetTimeStr}:00`);
+    const diff = target - Date.now();
+    if (diff <= 0) return { h:0, m:0, s:0, expired:true, urgent:false };
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return { h, m, s, expired:false, urgent: diff < 7200000 }; // urgent if < 2hrs
+  };
+  const [remaining, setRemaining] = useState(getRemaining);
+  useEffect(() => {
+    const t = setInterval(() => setRemaining(getRemaining()), 1000);
+    return () => clearInterval(t);
+  }, [targetDateStr, targetTimeStr]);
+  return remaining;
+}
+
+// Confetti component
+function Confetti() {
+  const pieces = Array.from({length:60}, (_,i) => ({
+    id:i,
+    x: Math.random()*100,
+    delay: Math.random()*3,
+    dur: 2 + Math.random()*2,
+    color: ["#1e5c1e","#d4a017","#dc2626","#2563eb","#16803a","#b8860b"][i%6],
+    size: 6 + Math.random()*8,
+    spin: Math.random()*360,
+  }));
+  return (
+    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9998,overflow:"hidden"}}>
+      {pieces.map(p=>(
+        <div key={p.id} style={{
+          position:"absolute",
+          left:`${p.x}%`,
+          top:-20,
+          width:p.size,
+          height:p.size,
+          background:p.color,
+          borderRadius:p.size>10?'50%':2,
+          animation:`confettiFall ${p.dur}s ${p.delay}s ease-in forwards`,
+          transform:`rotate(${p.spin}deg)`,
+        }}/>
+      ))}
+      <style>{`@keyframes confettiFall{from{top:-20px;opacity:1}to{top:110vh;opacity:0;transform:rotate(720deg);}}`}</style>
+    </div>
+  );
+}
+
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://yhohlsqiedzpxumqhppb.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlob2hsc3FpZWR6cHh1bXFocHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNTA3OTMsImV4cCI6MjA5MjcyNjc5M30.Yvf-ooW0Ti0TCcmZg-VtPzrsbQVlpc_YeBzf07_qfv0";
@@ -94,6 +145,27 @@ const BET_TYPES = [
     multiplier:(horses,om) => om[horses[0]]?.placeOdds || 0,
   },
   {
+    id:"quinella", label:"Quinella", desc:"Pick 1st & 2nd in any order",
+    positions:[{label:"Horse 1",key:"p1"},{label:"Horse 2",key:"p2"}],
+    check:(horses,res) => {
+      const top2=[res.first,res.second];
+      return horses.length===2 && top2.includes(horses[0]) && top2.includes(horses[1]);
+    },
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])/2).toFixed(2));
+    },
+  },
+  {
+    id:"exacta", label:"Exacta", desc:"Pick 1st & 2nd in exact order",
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
+    check:(horses,res) => horses[0]===res.first && horses[1]===res.second,
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])/2).toFixed(2));
+    },
+  },
+  {
     id:"trifecta", label:"Trifecta", desc:"Pick 1st, 2nd & 3rd in order",
     positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"},{label:"3rd",key:"p3"}],
     check:(horses,res) => horses[0]===res.first && horses[1]===res.second && horses[2]===res.third,
@@ -125,7 +197,17 @@ function raceStaked(bets, playerId, raceId) {
     .reduce((s, b) => s + b.stake, 0);
 }
 
-// ─── THEME — Racing green, gold & white. Clear for ages 20-70 ────────────────
+// Race countdown component
+function RaceCountdown({date, time}) {
+  const r = useCountdown(date, time);
+  if (!r || r.expired) return null;
+  const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
+  return (
+    <span className="sy" style={{fontSize:12,fontWeight:700,color:r.urgent?C.red:C.accent,background:r.urgent?C.redBg:C.accentGlow,padding:"2px 8px",borderRadius:20,border:`1px solid ${r.urgent?C.redBd:C.accent}`,display:"inline-block",marginTop:3}}>
+      {r.urgent?"⚡ ":""}{r.urgent?"Closes in ":""}{label}
+    </span>
+  );
+}
 const C = {
   // Backgrounds
   bg:"#f0f2f0",        // soft off-white with a hint of green
@@ -266,6 +348,8 @@ export default function App() {
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seasonMessage, setSeasonMessage] = useState({ enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" });
+  const [resultsBanner, setResultsBanner] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Load all data from Supabase on startup + restore session
   useEffect(() => {
@@ -574,7 +658,15 @@ export default function App() {
       });
     }
 
-    showToast(`Race settled — ${wins} winner${wins!==1?"s":""}, ${fmt(paid)} paid out. Emails sent!`);
+    showToast(`Race settled — ${wins} winner${wins!==1?"s":""}, ${fmt(paid)} paid out`);
+
+    // Show results banner for the logged-in player
+    const myWins = settled.filter(b => b.playerId === session && b.won === true);
+    setResultsBanner({ raceName: races.find(r=>r.id===raceId)?.name, myWins: myWins.length, myPayout: myWins.reduce((s,b)=>s+(b.payout||0),0) });
+    if (myWins.length > 0) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 4000);
+    }
   };
 
   const addRace = (race) => {
@@ -676,6 +768,22 @@ export default function App() {
         </div>
       )}
 
+      {showConfetti&&<Confetti/>}
+
+      {/* Results banner */}
+      {resultsBanner&&(
+        <div style={{position:"fixed",top:72,left:16,right:16,zIndex:9990,maxWidth:520,margin:"0 auto",background:resultsBanner.myWins>0?"rgba(21,128,61,.97)":"rgba(30,92,30,.95)",borderRadius:14,padding:"16px 20px",boxShadow:"0 8px 40px rgba(0,0,0,.25)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,animation:"notif .3s ease"}}>
+          <div>
+            <div className="sy" style={{fontSize:15,fontWeight:800,color:"#fff"}}>
+              {resultsBanner.myWins>0?`🎉 You won on ${resultsBanner.raceName}!`:`📋 ${resultsBanner.raceName} has been settled`}
+            </div>
+            {resultsBanner.myWins>0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.85)",marginTop:2}}>+{fmt(resultsBanner.myPayout)} — check My Bets for details</div>}
+            {resultsBanner.myWins===0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.75)",marginTop:2}}>Check My Bets to see the results</div>}
+          </div>
+          <button onClick={()=>setResultsBanner(null)} style={{background:"none",border:"none",color:"rgba(255,255,255,.7)",fontSize:22,cursor:"pointer",flexShrink:0,lineHeight:1}}>×</button>
+        </div>
+      )}
+
       {toast&&(
         <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
           {toast.msg}
@@ -690,7 +798,7 @@ export default function App() {
               <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
-                {[["lobby","Races"],["leaderboard","Standings"],["season","Season"],["profile","My Account"],["admin","Admin"]].map(([s,l])=>(
+                {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
                   <button key={s} className={`tab${screen===s||(screen==="race"&&s==="lobby")?" on":""}`} onClick={()=>setScreen(s)}>{l}</button>
                 ))}
               </nav>
@@ -712,7 +820,7 @@ export default function App() {
 
           {/* ── MOBILE BOTTOM NAV ── */}
           <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)"}}>
-            {[["lobby","Races"],["leaderboard","Standings"],["season","Season"],["profile","Account"],["admin","Admin"]].map(([s,l])=>{
+            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
                 <button key={s} onClick={()=>setScreen(s)}
@@ -732,8 +840,7 @@ export default function App() {
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races}/>}
-        {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
-        {screen==="profile"&&<ProfileScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
+        {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast}/>}
       </main>}
 
@@ -1038,13 +1145,21 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
                         {fav&&<p className="sy" style={{fontSize:13,marginTop:3,color:C.text}}>FAV: <strong>{fav.name}</strong> <span style={{color:C.accent,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
                         {race.raceTime&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:13,marginTop:4,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
+                          <div style={{marginTop:4}}>
+                            <p className="sy" style={{fontSize:13,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
+                            <RaceCountdown date={race.date} time={race.raceTime}/>
+                          </div>
                         )}
                         {race.oddsAsOf&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:12,marginTop:3,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
+                          <p className="sy" style={{fontSize:12,marginTop:4,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
                         )}
                         {race.status==="closed"&&(
                           <p className="sy" style={{fontSize:13,marginTop:4,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
+                        )}
+                        {account&&race.status==="upcoming"&&raceBal===STARTING_BALANCE&&(
+                          <div style={{marginTop:6,padding:"6px 10px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:7}}>
+                            <p className="sy" style={{fontSize:12,color:C.red,fontWeight:700}}>⚠ No bets placed yet!</p>
+                          </div>
                         )}
                       </div>
                       <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
@@ -1161,24 +1276,26 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const getBoxedCombos=()=>{
     const allSel=[...new Set(Object.values(sel).flat())];
     if(allSel.length<numPositions) return [];
+    // Quinella boxed = unordered pairs (combinations, not permutations)
+    if(betType==="quinella"){
+      const pairs=[];
+      for(let i=0;i<allSel.length;i++)
+        for(let j=i+1;j<allSel.length;j++)
+          pairs.push([allSel[i],allSel[j]]);
+      return pairs;
+    }
+    // Exacta/Trifecta/First Four boxed = ordered permutations
     function perms(arr,r){if(r===0)return[[]]; return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));}
     return perms(allSel,numPositions);
   };
 
-  const allCombos = boxed&&(betType==="trifecta"||betType==="firstfour") ? getBoxedCombos() : getUnboxedCombos();
+  const allCombos = boxed&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella") ? getBoxedCombos() : getUnboxedCombos();
   const combos = allCombos.length;
+  const unitStake = combos > 0 ? parseFloat((stake / combos).toFixed(4)) : stake;
 
-  // Full (standard) number of combos if it were a straight bet (1 combo = flexi 100%)
-  // Flexi % = (unit_stake / full_bet_unit_stake) * (your_combos / 1) ... simplified:
-  // Flexi % = (stake_per_combo * your_combos) / standard_single_bet_cost * 100
-  // For TAB-style flexi: flexi % = stake_per_combo / standard_unit * 100
-  // Standard unit for trifecta/firstfour = $1. So flexi% = stake * 100 (as % of $1 unit)
-  // More accurately: flexi % = (total_outlay / num_combos) / standard_unit * 100
-  // We'll show: flexi % = (stake_per_combo / 1.00) * 100 = stake * 100
-  // But the real display is just: each combo is X% of a full unit dividend
-  const standardUnit = 1.00;
-  const totalCost = stake; // stake IS the total now
-  const unitStake = combos > 0 ? parseFloat((stake / combos).toFixed(2)) : stake;
+  // Flexi % = unit stake as a % of $1.00 standard dividend unit
+  // e.g. if you split $24 across 6 trifecta combos = $4 each = 400% flexi per combo
+  const flexiPct = combos > 0 ? parseFloat(((stake / combos) * 100).toFixed(1)) : 0;
 
   const isReady=()=>{
     if(stake<=0) return false;
@@ -1200,7 +1317,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     return def.positions.map((p,i)=>(sel[i]||[]).includes(num)?p.label:null).filter(Boolean);
   };
 
-  const canShowBoxed=betType==="trifecta"||betType==="firstfour";
+  const canShowBoxed=betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella";
 
   return (
     <div className="sr">
@@ -1244,9 +1361,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
         {/* Field */}
         <div>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 70px 60px 100px`,gap:0,padding:"4px 12px",marginBottom:4}}>
-            {["#","Horse / Jockey","Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
-              <span key={i} className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form")?"center":"left",padding:"0 4px"}}>{h}</span>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 50px 70px 60px 100px`,gap:0,padding:"4px 12px",marginBottom:4}}>
+            {["#","Horse / Jockey",...(isMobile?[]:["Wt"]),"Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
+              <span key={i} className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form"||h==="Wt")?"center":"left",padding:"0 4px",color:C.soft}}>{h}</span>
             ))}
           </div>
 
@@ -1256,24 +1373,25 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             const isSel=posLabels.length>0;
             return (
               <div key={h.number} className={`hrow${scr?" scr":" clickable"}${isSel?" sel":""}`}
-                style={{gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 70px 60px 100px`,gap:0,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent",padding:"10px 12px"}}
+                style={{gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 50px 70px 60px 100px`,gap:0,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent",padding:"10px 12px"}}
                 onClick={()=>{
                   if(scr) return;
                   if(betType==="win"||betType==="place") toggleHorse(0,h.number);
-                  if((betType==="trifecta"||betType==="firstfour")&&boxed) toggleHorse(0,h.number);
+                  if((betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&boxed) toggleHorse(0,h.number);
                 }}>
                 <div style={{width:22,height:22,borderRadius:"50%",background:scr?"#e5e7eb":silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{h.number}</div>
                 <div>
-                  <div className="sy" style={{fontWeight:600,fontSize:13,textDecoration:scr?"line-through":"",display:"flex",alignItems:"center",gap:6}}>
+                  <div className="sy" style={{fontWeight:600,fontSize:13,textDecoration:scr?"line-through":"",display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                     {h.name}
+                    {!scr&&h.number===fav?.number&&<span style={{fontSize:9,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:4,fontWeight:800}}>⭐ FAV</span>}
                     {posLabels.length>0&&posLabels.map(pl=>(
                       <span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:4,fontWeight:800}}>{pl}</span>
                     ))}
                     {scr&&<span className="badge sy" style={{background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,fontSize:9}}>SCR</span>}
                   </div>
-                  <div className="sy soft" style={{fontSize:10,marginTop:1}}>{h.jockey} · {h.trainer}</div>
+                  <div className="sy" style={{fontSize:10,marginTop:1,color:C.soft}}>{h.jockey} · {h.trainer}</div>
                   {/* Position buttons for trifecta/firstfour unboxed */}
-                  {!scr&&(betType==="trifecta"||betType==="firstfour")&&!boxed&&(
+                  {!scr&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&!boxed&&(
                     <div style={{display:"flex",gap:4,marginTop:5,flexWrap:"wrap"}}>
                       {def.positions.map((pos,pi)=>{
                         const isThis=(sel[pi]||[]).includes(h.number);
@@ -1287,8 +1405,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                   )}
                 </div>
+                {!isMobile&&<div className="sy" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",color:C.soft}}>{h.weight||"—"}</div>}
                 <div className="cg gold" style={{fontWeight:700,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>${h.winOdds.toFixed(2)}</div>
-                <div className="sy soft" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>${h.placeOdds.toFixed(2)}</div>
+                <div className="sy" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",color:C.soft}}>${h.placeOdds.toFixed(2)}</div>
                 <div style={{display:"flex",gap:3,alignItems:"center",justifyContent:"center",flexWrap:"wrap",padding:"0 4px"}}>
                   {h.form&&h.form.length>0 ? h.form.map((f,fi)=>(
                     <span key={fi} style={{width:16,height:16,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{f}</span>
@@ -1337,9 +1456,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               {betType==="win"||betType==="place"?(
                 (sel[0]||[]).length===0
                   ? <p className="sy" style={{fontSize:12,color:C.soft}}>
-                      {(betType==="trifecta"||betType==="firstfour")&&boxed
+                      {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&boxed
                         ? "← Tap any horse to include in your boxed selection"
-                        : (betType==="trifecta"||betType==="firstfour")
+                        : (betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")
                         ? "← Use the position buttons on each horse to assign 1st, 2nd, 3rd..."
                         : "← Tap a horse from the field to select"}
                     </p>
@@ -1425,20 +1544,20 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                   </>
                 )}
-                {(betType==="trifecta"||betType==="firstfour")&&combos>1&&(
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:"rgba(26,86,160,.07)",borderRadius:5}}>
-                    <span className="sy" style={{fontSize:10,fontWeight:700,color:C.accent}}>Flexi %</span>
-                    <span className="sy" style={{fontSize:13,fontWeight:700,color:C.accent}}>{parseFloat(((stake/combos)/1*100).toFixed(1))}%</span>
+                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>1&&(
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:C.accentGlow,borderRadius:5}}>
+                    <span className="sy" style={{fontSize:12,fontWeight:700,color:C.accent}}>Flexi %</span>
+                    <span className="sy" style={{fontSize:14,fontWeight:800,color:C.accent}}>{flexiPct}%</span>
                   </div>
                 )}
                 <div style={{display:"flex",justifyContent:"space-between",borderTop:combos>1?`1px solid rgba(26,86,160,.12)`:"none",paddingTop:combos>1?7:0,marginTop:combos>1?2:0}}>
                   <span className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em"}}>Total Stake</span>
                   <span className="cg" style={{fontSize:20,fontWeight:700,color:C.text}}>{fmt(stake)}</span>
                 </div>
-                {stake>raceBalance&&<p className="sy" style={{fontSize:10,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
-                {(betType==="trifecta"||betType==="firstfour")&&combos>1&&(
-                  <p className="sy" style={{fontSize:10,color:C.soft,marginTop:6,lineHeight:1.5}}>
-                    💡 Your {fmt(stake)} stake is split across {combos} combinations ({fmt(parseFloat((stake/combos).toFixed(2)))} each). Flexi % = {parseFloat(((stake/combos)/1*100).toFixed(0))}% of the full dividend.
+                {stake>raceBalance&&<p className="sy" style={{fontSize:12,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
+                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>1&&(
+                  <p className="sy" style={{fontSize:12,color:C.soft,marginTop:6,lineHeight:1.5}}>
+                    {combos} combination{combos!==1?"s":""} · {fmt(parseFloat((stake/combos).toFixed(2)))} each · <strong style={{color:C.accent}}>{flexiPct}% flexi</strong>
                   </p>
                 )}
               </div>
@@ -1576,11 +1695,29 @@ function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfi
 function LeaderboardScreen({accounts,bets,races}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
+  const [copied, setCopied] = useState(false);
   const medals=["🥇","🥈","🥉"]; const medalC=["#ffd700","#c0c0c0","#cd7f32"];
+
+  const copyStandings = () => {
+    const lines = accounts.map((a,i) => {
+      const profit = parseFloat((a.totalWon - a.totalStaked).toFixed(2));
+      const medal = medals[i] || `#${i+1}`;
+      return `${medal} ${a.name} — ${profit>=0?"+":""}${fmt(profit)}`;
+    });
+    const text = `🏇 Spring Carnival Standings\n\n${lines.join("\n")}`;
+    navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
+  };
   return (
     <div className="fu">
-      <h2 className="cg" style={{fontSize:isMobile?22:28,fontWeight:700,marginBottom:4}}>🏆 Leaderboard</h2>
-      <p className="sy soft" style={{fontSize:13,marginBottom:18}}>Ranked by net profit across all races.</p>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4,flexWrap:"wrap",gap:10}}>
+        <h2 className="cg" style={{fontSize:isMobile?22:28,fontWeight:700}}>🏆 Leaderboard</h2>
+        {accounts.length>0&&(
+          <button className="sy" style={{fontSize:13,padding:"8px 16px",borderRadius:8,border:`1px solid ${C.border}`,background:copied?C.greenBg:"#fff",color:copied?C.green:C.text,cursor:"pointer",fontWeight:600,transition:"all .2s"}} onClick={copyStandings}>
+            {copied?"✓ Copied!":"📋 Copy Standings"}
+          </button>
+        )}
+      </div>
+      <p className="sy" style={{fontSize:13,color:C.soft,marginBottom:18}}>Ranked by net profit across all races.</p>
       {accounts.length===0?<p className="sy soft">No players yet.</p>:(
         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
           {accounts.map((a,i)=>{
@@ -1697,6 +1834,24 @@ function SeasonScreen({accounts, bets, races}) {
       )}
 
       {/* Leaderboard */}
+      {/* Best bet callout */}
+      {bets.filter(b=>b.won===true).length>0&&(()=>{
+        const bestBet = bets.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const bestPlayer = bestBet ? accounts.find(a=>a.id===bestBet.playerId) : null;
+        const bestRace = bestBet ? races.find(r=>r.id===bestBet.raceId) : null;
+        const bestType = bestBet ? BET_TYPES.find(t=>t.id===bestBet.type) : null;
+        if (!bestPlayer) return null;
+        return (
+          <div className="card" style={{marginBottom:24,background:"linear-gradient(135deg,#fffbeb,#fef9e7)",border:`2px solid ${C.gold}`,textAlign:"center",padding:"20px 24px"}}>
+            <div style={{fontSize:32,marginBottom:6}}>🌟</div>
+            <div className="sy" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".1em",color:C.gold,fontWeight:700,marginBottom:4}}>Best Bet of the Season</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,marginBottom:4}}>{bestPlayer.name}</div>
+            <div className="sy" style={{fontSize:14,color:C.soft,marginBottom:6}}>{bestType?.label} on {bestRace?.name}</div>
+            <div className="cg" style={{fontSize:32,fontWeight:900,color:C.green}}>+{fmt(bestBet.payout||0)}</div>
+          </div>
+        );
+      })()}
+
       <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:14}}>Season Leaderboard</h3>
       {playerStats.length === 0 ? (
         <div className="card" style={{textAlign:"center",padding:40}}>
@@ -1769,6 +1924,8 @@ function SeasonScreen({accounts, bets, races}) {
                             ["Place 2nd",race.result.dividends.place2],
                             ["Place 3rd",race.result.dividends.place3],
                             ["Place 4th",race.result.dividends.place4],
+                            ["Quinella",race.result.dividends.quinella],
+                            ["Exacta",race.result.dividends.exacta],
                             ["Trifecta",race.result.dividends.trifecta],
                             ["First Four",race.result.dividends.firstfour],
                           ].filter(([,v])=>v&&v>0).map(([l,v])=>(
@@ -1963,6 +2120,196 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
   );
 }
 
+// ─── MY BETS ──────────────────────────────────────────────────────────────────
+function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCancelBet}) {
+  const w = useWindowWidth();
+  const isMobile = w < 700;
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [newPin2, setNewPin2] = useState("");
+  const [pinStep, setPinStep] = useState("new");
+  const [pinErr, setPinErr] = useState("");
+  const [pinOk, setPinOk] = useState(false);
+
+  if (!account) return null;
+
+  const settled = bets.filter(b=>b.won!==null);
+  const won = bets.filter(b=>b.won===true);
+  const pending = bets.filter(b=>b.won===null);
+  const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
+  const winRate = settled.length ? Math.round((won.length/settled.length)*100) : 0;
+
+  // Group bets by race
+  const allRaces = [...new Set(bets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)).filter(Boolean);
+  const finishedRaces = allRaces.filter(r=>r.status==="finished"||r.status==="archived");
+  const upcomingRaces = allRaces.filter(r=>r.status==="upcoming"||r.status==="closed");
+
+  const handleNewPin = () => { if(newPin.length<4) return; setPinStep("confirm"); setNewPin2(""); setPinErr(""); };
+  const handleConfirmPin = val => {
+    setNewPin2(val);
+    if(val.length===4){
+      if(val===newPin){ onChangePin(newPin); setShowPinChange(false); setPinOk(true); setNewPin(""); setNewPin2(""); setPinStep("new"); setTimeout(()=>setPinOk(false),3000); }
+      else { setPinErr("PINs don't match. Try again."); setPinStep("new"); setNewPin(""); setNewPin2(""); }
+    }
+  };
+
+  return (
+    <div className="fu">
+      {/* Header */}
+      <div className="card" style={{marginBottom:16,borderLeft:`4px solid ${C.accent}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+          <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},#2d7a2d)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff",flexShrink:0}}>
+            {account.name[0].toUpperCase()}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <h2 className="cg" style={{fontSize:isMobile?20:24,fontWeight:700}}>{account.name}</h2>
+            <p className="sy" style={{fontSize:12,color:C.soft}}>{account.email}</p>
+            <button className="sy" style={{background:"none",border:"none",color:C.accent,cursor:"pointer",fontSize:12,fontWeight:700,textDecoration:"underline",padding:0,marginTop:2}} onClick={()=>{setShowPinChange(true);setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");setPinOk(false);}}>
+              Change PIN
+            </button>
+            {pinOk&&<span className="sy" style={{fontSize:12,color:C.green,marginLeft:10}}>✓ PIN updated!</span>}
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div className="sy" style={{fontSize:11,color:C.soft,textTransform:"uppercase",letterSpacing:".06em"}}>Season Profit</div>
+            <div className="cg" style={{fontSize:isMobile?24:30,fontWeight:800,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:16}}>
+        {[["Bets Placed",bets.length],["Win Rate",`${winRate}%`],["Total Won",fmt(account.totalWon)],["Pending",pending.length]].map(([l,v])=>(
+          <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
+            <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
+            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:700}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pending bets */}
+      {upcomingRaces.length>0&&(
+        <div style={{marginBottom:20}}>
+          <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:10}}>Upcoming Bets</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {upcomingRaces.map(race=>{
+              const rb=bets.filter(b=>b.raceId===race.id);
+              const bal=getRaceBalance(account.id,race.id);
+              return(
+                <div key={race.id} className="card" style={{borderLeft:`3px solid ${bal===0?C.green:C.accent}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                    <div>
+                      <div className="cg" style={{fontSize:16,fontWeight:700}}>{race.name}</div>
+                      <div className="sy" style={{fontSize:12,color:C.soft}}>{race.venue} · {new Date(race.date).toLocaleDateString("en-AU",{day:"numeric",month:"short"})}</div>
+                    </div>
+                    <span className="badge sy" style={{background:bal===0?C.greenBg:C.accentGlow,color:bal===0?C.green:C.accent,border:`1px solid ${bal===0?C.greenBd:C.accent}`,fontSize:12}}>{bal===0?"✓ Spent":"$"+bal.toFixed(2)+" left"}</span>
+                  </div>
+                  {rb.length>0?(
+                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                      {rb.map(b=>{
+                        const td=BET_TYPES.find(t=>t.id===b.type);
+                        return(
+                          <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:7}}>
+                            <div>
+                              <span className="sy" style={{fontSize:13,fontWeight:700}}>{td?.label}</span>
+                              <span className="sy" style={{fontSize:12,color:C.soft}}> · #{b.horses.join(" → #")}</span>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                              <span className="sy" style={{fontSize:13,fontWeight:700}}>{fmt(b.stake)}</span>
+                              {race.status==="upcoming"&&(
+                                <button className="sy" style={{fontSize:11,padding:"3px 8px",borderRadius:5,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}} onClick={()=>{if(window.confirm("Cancel this bet?")) onCancelBet(b.id);}}>Cancel</button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ):<p className="sy" style={{fontSize:13,color:C.red,fontWeight:600}}>⚠ No bets placed yet — must spend {fmt(bal)}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Race by race results */}
+      {finishedRaces.length>0&&(
+        <div style={{marginBottom:20}}>
+          <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:10}}>Race Results</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {finishedRaces.map(race=>{
+              const rb=bets.filter(b=>b.raceId===race.id);
+              const racePayout=rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+              const raceStaked=rb.reduce((s,b)=>s+b.stake,0);
+              const raceProfit=parseFloat((racePayout-raceStaked).toFixed(2));
+              const winner=race.horses?.find(h=>h.number===race.result?.first);
+              return(
+                <div key={race.id} className="card" style={{borderLeft:`3px solid ${raceProfit>=0?C.green:C.red}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:rb.length>0?8:0}}>
+                    <div>
+                      <div className="cg" style={{fontSize:16,fontWeight:700}}>{race.name}</div>
+                      <div className="sy" style={{fontSize:12,color:C.soft}}>{race.venue} · {new Date(race.date).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}</div>
+                      {winner&&<div className="sy" style={{fontSize:12,marginTop:2,color:C.accent,fontWeight:600}}>🥇 {winner.name}</div>}
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div className="sy" style={{fontSize:11,color:C.soft}}>Your result</div>
+                      <div className="cg" style={{fontSize:18,fontWeight:700,color:raceProfit>=0?C.green:C.red}}>{raceProfit>=0?"+":""}{fmt(raceProfit)}</div>
+                    </div>
+                  </div>
+                  {rb.length>0&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                      {rb.map(b=>{
+                        const td=BET_TYPES.find(t=>t.id===b.type);
+                        return(
+                          <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
+                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · #{b.horses.join(" → #")} · {fmt(b.stake)}</span>
+                            <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0,marginLeft:8}}>
+                              {b.won===true?`+${fmt(b.payout)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {bets.length===0&&upcomingRaces.length===0&&finishedRaces.length===0&&(
+        <div className="card" style={{textAlign:"center",padding:40}}>
+          <div style={{fontSize:48,marginBottom:12}}>🏇</div>
+          <p className="cg" style={{fontSize:20,marginBottom:6}}>No bets yet</p>
+          <p className="sy" style={{fontSize:14,color:C.soft}}>Head to the Races tab to place your first bet!</p>
+        </div>
+      )}
+
+      {/* Change PIN modal */}
+      {showPinChange&&(
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setShowPinChange(false)}>
+          <div className="modal sr">
+            <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:16}}>Change PIN</h3>
+            {pinStep==="new"?(
+              <>
+                <p className="sy" style={{fontSize:14,color:C.soft,marginBottom:14}}>Enter your new 4-digit PIN:</p>
+                <PinPad value={newPin} onChange={v=>{setNewPin(v);if(v.length===4)handleNewPin();}}/>
+                {pinErr&&<p className="sy" style={{color:C.red,fontSize:13,marginTop:10,textAlign:"center"}}>{pinErr}</p>}
+              </>
+            ):(
+              <>
+                <p className="sy" style={{fontSize:14,color:C.soft,marginBottom:14}}>Confirm your new PIN:</p>
+                <PinPad value={newPin2} onChange={handleConfirmPin}/>
+                <button className="btn btn-ghost" style={{width:"100%",marginTop:10,fontSize:13}} onClick={()=>{setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");}}>← Back</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
 function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast}) {
   const [inputs, setInputs] = useState({});
@@ -1978,7 +2325,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [newRace, setNewRace] = useState({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:"",oddsAsOf:""});
   const [newRaceErr, setNewRaceErr] = useState("");
   const [addHorseFor, setAddHorseFor] = useState(null);
-  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});
+  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:"",weight:""});
   const [horseErr, setHorseErr] = useState("");
   const [bulkImportFor, setBulkImportFor] = useState(null);
   const [bulkText, setBulkText] = useState("");
@@ -2030,7 +2377,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       const raw = line.trim();
       if (!raw) return;
 
-      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [];
+      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [], weight = "";
 
       // Try pipe-separated format: "1. Name | Jockey | Trainer | 5.00 | 1.95 | 1x2x3"
       if (raw.includes("|")) {
@@ -2045,6 +2392,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         placeOdds = parseFloat(parts[4]);
         // Form is optional 6th field — e.g. "1x2x3x4" or "1-2-3"
         if (parts[5]) form = parts[5].split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean);
+        if (parts[6]) weight = parts[6].trim();
       } else {
         // Try to extract from free text — look for numbers at end for odds
         const numMatch = raw.match(/^(\d+)[\.\):\s]+/);
@@ -2086,7 +2434,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         number: num,
         name, jockey, trainer,
         winOdds, placeOdds,
-        form, scratched: false,
+        form, weight, scratched: false,
       });
     });
 
@@ -2128,9 +2476,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       place2:    parseFloat(inp.divs.place2    || 0),
       place3:    parseFloat(inp.divs.place3    || 0),
       place4:    parseFloat(inp.divs.place4    || 0),
+      quinella:  parseFloat(inp.divs.quinella  || 0),
+      exacta:    parseFloat(inp.divs.exacta    || 0),
       trifecta:  parseFloat(inp.divs.trifecta  || 0),
       firstfour: parseFloat(inp.divs.firstfour || 0),
-      quinella:  parseFloat(inp.divs.quinella  || 0),
     };
     onSettle(raceId, result, dividends);
   };
@@ -2267,9 +2616,37 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       {adminTab === "races" && (
         <div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <p className="sy soft" style={{fontSize:12}}>Click horses into finishing order, enter TAB dividends, then settle.</p>
+            <p className="sy" style={{fontSize:12,color:C.soft}}>Click horses into finishing order, enter TAB dividends, then settle.</p>
             <button className="btn btn-gold sy" style={{fontSize:12,padding:"8px 16px",flexShrink:0}} onClick={()=>setShowAddRace(true)}>+ Add Race</button>
           </div>
+
+          {/* Race day checklist */}
+          {races.filter(r=>r.status==="upcoming"||r.status==="closed").map(race=>{
+            const hasHorses = race.horses.filter(h=>!h.scratched).length > 0;
+            const hasOddsAsOf = !!race.oddsAsOf;
+            const hasScratchCheck = true; // reminder only
+            const steps = [
+              {label:"Race added", done:true},
+              {label:"Horses imported", done:hasHorses},
+              {label:"Odds as of set", done:hasOddsAsOf},
+              {label:"Scratching checked", done:hasOddsAsOf&&hasHorses},
+            ];
+            const allDone = steps.every(s=>s.done);
+            return(
+              <div key={race.id} className="card" style={{marginBottom:10,background:allDone?"rgba(21,128,61,.04)":"rgba(184,134,11,.04)",border:`1px solid ${allDone?C.greenBd:"rgba(184,134,11,.3)"}`}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <span className="sy" style={{fontSize:13,fontWeight:700}}>{allDone?"✅":"📋"} {race.name} — Race Day Checklist</span>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {steps.map(step=>(
+                    <span key={step.label} className="sy" style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:step.done?C.greenBg:C.redBg,color:step.done?C.green:C.red,border:`1px solid ${step.done?C.greenBd:C.redBd}`,fontWeight:600}}>
+                      {step.done?"✓":"✗"} {step.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
 
           {/* Season message toggle */}
           <div className="card" style={{marginBottom:16,background:"rgba(30,92,30,.04)",border:`1px solid rgba(30,92,30,.15)`}}>
@@ -2354,6 +2731,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                               ["Place 2nd",race.result.dividends.place2],
                               ["Place 3rd",race.result.dividends.place3],
                               ["Place 4th",race.result.dividends.place4],
+                              ["Quinella",race.result.dividends.quinella],
+                              ["Exacta",race.result.dividends.exacta],
                               ["Trifecta",race.result.dividends.trifecta],
                               ["First Four",race.result.dividends.firstfour],
                             ].filter(([,v])=>v&&v>0).map(([l,v])=>(
@@ -2389,7 +2768,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           : race.horses.map(h=>(
                             <button key={h.number} className="sy" style={{fontSize:10,padding:"3px 9px",borderRadius:6,border:`1px solid ${h.scratched?C.redBd:C.border}`,background:h.scratched?C.redBg:"#f4f5f7",color:h.scratched?C.red:C.soft,cursor:"pointer",textDecoration:h.scratched?"line-through":"",display:"inline-flex",alignItems:"center",gap:4}}>
                               <span onClick={()=>!h.scratched&&onScratch(race.id,h.number)}>#{h.number} {h.name}{h.scratched?" SCR":""}</span>
-                              {!h.scratched&&<span style={{color:C.accent,fontSize:11}} onClick={e=>{e.stopPropagation();setEditHorseFor({raceId:race.id,horseNum:h.number});setEditHorseForm({name:h.name,jockey:h.jockey||"",trainer:h.trainer||"",winOdds:String(h.winOdds),placeOdds:String(h.placeOdds)});}}>✏️</span>}
+                              {!h.scratched&&<span style={{color:C.accent,fontSize:11}} onClick={e=>{e.stopPropagation();setEditHorseFor({raceId:race.id,horseNum:h.number});setEditHorseForm({name:h.name,jockey:h.jockey||"",trainer:h.trainer||"",winOdds:String(h.winOdds),placeOdds:String(h.placeOdds),weight:h.weight||""});}}>✏️</span>}
                             </button>
                           ))
                         }
@@ -2453,9 +2832,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           ["place2",   "Place — 2nd",       false],
                           ["place3",   "Place — 3rd",       false],
                           ["place4",   "Place — 4th",       false],
+                          ["quinella", "Quinella",          false],
+                          ["exacta",   "Exacta",            false],
                           ["trifecta", "Trifecta",          false],
                           ["firstfour","First Four",        false],
-                          ["quinella", "Quinella",          false],
                         ].map(([key,label,required])=>(
                           <div key={key}>
                             <label className="sy" style={{fontSize:10,display:"block",marginBottom:3,fontWeight:required?700:400,color:required?C.text:C.soft}}>
@@ -2498,9 +2878,9 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <p className="cg" style={{fontSize:16,fontWeight:700,marginBottom:4}}>{races.find(r=>r.id===bulkImportFor)?.name}</p>
             <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format:</p>
             <div style={{padding:"10px 14px",background:"#f0f4ff",border:`1px solid rgba(26,86,160,.2)`,borderRadius:8,marginBottom:14,fontFamily:"monospace",fontSize:11,color:C.soft,lineHeight:1.8}}>
-              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3<br/>
-              2. Another Horse | J Smith | T Jones | 9.50 | 2.90 | 4x1x2<br/>
-              <span style={{opacity:.6}}>— form (last column) is optional</span>
+              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3 | 58<br/>
+              2. Another Horse | J Smith | T Jones | 9.50 | 2.90 | 4x1x2 | 56.5<br/>
+              <span style={{opacity:.6}}>form & weight (last 2 columns) are optional</span>
             </div>
             <textarea
               className="inp sy"
@@ -2600,9 +2980,15 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 </div>
               </div>
             </div>
-            <div>
-              <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Recent Form <span style={{fontWeight:400,textTransform:"none"}}>(optional — e.g. 1x2x3)</span></label>
-              <input className="inp sy" placeholder="e.g. 1x2x3x4" value={horseForm.form||""} onChange={e=>setHorseForm(p=>({...p,form:e.target.value}))}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div>
+                <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Weight <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="e.g. 58" value={horseForm.weight||""} onChange={e=>setHorseForm(p=>({...p,weight:e.target.value}))}/>
+              </div>
+              <div>
+                <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Recent Form <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="e.g. 1x2x3x4" value={horseForm.form||""} onChange={e=>setHorseForm(p=>({...p,form:e.target.value}))}/>
+              </div>
             </div>
             {horseErr&&<p className="sy" style={{color:C.red,fontSize:12,marginTop:6}}>{horseErr}</p>}
             <div style={{display:"flex",gap:8,marginTop:12}}>
@@ -2619,6 +3005,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   trainer: horseForm.trainer.trim() || "TBA",
                   winOdds: parseFloat(horseForm.winOdds),
                   placeOdds: parseFloat(horseForm.placeOdds),
+                  weight: horseForm.weight.trim() || "",
                   form: horseForm.form ? horseForm.form.split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean) : [],
                   scratched: false,
                 };
@@ -2778,6 +3165,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   </div>
                 </div>
               </div>
+              <div>
+                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Weight <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="e.g. 58" value={editHorseForm.weight||""} onChange={e=>setEditHorseForm(p=>({...p,weight:e.target.value}))}/>
+              </div>
             </div>
             <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:14}} onClick={()=>{
               if(!editHorseForm.name?.trim()) return;
@@ -2787,6 +3178,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 trainer: editHorseForm.trainer.trim()||"TBA",
                 winOdds: parseFloat(editHorseForm.winOdds)||0,
                 placeOdds: parseFloat(editHorseForm.placeOdds)||0,
+                weight: editHorseForm.weight?.trim()||"",
               });
               setEditHorseFor(null);
             }}>Save Changes ✓</button>
