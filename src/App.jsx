@@ -748,11 +748,33 @@ export default function App() {
   };
 
   const leaderboard = [...accounts].sort((a,b)=>{
-    // Sort by total won (winnings) — most profitable first
     const profitA = a.totalWon - a.totalStaked;
     const profitB = b.totalWon - b.totalStaked;
     return profitB - profitA;
   });
+
+  // Track position movements — save current positions to localStorage and compare
+  const [prevPositions, setPrevPositions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("sc_prev_positions") || "{}"); } catch { return {}; }
+  });
+
+  useEffect(() => {
+    if (leaderboard.length === 0) return;
+    const current = {};
+    leaderboard.forEach((a,i) => { current[a.id] = i + 1; });
+    // Save current as new previous after a delay (so player sees movement first)
+    const t = setTimeout(() => {
+      localStorage.setItem("sc_prev_positions", JSON.stringify(current));
+      setPrevPositions(current);
+    }, 30000); // update every 30s
+    return () => clearTimeout(t);
+  }, [leaderboard.map(a=>a.id).join(",")]);
+
+  const getMovement = (accountId, currentPos) => {
+    const prev = prevPositions[accountId];
+    if (!prev || prev === currentPos) return null;
+    return prev - currentPos; // positive = moved up, negative = moved down
+  };
 
   const selectedRace = races.find(r=>r.id===raceId);
 
@@ -839,7 +861,7 @@ export default function App() {
       {screen!=="auth"&&<main style={{maxWidth:980,margin:"0 auto",padding:"22px 14px 80px 14px"}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
-        {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races}/>}
+        {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast}/>}
       </main>}
@@ -1692,7 +1714,7 @@ function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfi
 }
 
 // ─── LEADERBOARD ──────────────────────────────────────────────────────────────
-function LeaderboardScreen({accounts,bets,races}) {
+function LeaderboardScreen({accounts,bets,races,getMovement}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [copied, setCopied] = useState(false);
@@ -1724,13 +1746,21 @@ function LeaderboardScreen({accounts,bets,races}) {
             const pb=bets.filter(b=>b.playerId===a.id);
             const won=pb.filter(b=>b.won===true).length, lost=pb.filter(b=>b.won===false).length, pend=pb.filter(b=>b.won===null).length;
             const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
+            const movement = getMovement ? getMovement(a.id, i+1) : null;
             return(
               <div key={a.id} className="card" style={{display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${medalC[i]||C.border}`}}>
                 <div style={{fontSize:i<3?28:16,width:36,textAlign:"center",flexShrink:0,fontWeight:700}}>
                   {medals[i]||<span className="sy" style={{color:C.muted}}>#{i+1}</span>}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:700}}>{a.name}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:700}}>{a.name}</div>
+                    {movement!==null&&movement!==0&&(
+                      <span className="sy" style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:3,background:movement>0?C.greenBg:C.redBg,color:movement>0?C.green:C.red,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
+                        {movement>0?`▲ ${movement}`:`▼ ${Math.abs(movement)}`}
+                      </span>
+                    )}
+                  </div>
                   <div className="sy" style={{fontSize:12,marginTop:3,color:C.soft}}>
                     <span style={{color:C.green,fontWeight:600}}>{won}W</span>
                     <span style={{margin:"0 4px",color:C.muted}}>·</span>
@@ -1742,7 +1772,7 @@ function LeaderboardScreen({accounts,bets,races}) {
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:700,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
-                  {!isMobile&&<div className="sy soft" style={{fontSize:10,marginTop:2}}>Won {fmt(a.totalWon)} · Staked {fmt(a.totalStaked)}</div>}
+                  {!isMobile&&<div className="sy" style={{fontSize:11,marginTop:2,color:C.soft}}>Won {fmt(a.totalWon)} · Staked {fmt(a.totalStaked)}</div>}
                 </div>
               </div>
             );
@@ -2262,6 +2292,164 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           </div>
         </div>
       )}
+
+      {/* ── VISUAL STATS SECTION ── */}
+      {settled.length > 0 && (() => {
+        // Profit curve — cumulative profit over each settled bet
+        const profitCurve = [];
+        let running = 0;
+        settled.forEach(b => {
+          running = parseFloat((running + (b.won ? (b.payout||0) - b.stake : -b.stake)).toFixed(2));
+          profitCurve.push(running);
+        });
+        const maxVal = Math.max(...profitCurve, 0.01);
+        const minVal = Math.min(...profitCurve, 0);
+        const range = maxVal - minVal || 1;
+
+        // Profit by bet type — bar chart data
+        const typeData = BET_TYPES.map(t => {
+          const tb = settled.filter(b=>b.type===t.id);
+          if (!tb.length) return null;
+          const tw = tb.filter(b=>b.won===true);
+          const p = tw.reduce((s,b)=>s+(b.payout||0),0) - tb.reduce((s,b)=>s+b.stake,0);
+          return { label:t.label, profit:parseFloat(p.toFixed(2)), count:tb.length, wins:tw.length };
+        }).filter(Boolean);
+
+        // Win/loss donut data
+        const totalSettled = settled.length;
+
+        // Race profit heatmap
+        const raceData = [...new Set(settled.map(b=>b.raceId))].map(rid => {
+          const rb = settled.filter(b=>b.raceId===rid);
+          const race = races.find(r=>r.id===rid);
+          const p = rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
+          return { name: race?.name?.replace(/Handicap|Stakes|Cup/g,'').trim() || rid, profit: parseFloat(p.toFixed(2)) };
+        }).sort((a,b)=>b.profit-a.profit);
+
+        const barMax = typeData.length ? Math.max(...typeData.map(t=>Math.abs(t.profit)), 0.01) : 1;
+        const raceMax = raceData.length ? Math.max(...raceData.map(r=>Math.abs(r.profit)), 0.01) : 1;
+
+        return (
+          <div style={{marginBottom:24}}>
+            <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:14}}>📈 Your Season in Charts</h3>
+
+            {/* 1. Profit Curve */}
+            <div className="card" style={{marginBottom:12,padding:"18px 16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+                <span className="sy" style={{fontSize:13,fontWeight:700}}>Profit Over Time</span>
+                <span className="cg" style={{fontSize:16,fontWeight:800,color:running>=0?C.green:C.red}}>{running>=0?"+":""}{fmt(running)}</span>
+              </div>
+              <div style={{position:"relative",height:80,display:"flex",alignItems:"flex-end",gap:2}}>
+                {/* Zero line */}
+                <div style={{position:"absolute",left:0,right:0,bottom:`${(Math.abs(minVal)/range)*100}%`,height:1,background:C.border,zIndex:1}}/>
+                {profitCurve.map((v,i)=>{
+                  const isUp = i===0 ? v>=0 : v >= profitCurve[i-1];
+                  const h = Math.max(2, Math.abs(v-minVal)/range*100);
+                  const bottom = minVal<0 ? (v<0?(Math.abs(minVal+v)/range*100):(Math.abs(minVal)/range*100)) : 0;
+                  return (
+                    <div key={i} style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"flex-end"}}>
+                      <div style={{position:"absolute",bottom:`${((-minVal)/range)*100}%`,left:0,right:0,
+                        height:`${(v/range)*100}%`,background:v>=0?`rgba(21,128,61,${0.4+0.6*(v/maxVal)})`:C.red,
+                        borderRadius:"2px 2px 0 0",minHeight:2,transform:v<0?"scaleY(-1) translateY(100%)":"none",transformOrigin:"bottom"
+                      }}/>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                <span className="sy" style={{fontSize:10,color:C.muted}}>Bet 1</span>
+                <span className="sy" style={{fontSize:10,color:C.muted}}>Bet {profitCurve.length}</span>
+              </div>
+            </div>
+
+            {/* 2. Win Rate Ring + Streak */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              {/* Win Rate Ring */}
+              <div className="card" style={{textAlign:"center",padding:"20px 16px"}}>
+                <span className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,display:"block",marginBottom:10}}>Win Rate</span>
+                <div style={{position:"relative",width:90,height:90,margin:"0 auto 10px"}}>
+                  <svg viewBox="0 0 36 36" style={{transform:"rotate(-90deg)",width:90,height:90}}>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke={C.border} strokeWidth="3"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke={winRate>=50?C.green:winRate>=25?C.gold:C.red}
+                      strokeWidth="3" strokeDasharray={`${winRate} ${100-winRate}`} strokeLinecap="round"/>
+                  </svg>
+                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                    <span className="cg" style={{fontSize:20,fontWeight:800,color:winRate>=50?C.green:winRate>=25?C.gold:C.red}}>{winRate}%</span>
+                  </div>
+                </div>
+                <div className="sy" style={{fontSize:12,color:C.soft}}>{won.length}W · {lost.length}L</div>
+              </div>
+
+              {/* Current streak */}
+              <div className="card" style={{textAlign:"center",padding:"20px 16px",background:streak&&streak.count>1?(streak.type==="win"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)"):"#fff"}}>
+                <span className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,display:"block",marginBottom:10}}>Current Streak</span>
+                {streak&&streak.count>0?(
+                  <>
+                    <div style={{fontSize:44,marginBottom:4}}>{streak.type==="win"?"🔥":"❄️"}</div>
+                    <div className="cg" style={{fontSize:24,fontWeight:800,color:streak.type==="win"?C.green:C.red}}>{streak.count}</div>
+                    <div className="sy" style={{fontSize:12,color:streak.type==="win"?C.green:C.red,marginTop:2}}>{streak.type==="win"?"wins":"losses"} in a row</div>
+                  </>
+                ):(
+                  <div className="sy" style={{fontSize:13,color:C.muted,marginTop:20}}>No streak yet</div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Profit by Bet Type — horizontal bars */}
+            {typeData.length>0&&(
+              <div className="card" style={{marginBottom:12,padding:"18px 16px"}}>
+                <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:12}}>Profit by Bet Type</span>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {typeData.map(t=>(
+                    <div key={t.label}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span className="sy" style={{fontSize:12,fontWeight:600}}>{t.label} <span style={{color:C.muted,fontWeight:400}}>({t.count} bets · {t.wins}W)</span></span>
+                        <span className="sy" style={{fontSize:12,fontWeight:700,color:t.profit>=0?C.green:C.red}}>{t.profit>=0?"+":""}{fmt(t.profit)}</span>
+                      </div>
+                      <div style={{height:10,background:C.surface,borderRadius:5,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.min(100,Math.abs(t.profit)/barMax*100)}%`,background:t.profit>=0?C.green:C.red,borderRadius:5,transition:"width .5s ease"}}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. Race by race profit heatmap */}
+            {raceData.length>0&&(
+              <div className="card" style={{padding:"18px 16px"}}>
+                <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:12}}>Profit Per Race</span>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {raceData.map(r=>(
+                    <div key={r.name}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span className="sy" style={{fontSize:12,fontWeight:600,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</span>
+                        <span className="sy" style={{fontSize:12,fontWeight:700,color:r.profit>=0?C.green:C.red,marginLeft:8,flexShrink:0}}>{r.profit>=0?"+":""}{fmt(r.profit)}</span>
+                      </div>
+                      <div style={{height:10,background:C.surface,borderRadius:5,overflow:"hidden",position:"relative"}}>
+                        <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:C.border}}/>
+                        <div style={{
+                          position:"absolute",
+                          height:"100%",
+                          width:`${Math.min(50,Math.abs(r.profit)/raceMax*50)}%`,
+                          left:r.profit>=0?"50%":"auto",
+                          right:r.profit<0?"50%":"auto",
+                          background:r.profit>=0?C.green:C.red,
+                          borderRadius:r.profit>=0?"0 5px 5px 0":"5px 0 0 5px",
+                        }}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+                  <span className="sy" style={{fontSize:10,color:C.muted}}>← Loss</span>
+                  <span className="sy" style={{fontSize:10,color:C.muted}}>Profit →</span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Pending bets */}
       {upcomingRaces.length>0&&(
