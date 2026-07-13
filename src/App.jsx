@@ -1758,8 +1758,17 @@ function LeaderboardScreen({accounts,bets,races,getMovement}) {
             const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
             const bestWinType = bestWin ? BET_TYPES.find(t=>t.id===bestWin.type) : null;
 
-            // Last 5 settled results as form dots
-            const last5 = [...pb].filter(b=>b.won!==null).slice(-5);
+            // Last 5 races - profit/loss per race
+            const settledRaces = races
+              .filter(r=>r.status==="finished"||r.status==="archived")
+              .map(r=>{
+                const rb = pb.filter(b=>b.raceId===r.id&&b.won!==null);
+                if(!rb.length) return null;
+                const raceProfit = rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
+                return { raceId:r.id, name:r.name, profit:raceProfit };
+              })
+              .filter(Boolean)
+              .slice(-5);
 
             return(
               <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`}}>
@@ -1795,17 +1804,18 @@ function LeaderboardScreen({accounts,bets,races,getMovement}) {
                 {/* Form + Best Win strip */}
                 <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
 
-                  {/* Last 5 form dots */}
+                  {/* Last 5 race form dots */}
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <span className="sy" style={{fontSize:11,color:C.muted,marginRight:2}}>Form</span>
-                    {last5.length===0?(
-                      <span className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>No results yet</span>
-                    ):last5.map((b,fi)=>(
-                      <div key={fi} title={b.won?"Win":"Loss"} style={{width:22,height:22,borderRadius:"50%",background:b.won?C.green:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0}}>
-                        {b.won?"W":"L"}
+                    {settledRaces.length===0?(
+                      <span className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>No races settled yet</span>
+                    ):settledRaces.map((r,fi)=>(
+                      <div key={fi} title={`${r.name}: ${r.profit>=0?"+":""}$${Math.abs(r.profit).toFixed(2)}`}
+                        style={{width:22,height:22,borderRadius:"50%",background:r.profit>=0?C.green:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0,cursor:"default"}}>
+                        {r.profit>=0?"W":"L"}
                       </div>
                     ))}
-                    {last5.length>0&&last5.length<5&&Array.from({length:5-last5.length}).map((_,fi)=>(
+                    {settledRaces.length>0&&settledRaces.length<5&&Array.from({length:5-settledRaces.length}).map((_,fi)=>(
                       <div key={`e${fi}`} style={{width:22,height:22,borderRadius:"50%",background:C.border,flexShrink:0}}/>
                     ))}
                   </div>
