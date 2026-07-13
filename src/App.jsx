@@ -145,6 +145,13 @@ const BET_TYPES = [
     multiplier:(horses,om) => om[horses[0]]?.placeOdds || 0,
   },
   {
+    id:"eachway", label:"Each Way", desc:"Win + Place on the same horse",
+    positions:[{label:"Horse",key:"horse"}],
+    check:(horses,res) => horses[0]===res.first || [res.first,res.second,res.third].includes(horses[0]),
+    multiplier:(horses,om) => (om[horses[0]]?.winOdds||0) + (om[horses[0]]?.placeOdds||0),
+    eachway: true,
+  },
+  {
     id:"quinella", label:"Quinella", desc:"Pick 1st & 2nd in any order",
     positions:[{label:"Horse 1",key:"p1"},{label:"Horse 2",key:"p2"}],
     check:(horses,res) => {
@@ -1447,16 +1454,16 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           <span className="badge sy" style={{background:C.blueBg,color:C.blue,border:`1px solid ${C.blueBd}`}}>{race.raceNum}</span>
           {fav&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`}}>FAV: {fav.name} ${fav.winOdds.toFixed(1)}</span>}
         </div>
-        <h2 className="cg" style={{fontSize:28,fontWeight:700,marginBottom:3}}>{race.name}</h2>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:3}}>
+          <h2 className="cg" style={{fontSize:28,fontWeight:700}}>{race.name}</h2>
+          {race.oddsAsOf&&(
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",background:"rgba(184,134,11,0.1)",border:`1px solid rgba(184,134,11,0.3)`,borderRadius:6,flexShrink:0,marginTop:4}}>
+              <span style={{fontSize:13}}>🕐</span>
+              <span className="sy" style={{fontSize:12,fontWeight:600,color:C.gold,whiteSpace:"nowrap"}}>Odds as of {race.oddsAsOf}</span>
+            </div>
+          )}
+        </div>
         <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
-
-        {/* Odds as of — prominent */}
-        {race.oddsAsOf&&(
-          <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,padding:"5px 12px",background:"rgba(184,134,11,0.1)",border:`1px solid rgba(184,134,11,0.3)`,borderRadius:6}}>
-            <span style={{fontSize:14}}>🕐</span>
-            <span className="sy" style={{fontSize:13,fontWeight:600,color:C.gold}}>Odds as of {race.oddsAsOf}</span>
-          </div>
-        )}
 
         {/* Budget — bold and impossible to miss */}
         <div style={{marginTop:10,padding:"12px 16px",borderRadius:10,background:raceBalance===0?"rgba(21,128,61,0.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,0.07)":"rgba(30,92,30,0.06)",border:`2px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.accent}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
@@ -1503,9 +1510,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Horse number silk */}
+                  {/* Horse number / silk */}
                   <div style={{width:44,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"14px 0",borderRight:`1px solid ${C.border}`}}>
-                    <div style={{width:28,height:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>
+                    {h.silkUrl ? (
+                      <img src={h.silkUrl} alt={`${h.name} silk`}
+                        style={{width:32,height:32,objectFit:"contain",borderRadius:4}}
+                        onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}
+                      />
+                    ) : null}
+                    <div style={{width:28,height:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>
                       {h.number}
                     </div>
                   </div>
@@ -1526,7 +1539,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       ))}
                     </div>
                     <div className="sy" style={{fontSize:11,color:C.soft}}>
-                      J {h.jockey} · T {h.trainer}{h.weight?` · ${h.weight}kg`:""}
+                      <strong style={{color:C.text}}>J</strong> {h.jockey.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text}}>T</strong> {h.trainer.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
                     </div>
                     {/* Form dots */}
                     {h.form&&h.form.length>0&&(
@@ -1552,38 +1565,60 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     )}
                   </div>
 
-                  {/* Win & Place odds — TAB style buttons */}
+                  {/* Win & Place odds — TAB style tap-to-select buttons */}
                   {!scr&&(
                     <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
+                      {/* WIN button */}
                       <button className="sy" style={{
                         width:isMobile?68:78,
                         padding:"10px 0",
                         borderRadius:8,
-                        border:`2px solid ${(betType==="win"||(betType==="place"&&false))&&isSel?C.accent:C.accent}`,
-                        background:(betType==="win"&&isSel)?C.accent:C.accentGlow,
-                        color:(betType==="win"&&isSel)?"#fff":C.accent,
-                        cursor:"pointer",
-                        textAlign:"center",
-                        transition:"all .15s",
+                        border:`2px solid ${(betType==="win"||betType==="eachway")&&(sel[0]||[]).includes(h.number)?C.accent:C.accent}`,
+                        background:(betType==="win"||(betType==="eachway"))&&(sel[0]||[]).includes(h.number)?C.accent:C.accentGlow,
+                        color:(betType==="win"||betType==="eachway")&&(sel[0]||[]).includes(h.number)?"#fff":C.accent,
+                        cursor:"pointer",textAlign:"center",transition:"all .15s",
                       }}
-                        onClick={e=>{e.stopPropagation();if(betType==="win")toggleHorse(0,h.number);}}>
+                        onClick={e=>{
+                          e.stopPropagation();
+                          // If Place already selected on this horse → upgrade to Each Way
+                          if(betType==="place"&&(sel[0]||[]).includes(h.number)){
+                            changeType("eachway");
+                          } else if(betType==="eachway"&&(sel[0]||[]).includes(h.number)){
+                            // Deselect win side → go back to Place
+                            changeType("place");
+                          } else {
+                            changeType("win");
+                            setSel({0:[h.number]});
+                          }
+                        }}>
                         <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
-                        <div style={{fontSize:9,fontWeight:600,opacity:.75,marginTop:1}}>WIN</div>
+                        <div style={{fontSize:9,fontWeight:700,opacity:.8,marginTop:1}}>WIN</div>
                       </button>
+                      {/* PLACE button */}
                       <button className="sy" style={{
                         width:isMobile?68:78,
                         padding:"10px 0",
                         borderRadius:8,
-                        border:`2px solid ${C.border}`,
-                        background:(betType==="place"&&isSel)?"#e0e7ff":"#f8f9fb",
-                        color:(betType==="place"&&isSel)?C.blue:C.soft,
-                        cursor:"pointer",
-                        textAlign:"center",
-                        transition:"all .15s",
+                        border:`2px solid ${(betType==="place"||betType==="eachway")&&(sel[0]||[]).includes(h.number)?C.blue:"#d1d5db"}`,
+                        background:(betType==="place"||betType==="eachway")&&(sel[0]||[]).includes(h.number)?"#2563eb":"#f8f9fb",
+                        color:(betType==="place"||betType==="eachway")&&(sel[0]||[]).includes(h.number)?"#fff":"#6b7280",
+                        cursor:"pointer",textAlign:"center",transition:"all .15s",
                       }}
-                        onClick={e=>{e.stopPropagation();if(betType==="place")toggleHorse(0,h.number);}}>
+                        onClick={e=>{
+                          e.stopPropagation();
+                          // If Win already selected on this horse → upgrade to Each Way
+                          if(betType==="win"&&(sel[0]||[]).includes(h.number)){
+                            changeType("eachway");
+                          } else if(betType==="eachway"&&(sel[0]||[]).includes(h.number)){
+                            // Deselect place side → go back to Win
+                            changeType("win");
+                          } else {
+                            changeType("place");
+                            setSel({0:[h.number]});
+                          }
+                        }}>
                         <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
-                        <div style={{fontSize:9,fontWeight:600,opacity:.75,marginTop:1}}>PLACE</div>
+                        <div style={{fontSize:9,fontWeight:700,opacity:.8,marginTop:1}}>PLACE</div>
                       </button>
                     </div>
                   )}
@@ -2830,7 +2865,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [newRace, setNewRace] = useState({name:"",venue:"",date:"",distance:"",raceNum:"",raceTime:"",oddsAsOf:""});
   const [newRaceErr, setNewRaceErr] = useState("");
   const [addHorseFor, setAddHorseFor] = useState(null);
-  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:"",weight:""});
+  const [horseForm, setHorseForm] = useState({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:"",weight:"",silkUrl:""});
   const [horseErr, setHorseErr] = useState("");
   const [bulkImportFor, setBulkImportFor] = useState(null);
   const [bulkText, setBulkText] = useState("");
@@ -2882,7 +2917,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       const raw = line.trim();
       if (!raw) return;
 
-      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [], weight = "";
+      let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [], weight = "", silkUrl = "";
 
       // Try pipe-separated format: "1. Name | Jockey | Trainer | 5.00 | 1.95 | 1x2x3"
       if (raw.includes("|")) {
@@ -2898,6 +2933,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         // Form is optional 6th field — e.g. "1x2x3x4" or "1-2-3"
         if (parts[5]) form = parts[5].split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean);
         if (parts[6]) weight = parts[6].trim();
+        if (parts[7]) silkUrl = parts[7].trim();
       } else {
         // Try to extract from free text — look for numbers at end for odds
         const numMatch = raw.match(/^(\d+)[\.\):\s]+/);
@@ -2939,7 +2975,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         number: num,
         name, jockey, trainer,
         winOdds, placeOdds,
-        form, weight, scratched: false,
+        form, weight, silkUrl, scratched: false,
       });
     });
 
@@ -3273,7 +3309,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           : race.horses.map(h=>(
                             <button key={h.number} className="sy" style={{fontSize:10,padding:"3px 9px",borderRadius:6,border:`1px solid ${h.scratched?C.redBd:C.border}`,background:h.scratched?C.redBg:"#f4f5f7",color:h.scratched?C.red:C.soft,cursor:"pointer",textDecoration:h.scratched?"line-through":"",display:"inline-flex",alignItems:"center",gap:4}}>
                               <span onClick={()=>!h.scratched&&onScratch(race.id,h.number)}>#{h.number} {h.name}{h.scratched?" SCR":""}</span>
-                              {!h.scratched&&<span style={{color:C.accent,fontSize:11}} onClick={e=>{e.stopPropagation();setEditHorseFor({raceId:race.id,horseNum:h.number});setEditHorseForm({name:h.name,jockey:h.jockey||"",trainer:h.trainer||"",winOdds:String(h.winOdds),placeOdds:String(h.placeOdds),weight:h.weight||""});}}>✏️</span>}
+                              {!h.scratched&&<span style={{color:C.accent,fontSize:11}} onClick={e=>{e.stopPropagation();setEditHorseFor({raceId:race.id,horseNum:h.number});setEditHorseForm({name:h.name,jockey:h.jockey||"",trainer:h.trainer||"",winOdds:String(h.winOdds),placeOdds:String(h.placeOdds),weight:h.weight||"",silkUrl:h.silkUrl||""});}}>✏️</span>}
                             </button>
                           ))
                         }
@@ -3383,9 +3419,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <p className="cg" style={{fontSize:16,fontWeight:700,marginBottom:4}}>{races.find(r=>r.id===bulkImportFor)?.name}</p>
             <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format:</p>
             <div style={{padding:"10px 14px",background:"#f0f4ff",border:`1px solid rgba(26,86,160,.2)`,borderRadius:8,marginBottom:14,fontFamily:"monospace",fontSize:11,color:C.soft,lineHeight:1.8}}>
-              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3 | 58<br/>
-              2. Another Horse | J Smith | T Jones | 9.50 | 2.90 | 4x1x2 | 56.5<br/>
-              <span style={{opacity:.6}}>form & weight (last 2 columns) are optional</span>
+              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3 | 58 | https://silk-image-url.png<br/>
+              <span style={{opacity:.6}}>form, weight and silk URL (last 3 columns) are all optional</span>
             </div>
             <textarea
               className="inp sy"
@@ -3407,8 +3442,11 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <p className="sy" style={{fontSize:12,fontWeight:700,color:C.green,marginBottom:8}}>✓ {bulkPreview.length} horses ready to import:</p>
                 <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
                   {bulkPreview.map((h,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12,gap:8}}>
-                      <span className="sy"><strong>#{h.number} {h.name}</strong> <span style={{color:C.soft}}>· {h.jockey} · {h.trainer}</span></span>
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12,gap:8,alignItems:"center"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        {h.silkUrl&&<img src={h.silkUrl} alt="silk" style={{width:24,height:24,objectFit:"contain",borderRadius:3}}/>}
+                        <span className="sy"><strong>#{h.number} {h.name}</strong> <span style={{color:C.soft}}>· {h.jockey} · {h.trainer}</span></span>
+                      </div>
                       <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
                         {h.form&&h.form.length>0&&<span className="sy" style={{fontSize:11,color:C.soft}}>{h.form.join("-")}</span>}
                         <span className="sy" style={{color:C.accent,fontWeight:700}}>${h.winOdds.toFixed(2)} / ${h.placeOdds.toFixed(2)}</span>
@@ -3495,8 +3533,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <input className="inp sy" placeholder="e.g. 1x2x3x4" value={horseForm.form||""} onChange={e=>setHorseForm(p=>({...p,form:e.target.value}))}/>
               </div>
             </div>
-            {horseErr&&<p className="sy" style={{color:C.red,fontSize:12,marginTop:6}}>{horseErr}</p>}
-            <div style={{display:"flex",gap:8,marginTop:12}}>
+            <div>
+                <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Silk Image URL <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="https://..." value={horseForm.silkUrl||""} onChange={e=>setHorseForm(p=>({...p,silkUrl:e.target.value}))}/>
+              </div>
               <button className="btn btn-gold" style={{flex:1,padding:12,fontSize:13}} onClick={()=>{
                 if(!horseForm.name.trim()) return setHorseErr("Horse name is required.");
                 if(!horseForm.winOdds||parseFloat(horseForm.winOdds)<=0) return setHorseErr("Win odds are required.");
@@ -3511,6 +3551,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   winOdds: parseFloat(horseForm.winOdds),
                   placeOdds: parseFloat(horseForm.placeOdds),
                   weight: horseForm.weight.trim() || "",
+                  silkUrl: horseForm.silkUrl.trim() || "",
                   form: horseForm.form ? horseForm.form.split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean) : [],
                   scratched: false,
                 };
@@ -3671,8 +3712,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 </div>
               </div>
               <div>
-                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Weight <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
-                <input className="inp sy" placeholder="e.g. 58" value={editHorseForm.weight||""} onChange={e=>setEditHorseForm(p=>({...p,weight:e.target.value}))}/>
+                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Silk Image URL <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+                <input className="inp sy" placeholder="https://..." value={editHorseForm.silkUrl||""} onChange={e=>setEditHorseForm(p=>({...p,silkUrl:e.target.value}))}/>
               </div>
             </div>
             <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:14}} onClick={()=>{
@@ -3684,6 +3725,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 winOdds: parseFloat(editHorseForm.winOdds)||0,
                 placeOdds: parseFloat(editHorseForm.placeOdds)||0,
                 weight: editHorseForm.weight?.trim()||"",
+                silkUrl: editHorseForm.silkUrl?.trim()||"",
               });
               setEditHorseFor(null);
             }}>Save Changes ✓</button>
