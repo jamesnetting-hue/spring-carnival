@@ -1478,57 +1478,125 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
         {/* Field */}
         <div>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 50px 70px 60px 100px`,gap:0,padding:"4px 12px",marginBottom:4}}>
-            {["#","Horse / Jockey",...(isMobile?[]:["Wt"]),"Win",...(isMobile?[]:["Place"]),"Form"].map((h,i)=>(
-              <span key={i} className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",textAlign:(h==="Win"||h==="Place"||h==="Form"||h==="Wt")?"center":"left",padding:"0 4px",color:C.soft}}>{h}</span>
-            ))}
+          {/* Column headers */}
+          <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"0 12px",marginBottom:4}}>
+            <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:isMobile?70:80,textAlign:"center"}}>WIN</span>
+            <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:isMobile?70:80,textAlign:"center"}}>PLACE</span>
           </div>
 
           {race.horses.map((h,idx)=>{
             const scr=h.scratched;
             const posLabels=horsePositions(h.number);
             const isSel=posLabels.length>0;
+            const isBoxedSel = boxed&&(sel[0]||[]).includes(h.number);
+            const isWinSel = (betType==="win"||betType==="place")&&(sel[0]||[]).includes(h.number);
+            const highlighted = isSel||isBoxedSel||isWinSel;
+
             return (
-              <div key={h.number} className={`hrow${scr?" scr":" clickable"}${isSel?" sel":""}`}
-                style={{gridTemplateColumns:isMobile?`28px 1fr 56px 80px`:`28px 1fr 50px 70px 60px 100px`,gap:0,background:isSel?"#e8f5e8":idx%2===0?"#fafbfc":"transparent",padding:"10px 12px"}}
-                onClick={()=>{
-                  if(scr) return;
-                  if(betType==="win"||betType==="place") toggleHorse(0,h.number);
-                  if((betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&boxed) toggleHorse(0,h.number);
-                }}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:scr?"#e5e7eb":silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{h.number}</div>
-                <div>
-                  <div className="sy" style={{fontWeight:600,fontSize:13,textDecoration:scr?"line-through":"",display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                    {h.name}
-                    {!scr&&h.number===fav?.number&&<span style={{fontSize:9,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:4,fontWeight:800}}>⭐ FAV</span>}
-                    {posLabels.length>0&&posLabels.map(pl=>(
-                      <span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:4,fontWeight:800}}>{pl}</span>
-                    ))}
-                    {scr&&<span className="badge sy" style={{background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,fontSize:9}}>SCR</span>}
+              <div key={h.number} style={{
+                marginBottom:8,
+                borderRadius:12,
+                border:`2px solid ${highlighted?C.accent:scr?"#e5e7eb":C.border}`,
+                background:highlighted?"rgba(30,92,30,.06)":scr?"#f9f9f9":"#fff",
+                overflow:"hidden",
+                opacity:scr?0.55:1,
+                transition:"all .15s",
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:0}}>
+                  {/* Horse number silk */}
+                  <div style={{width:44,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"14px 0",borderRight:`1px solid ${C.border}`}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>
+                      {h.number}
+                    </div>
                   </div>
-                  <div className="sy" style={{fontSize:10,marginTop:1,color:C.soft}}>{h.jockey} · {h.trainer}</div>
-                  {/* Position buttons for trifecta/firstfour unboxed */}
-                  {!scr&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&!boxed&&(
-                    <div style={{display:"flex",gap:4,marginTop:5,flexWrap:"wrap"}}>
-                      {def.positions.map((pos,pi)=>{
-                        const isThis=(sel[pi]||[]).includes(h.number);
-                        return(
-                          <button key={pi} className="sy" style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:`1px solid ${isThis?C.accent:C.border}`,background:isThis?C.accentGlow:"transparent",color:isThis?C.accent:C.muted,cursor:"pointer",fontWeight:700,letterSpacing:".04em"}}
-                            onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
-                            {pos.label}
-                          </button>
-                        );
-                      })}
+
+                  {/* Horse info */}
+                  <div style={{flex:1,padding:"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
+                    onClick={()=>{
+                      if(scr) return;
+                      if(betType==="win"||betType==="place") toggleHorse(0,h.number);
+                      if(canShowBoxed&&boxed) toggleHorse(0,h.number);
+                    }}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?15:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}</span>
+                      {!scr&&h.number===fav?.number&&<span style={{fontSize:10,padding:"1px 7px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
+                      {scr&&<span style={{fontSize:11,padding:"2px 8px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
+                      {posLabels.map(pl=>(
+                        <span key={pl} style={{fontSize:10,padding:"1px 7px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>
+                      ))}
+                    </div>
+                    <div className="sy" style={{fontSize:11,color:C.soft}}>
+                      J {h.jockey} · T {h.trainer}{h.weight?` · ${h.weight}kg`:""}
+                    </div>
+                    {/* Form dots */}
+                    {h.form&&h.form.length>0&&(
+                      <div style={{display:"flex",gap:3,marginTop:5}}>
+                        {h.form.map((f,fi)=>(
+                          <span key={fi} style={{width:18,height:18,borderRadius:4,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:"#fff"}}>{f}</span>
+                        ))}
+                      </div>
+                    )}
+                    {/* Position buttons for unboxed exotic bets */}
+                    {!scr&&canShowBoxed&&!boxed&&(
+                      <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+                        {def.positions.map((pos,pi)=>{
+                          const isThis=(sel[pi]||[]).includes(h.number);
+                          return(
+                            <button key={pi} className="sy" style={{fontSize:10,padding:"3px 9px",borderRadius:20,border:`1.5px solid ${isThis?C.accent:C.border}`,background:isThis?C.accent:"transparent",color:isThis?"#fff":C.soft,cursor:"pointer",fontWeight:700}}
+                              onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
+                              {pos.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Win & Place odds — TAB style buttons */}
+                  {!scr&&(
+                    <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
+                      <button className="sy" style={{
+                        width:isMobile?68:78,
+                        padding:"10px 0",
+                        borderRadius:8,
+                        border:`2px solid ${(betType==="win"||(betType==="place"&&false))&&isSel?C.accent:C.accent}`,
+                        background:(betType==="win"&&isSel)?C.accent:C.accentGlow,
+                        color:(betType==="win"&&isSel)?"#fff":C.accent,
+                        cursor:"pointer",
+                        textAlign:"center",
+                        transition:"all .15s",
+                      }}
+                        onClick={e=>{e.stopPropagation();if(betType==="win")toggleHorse(0,h.number);}}>
+                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
+                        <div style={{fontSize:9,fontWeight:600,opacity:.75,marginTop:1}}>WIN</div>
+                      </button>
+                      <button className="sy" style={{
+                        width:isMobile?68:78,
+                        padding:"10px 0",
+                        borderRadius:8,
+                        border:`2px solid ${C.border}`,
+                        background:(betType==="place"&&isSel)?"#e0e7ff":"#f8f9fb",
+                        color:(betType==="place"&&isSel)?C.blue:C.soft,
+                        cursor:"pointer",
+                        textAlign:"center",
+                        transition:"all .15s",
+                      }}
+                        onClick={e=>{e.stopPropagation();if(betType==="place")toggleHorse(0,h.number);}}>
+                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
+                        <div style={{fontSize:9,fontWeight:600,opacity:.75,marginTop:1}}>PLACE</div>
+                      </button>
                     </div>
                   )}
-                </div>
-                {!isMobile&&<div className="sy" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",color:C.soft}}>{h.weight||"—"}</div>}
-                <div className="cg gold" style={{fontWeight:700,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>${h.winOdds.toFixed(2)}</div>
-                <div className="sy" style={{fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",color:C.soft}}>${h.placeOdds.toFixed(2)}</div>
-                <div style={{display:"flex",gap:3,alignItems:"center",justifyContent:"center",flexWrap:"wrap",padding:"0 4px"}}>
-                  {h.form&&h.form.length>0 ? h.form.map((f,fi)=>(
-                    <span key={fi} style={{width:16,height:16,borderRadius:3,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{f}</span>
-                  )) : <span className="sy soft" style={{fontSize:10}}>—</span>}
+                  {scr&&(
+                    <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
+                      <div style={{width:isMobile?68:78,padding:"10px 0",borderRadius:8,border:`1px solid ${C.border}`,background:"#f3f4f6",textAlign:"center"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.muted}}>SCR</div>
+                      </div>
+                      <div style={{width:isMobile?68:78,padding:"10px 0",borderRadius:8,border:`1px solid ${C.border}`,background:"#f3f4f6",textAlign:"center"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.muted}}>SCR</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
