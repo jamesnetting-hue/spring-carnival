@@ -884,7 +884,7 @@ export default function App() {
               <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
-                {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
+                {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["season","Season"],["admin","Admin"]].map(([s,l])=>(
                   <button key={s} className={`tab${screen===s||(screen==="race"&&s==="lobby")?" on":""}`} onClick={()=>setScreen(s)}>{l}</button>
                 ))}
               </nav>
@@ -906,7 +906,7 @@ export default function App() {
 
           {/* ── MOBILE BOTTOM NAV ── */}
           <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"env(safe-area-inset-bottom, 8px)"}}>
-            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
+            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["season","Season"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
                 <button key={s} onClick={()=>setScreen(s)}
@@ -927,6 +927,7 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
+        {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast}/>}
       </main>}
 
@@ -2065,10 +2066,11 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               .slice(-5);
 
             return(
-              <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`,cursor:"pointer",transition:"box-shadow .15s"}}
-                onClick={()=>setH2h(a.id)}
-                onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,.1)"}
+              <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`,cursor:myAccount&&a.id!==myAccount.id?"pointer":"default",transition:"box-shadow .15s",position:"relative"}}
+                onClick={()=>myAccount&&a.id!==myAccount.id&&setH2h(a.id)}
+                onMouseEnter={e=>{if(myAccount&&a.id!==myAccount.id)e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,.1)";}}
                 onMouseLeave={e=>e.currentTarget.style.boxShadow=""}>
+                {myAccount&&a.id!==myAccount.id&&<div className="sy" style={{position:"absolute",top:8,right:12,fontSize:10,color:C.muted}}>Tap for H2H →</div>}
                 {/* Main row */}
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
                   <div style={{fontSize:i<3?28:16,width:36,textAlign:"center",flexShrink:0,fontWeight:700}}>
