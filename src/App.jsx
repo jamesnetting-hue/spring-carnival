@@ -153,7 +153,7 @@ const BET_TYPES = [
   },
   {
     id:"quinella", label:"Quinella", desc:"Pick 1st & 2nd in any order",
-    positions:[{label:"Horse 1",key:"p1"},{label:"Horse 2",key:"p2"}],
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
     check:(horses,res) => {
       const top2=[res.first,res.second];
       return horses.length===2 && top2.includes(horses[0]) && top2.includes(horses[1]);
@@ -1563,24 +1563,48 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         ))}
                       </div>
                     )}
-                    {/* Position buttons for unboxed exotic bets */}
-                    {!scr&&canShowBoxed&&!boxed&&(
-                      <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
-                        {def.positions.map((pos,pi)=>{
-                          const isThis=(sel[pi]||[]).includes(h.number);
-                          return(
-                            <button key={pi} className="sy" style={{fontSize:10,padding:"3px 9px",borderRadius:20,border:`1.5px solid ${isThis?C.accent:C.border}`,background:isThis?C.accent:"transparent",color:isThis?"#fff":C.soft,cursor:"pointer",fontWeight:700}}
-                              onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
-                              {pos.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Win & Place — independent tap toggles like TAB app */}
-                  {!scr&&(
+                  {/* Right side buttons — position pills for exotics, Win/Place for simple bets */}
+                  {!scr&&canShowBoxed&&!boxed ? (
+                    /* TAB-style 1st/2nd/3rd/4th position pills */
+                    <div style={{display:"flex",gap:5,padding:"12px 10px",flexShrink:0,alignItems:"center"}}>
+                      {def.positions.map((pos,pi)=>{
+                        const isThis=(sel[pi]||[]).includes(h.number);
+                        return(
+                          <button key={pi} className="sy" style={{
+                            minWidth:44,padding:"10px 8px",borderRadius:8,
+                            border:`2px solid ${isThis?"#1e5c1e":"#d1d5db"}`,
+                            background:isThis?C.accent:"#fff",
+                            color:isThis?"#fff":"#374151",
+                            cursor:"pointer",fontWeight:700,fontSize:13,
+                            textAlign:"center",transition:"all .13s",
+                            fontFamily:"inherit",
+                          }}
+                            onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
+                            {pos.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : !scr&&canShowBoxed&&boxed ? (
+                    /* Boxed — single "Select" toggle */
+                    <div style={{display:"flex",padding:"12px 10px",flexShrink:0,alignItems:"center"}}>
+                      <button className="sy" style={{
+                        minWidth:72,padding:"10px 8px",borderRadius:8,
+                        border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1e5c1e":"#d1d5db"}`,
+                        background:(sel[0]||[]).includes(h.number)?C.accent:"#fff",
+                        color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",
+                        cursor:"pointer",fontWeight:700,fontSize:13,
+                        textAlign:"center",transition:"all .13s",
+                        fontFamily:"inherit",
+                      }}
+                        onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
+                        {(sel[0]||[]).includes(h.number)?"✓ In":"Select"}
+                      </button>
+                    </div>
+                  ) : !scr ? (
+                    /* Win/Place buttons for Win, Place, Each Way */
                     <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
                       {/* WIN */}
                       <button className="sy" style={{
@@ -1625,7 +1649,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         <div style={{fontSize:9,fontWeight:700,marginTop:1,opacity:.85}}>PLACE</div>
                       </button>
                     </div>
-                  )}
+                  ) : null}
                   {scr&&(
                     <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
                       <div style={{width:isMobile?68:78,padding:"10px 0",borderRadius:8,border:`1px solid ${C.border}`,background:"#f3f4f6",textAlign:"center"}}>
