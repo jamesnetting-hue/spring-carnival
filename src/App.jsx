@@ -2090,32 +2090,8 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
           },
           {
             emoji:"❄️",label:"Cold Streak",
-            name:(()=>{
-              // Find player with most consecutive losing races
-              const playerStreaks = accounts.map(a=>{
-                const playerRaces = finishedRaces.map(r=>{
-                  const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);
-                  const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
-                  return p;
-                });
-                let maxLoss=0,cur=0;
-                playerRaces.forEach(p=>{ if(p<0)cur++; else cur=0; maxLoss=Math.max(maxLoss,cur); });
-                return {name:a.name,streak:maxLoss};
-              }).sort((a,b)=>b.streak-a.streak)[0];
-              return playerStreaks?.streak>0?playerStreaks.name:"Everyone's winning!";
-            })(),
-            detail:(()=>{
-              const playerStreaks = accounts.map(a=>{
-                const playerRaces = finishedRaces.map(r=>{
-                  const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);
-                  return rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
-                });
-                let maxLoss=0,cur=0;
-                playerRaces.forEach(p=>{ if(p<0)cur++; else cur=0; maxLoss=Math.max(maxLoss,cur); });
-                return {name:a.name,streak:maxLoss};
-              }).sort((a,b)=>b.streak-a.streak)[0];
-              return playerStreaks?.streak>0?`${playerStreaks.streak} losing races in a row`:"🎉";
-            })(),
+            name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",
+            detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉",
           },
         ];
         return(
