@@ -884,7 +884,7 @@ export default function App() {
               <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
-                {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["season","Season"],["admin","Admin"]].map(([s,l])=>(
+                {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
                   <button key={s} className={`tab${screen===s||(screen==="race"&&s==="lobby")?" on":""}`} onClick={()=>setScreen(s)}>{l}</button>
                 ))}
               </nav>
@@ -906,7 +906,7 @@ export default function App() {
 
           {/* ── MOBILE BOTTOM NAV ── */}
           <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"env(safe-area-inset-bottom, 8px)"}}>
-            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["season","Season"],["admin","Admin"]].map(([s,l])=>{
+            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
                 <button key={s} onClick={()=>setScreen(s)}
@@ -927,7 +927,6 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="season"&&<SeasonScreen accounts={accounts} bets={bets} races={races}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast}/>}
       </main>}
 
@@ -1347,6 +1346,50 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
       {/* Sidebar */}
       {!isMobile&&<div style={{position:"sticky",top:70,display:"flex",flexDirection:"column",gap:12}}>
         <div className="card">
+      {/* Season Awards */}
+      {accounts.length>0&&bets.length>0&&(()=>{
+        const wins = bets.filter(b=>b.won===true);
+        const mostProfitable = [...accounts].sort((a,b)=>(b.totalWon-b.totalStaked)-(a.totalWon-a.totalStaked))[0];
+        const biggestRoughie = wins.reduce((best,b)=>{
+          const h=races.find(r=>r.id===b.raceId)?.horses?.find(x=>x.number===b.horses[0]);
+          const odds=h?.winOdds||0;
+          return odds>(best?.odds||0)?{...b,odds,horse:h?.name,player:accounts.find(a=>a.id===b.playerId)?.name}:best;
+        },{odds:0});
+        const luckiestWin = [...wins].sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const luckiestPlayer = luckiestWin?accounts.find(a=>a.id===luckiestWin.playerId):null;
+        const luckiestRace = luckiestWin?races.find(r=>r.id===luckiestWin.raceId):null;
+        const biggestLoser = [...accounts].sort((a,b)=>(a.totalWon-a.totalStaked)-(b.totalWon-b.totalStaked))[0];
+        const biggestLoserProfit = biggestLoser?parseFloat((biggestLoser.totalWon-biggestLoser.totalStaked).toFixed(2)):0;
+        const biggestTri = [...wins].filter(b=>b.type==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestTriPlayer = biggestTri?accounts.find(a=>a.id===biggestTri.playerId):null;
+        const biggestFF = [...wins].filter(b=>b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestFFPlayer = biggestFF?accounts.find(a=>a.id===biggestFF.playerId):null;
+        const mostProfitableProfit = mostProfitable?parseFloat((mostProfitable.totalWon-mostProfitable.totalStaked).toFixed(2)):0;
+        const awards = [
+          {emoji:"🏆",label:"Most Profitable",name:mostProfitable?.name||"TBD",detail:mostProfitable?`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`:"—"},
+          {emoji:"🐎",label:"Biggest Roughie",name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)}`:"No winners yet"},
+          {emoji:"🍀",label:"Luckiest Win",name:luckiestPlayer?.name||"TBD",detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${luckiestRace?.name}`:"No wins yet"},
+          {emoji:"💸",label:"Biggest Loser",name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉"},
+          {emoji:"🎯",label:"Biggest Trifecta",name:biggestTriPlayer?.name||"TBD",detail:biggestTri?`${fmt(biggestTri.payout||0)} · ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet"},
+          {emoji:"4️⃣",label:"Biggest First Four",name:biggestFFPlayer?.name||"TBD",detail:biggestFF?`${fmt(biggestFF.payout||0)} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet"},
+        ];
+        return(
+          <div style={{marginBottom:24}}>
+            <h3 className="cg" style={{fontSize:isMobile?18:20,fontWeight:700,marginBottom:12}}>🎖️ Season Awards</h3>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
+              {awards.map(a=>(
+                <div key={a.label} className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                  <div style={{fontSize:30,marginBottom:5}}>{a.emoji}</div>
+                  <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.soft,marginBottom:4}}>{a.label}</div>
+                  <div className="cg" style={{fontSize:14,fontWeight:700,marginBottom:3}}>{a.name}</div>
+                  <div className="sy" style={{fontSize:11,color:C.soft}}>{a.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
           <h4 className="cg" style={{fontSize:17,fontWeight:700,marginBottom:12}}>🏆 Standings</h4>
           {leaderboard.length===0?<p className="sy soft" style={{fontSize:12}}>No players yet.</p>:
             leaderboard.slice(0,6).map((a,i)=>{
@@ -1593,7 +1636,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       if(canShowBoxed&&boxed) toggleHorse(0,h.number);
                     }}>
                     <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
-                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?15:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}</span>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?15:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name} <span style={{fontWeight:500,color:C.muted,fontSize:isMobile?13:14}}>({h.barrier||h.number})</span></span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:10,padding:"1px 7px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:11,padding:"2px 8px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
                       {posLabels.map(pl=>(
@@ -2929,6 +2972,157 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         );
       })()}
 
+      {/* ── EXTENDED STATS ── */}
+      {raceStats.length>0&&(()=>{
+        // Running balance over races
+        let runningBal = 0;
+        const balanceHistory = raceStats.map(r=>{
+          runningBal = parseFloat((runningBal+r.profit).toFixed(2));
+          return { name:r.race.name, bal:runningBal, profit:r.profit };
+        });
+
+        // Horse numbers backed (all bets)
+        const numFreq={};
+        bets.forEach(b=>b.horses.forEach(n=>{numFreq[n]=(numFreq[n]||0)+1;}));
+        const maxFreq=Math.max(...Object.values(numFreq),1);
+
+        // Win vs loss by stake size buckets
+        const buckets=[{label:"$1-4",min:1,max:4},{label:"$5-8",min:5,max:8},{label:"$9-12",min:9,max:12},{label:"$13-16",min:13,max:16},{label:"$17+",min:17,max:999}];
+        const bucketData=buckets.map(b=>{
+          const tb=settled.filter(x=>x.stake>=b.min&&x.stake<=b.max);
+          const tw=tb.filter(x=>x.won===true);
+          return{...b,total:tb.length,wins:tw.length,payout:tw.reduce((s,x)=>s+(x.payout||0),0),staked:tb.reduce((s,x)=>s+x.stake,0)};
+        }).filter(b=>b.total>0);
+
+        // Average stake per race
+        const avgStakePerRace = raceStats.length ? parseFloat((settledStaked/raceStats.length).toFixed(2)) : 0;
+
+        // Biggest single odds backed (win bets only)
+        const winBets = bets.filter(b=>b.type==="win"&&b.won!==null);
+        const biggestOddsBet = winBets.reduce((best,b)=>{
+          const h = races.find(r=>r.id===b.raceId)?.horses?.find(x=>x.number===b.horses[0]);
+          return (h?.winOdds||0)>(best?.odds||0)?{...b,odds:h?.winOdds,horse:h?.name}:best;
+        },{odds:0});
+
+        // Return on each $1 staked
+        const netPerDollar = settledStaked>0 ? parseFloat((account.totalWon/settledStaked).toFixed(3)) : 0;
+
+        // How many bets per race on average
+        const avgBetsPerRace = raceStats.length ? parseFloat((settled.length/raceStats.length).toFixed(1)) : 0;
+
+        const peakBalance = Math.max(...balanceHistory.map(b=>b.bal),0);
+        const troughBalance = Math.min(...balanceHistory.map(b=>b.bal),0);
+
+        return (
+          <div style={{marginBottom:20}}>
+
+            {/* Balance tracker — running balance card */}
+            <div className="card" style={{marginBottom:12,padding:"18px 16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}>
+                <span className="sy" style={{fontSize:14,fontWeight:700}}>💰 Running Balance</span>
+                <span className="cg" style={{fontSize:13,color:C.soft}}>{raceStats.length} races</span>
+              </div>
+              <div style={{display:"flex",gap:10,marginBottom:10,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:80,textAlign:"center",padding:"8px 6px",background:"rgba(21,128,61,.07)",borderRadius:8}}>
+                  <div className="sy" style={{fontSize:10,color:C.soft,marginBottom:2}}>PEAK</div>
+                  <div className="cg" style={{fontSize:16,fontWeight:700,color:C.green}}>+{fmt(peakBalance)}</div>
+                </div>
+                <div style={{flex:1,minWidth:80,textAlign:"center",padding:"8px 6px",background:profit>=0?"rgba(21,128,61,.07)":"rgba(185,28,28,.07)",borderRadius:8}}>
+                  <div className="sy" style={{fontSize:10,color:C.soft,marginBottom:2}}>NOW</div>
+                  <div className="cg" style={{fontSize:16,fontWeight:700,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+                </div>
+                {troughBalance<0&&<div style={{flex:1,minWidth:80,textAlign:"center",padding:"8px 6px",background:"rgba(185,28,28,.07)",borderRadius:8}}>
+                  <div className="sy" style={{fontSize:10,color:C.soft,marginBottom:2}}>TROUGH</div>
+                  <div className="cg" style={{fontSize:16,fontWeight:700,color:C.red}}>{fmt(troughBalance)}</div>
+                </div>}
+              </div>
+              {/* Mini bar chart */}
+              <div style={{display:"flex",gap:3,height:48,alignItems:"flex-end"}}>
+                {balanceHistory.map((b,i)=>(
+                  <div key={i} title={`${b.name}: ${b.profit>=0?"+":""}$${b.profit.toFixed(2)}`} style={{flex:1,height:"100%",display:"flex",flexDirection:"column",justifyContent:b.profit>=0?"flex-end":"flex-start",cursor:"default"}}>
+                    <div style={{background:b.profit>=0?C.green:C.red,borderRadius:3,height:`${Math.max(4,Math.abs(b.profit)/Math.max(Math.max(...raceStats.map(r=>Math.abs(r.profit))),1)*44)}px`,opacity:.85}}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                <span className="sy" style={{fontSize:9,color:C.muted}}>Race 1</span>
+                <span className="sy" style={{fontSize:9,color:C.muted,textAlign:"center",flex:1}}>← profit green · loss red →</span>
+                <span className="sy" style={{fontSize:9,color:C.muted}}>Race {raceStats.length}</span>
+              </div>
+            </div>
+
+            {/* Quick number stats row */}
+            <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:8,marginBottom:12}}>
+              {[
+                ["Avg Stake/Race",fmt(avgStakePerRace),null],
+                ["Avg Bets/Race",avgBetsPerRace,null],
+                ["Return per $1",`$${netPerDollar}`,netPerDollar>=1?C.green:C.red],
+                ["Longest Odds Backed",biggestOddsBet.odds?`$${biggestOddsBet.odds?.toFixed(2)}`:"—",C.gold],
+              ].map(([l,v,col])=>(
+                <div key={l} className="card" style={{textAlign:"center",padding:"12px 8px"}}>
+                  <div className="sy" style={{fontSize:9,color:C.soft,marginBottom:3,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
+                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,color:col||C.text}}>{v}</div>
+                  {l==="Longest Odds Backed"&&biggestOddsBet.horse&&<div className="sy" style={{fontSize:9,color:C.muted,marginTop:2}}>{biggestOddsBet.horse}</div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Stake size breakdown */}
+            {bucketData.length>0&&(
+              <div className="card" style={{marginBottom:12,padding:"16px"}}>
+                <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:10}}>📊 Results by Stake Size</span>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {bucketData.map(b=>{
+                    const bProfit=parseFloat((b.payout-b.staked).toFixed(2));
+                    const hitRate=b.total?Math.round((b.wins/b.total)*100):0;
+                    return(
+                      <div key={b.label}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                          <span className="sy" style={{fontSize:12,fontWeight:600}}>{b.label} <span style={{color:C.muted,fontWeight:400}}>({b.total} bets · {hitRate}% hit)</span></span>
+                          <span className="sy" style={{fontSize:12,fontWeight:700,color:bProfit>=0?C.green:C.red}}>{bProfit>=0?"+":""}{fmt(bProfit)}</span>
+                        </div>
+                        <div style={{height:8,background:"#f0f0f0",borderRadius:4,overflow:"hidden",display:"flex"}}>
+                          <div style={{width:`${hitRate}%`,background:bProfit>=0?C.green:C.red,borderRadius:4,transition:"width .4s"}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Horse number heatmap */}
+            {Object.keys(numFreq).length>0&&(
+              <div className="card" style={{marginBottom:12,padding:"16px"}}>
+                <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:10}}>🎯 Favourite Barrier Numbers</span>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {Array.from({length:Math.max(...Object.keys(numFreq).map(Number))},(_,i)=>i+1).map(n=>{
+                    const freq=numFreq[n]||0;
+                    const intensity=freq/maxFreq;
+                    return(
+                      <div key={n} title={`#${n}: backed ${freq} time${freq!==1?"s":""}`} style={{
+                        width:36,height:36,borderRadius:8,
+                        background:freq>0?`rgba(30,92,30,${0.12+intensity*0.78})`:"#f4f5f7",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        cursor:"default",
+                      }}>
+                        <span className="sy" style={{fontSize:12,fontWeight:700,color:freq>0?(intensity>0.5?"#fff":C.accent):C.muted}}>{n}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8}}>
+                  <span className="sy" style={{fontSize:10,color:C.muted}}>Less</span>
+                  {[0.12,0.35,0.58,0.78,0.9].map((v,i)=><div key={i} style={{width:14,height:14,borderRadius:3,background:`rgba(30,92,30,${v})`}}/>)}
+                  <span className="sy" style={{fontSize:10,color:C.muted}}>More</span>
+                </div>
+              </div>
+            )}
+
+          </div>
+        );
+      })()}
+
       {/* Pending bets */}
       {upcomingRaces.length>0&&(
         <div style={{marginBottom:20}}>
@@ -3167,8 +3361,13 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         }
       }
 
-      // Clean up name — remove barrier numbers in parentheses like "(4)"
-      name = name.replace(/\(\d+\)$/, "").trim();
+      // Extract barrier from horse name if it contains "(N)" e.g. "Sacrify (1)"
+      const barrierMatch = name.match(/\((\d+)\)\s*$/);
+      let barrier = "";
+      if (barrierMatch) {
+        barrier = barrierMatch[1];
+        name = name.replace(/\s*\(\d+\)\s*$/, "").trim();
+      }
       // Remove leading number from name if still there
       name = name.replace(/^\d+[\.\):\s]+/, "").trim();
 
@@ -3180,7 +3379,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         number: num,
         name, jockey, trainer,
         winOdds, placeOdds,
-        form, weight, silkUrl, scratched: false,
+        form, weight, silkUrl, barrier, scratched: false,
       });
     });
 
