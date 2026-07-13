@@ -2202,10 +2202,10 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
                       </div>
                     )}
-                    {myAccount&&a.id!==myAccount.id&&(
+                    {a.id&&(
                       <button className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:8,border:`1.5px solid ${C.accent}`,background:C.accentGlow,color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0}}
-                        onClick={()=>setH2h(a.id)}>
-                        🥊 H2H
+                        onClick={(e)=>{e.stopPropagation();setH2h(a.id);}}>
+                        🥊 Head2Head
                       </button>
                     )}
                   </div>
@@ -2563,64 +2563,88 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           })}
         </div>
       )}
-      {h2h&&myAccount&&(()=>{
-        const opponent = accounts.find(a=>a.id===h2h);
-        if(!opponent||opponent.id===myAccount.id) return null;
+      {h2h&&(()=>{
+        const player1 = accounts.find(a=>a.id===h2h);
+        if(!player1) return null;
         const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
+        const [compareId, setCompareId] = useState(accounts.find(a=>a.id!==h2h)?.id||null);
+        const player2 = accounts.find(a=>a.id===compareId);
+
         const getProfit=(acc)=>race=>{
+          if(!acc) return 0;
           const rb=bets.filter(b=>b.raceId===race.id&&b.playerId===acc.id&&b.won!==null);
           return parseFloat(rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0).toFixed(2));
         };
-        const myProfitFn=getProfit(myAccount), oppProfitFn=getProfit(opponent);
-        const myTotal=parseFloat((myAccount.totalWon-myAccount.totalStaked).toFixed(2));
-        const oppTotal=parseFloat((opponent.totalWon-opponent.totalStaked).toFixed(2));
-        let myWins=0,oppWins=0,draws=0;
-        finishedRaces.forEach(r=>{const m=myProfitFn(r),o=oppProfitFn(r);if(m>o)myWins++;else if(o>m)oppWins++;else draws++;});
+        const p1fn=getProfit(player1), p2fn=getProfit(player2);
+        const p1Total=parseFloat((player1.totalWon-player1.totalStaked).toFixed(2));
+        const p2Total=player2?parseFloat((player2.totalWon-player2.totalStaked).toFixed(2)):0;
+        let p1Wins=0,p2Wins=0,draws=0;
+        if(player2) finishedRaces.forEach(r=>{const a=p1fn(r),b=p2fn(r);if(a>b)p1Wins++;else if(b>a)p2Wins++;else draws++;});
+
         return(
           <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setH2h(null)}>
             <div className="modal sr" style={{maxWidth:560}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <h3 className="cg" style={{fontSize:20,fontWeight:700}}>🥊 Head to Head</h3>
+                <h3 className="cg" style={{fontSize:20,fontWeight:700}}>🥊 Head2Head</h3>
                 <button onClick={()=>setH2h(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.soft}}>×</button>
               </div>
-              {/* Score summary */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,marginBottom:16,alignItems:"center"}}>
-                <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(30,92,30,.05)",border:`2px solid ${C.green}`}}>
-                  <div style={{fontSize:28,marginBottom:4}}>🏠</div>
-                  <div className="cg" style={{fontSize:15,fontWeight:700}}>{myAccount.name}</div>
-                  <div className="cg" style={{fontSize:24,fontWeight:800,color:myTotal>=0?C.green:C.red,marginTop:4}}>{myTotal>=0?"+":""}{fmt(myTotal)}</div>
-                </div>
-                <div style={{textAlign:"center"}}>
-                  <div className="cg" style={{fontSize:22,fontWeight:900,color:C.text}}>{myWins} - {oppWins}</div>
-                  {draws>0&&<div className="sy" style={{fontSize:11,color:C.soft}}>{draws} draw{draws>1?"s":""}</div>}
-                  <div className="sy" style={{fontSize:10,color:C.muted,marginTop:4}}>races won</div>
-                </div>
-                <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(184,134,11,.05)",border:`2px solid ${C.gold}`}}>
-                  <div style={{fontSize:28,marginBottom:4}}>⚔️</div>
-                  <div className="cg" style={{fontSize:15,fontWeight:700}}>{opponent.name}</div>
-                  <div className="cg" style={{fontSize:24,fontWeight:800,color:oppTotal>=0?C.green:C.red,marginTop:4}}>{oppTotal>=0?"+":""}{fmt(oppTotal)}</div>
+
+              {/* Player picker for opponent */}
+              <div style={{marginBottom:14}}>
+                <label className="sy" style={{fontSize:11,color:C.soft,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>Compare {player1.name} vs</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {accounts.filter(a=>a.id!==h2h).map(a=>(
+                    <button key={a.id} className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:20,border:`1.5px solid ${compareId===a.id?C.accent:C.border}`,background:compareId===a.id?C.accentGlow:"#fff",color:compareId===a.id?C.accent:C.soft,cursor:"pointer"}}
+                      onClick={()=>setCompareId(a.id)}>
+                      {a.name}
+                    </button>
+                  ))}
                 </div>
               </div>
-              {/* Race by race */}
-              <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:380,overflowY:"auto"}}>
-                {finishedRaces.map(race=>{
-                  const myP=myProfitFn(race), oppP=oppProfitFn(race);
-                  const winner=myP>oppP?"me":oppP>myP?"opp":"draw";
-                  return(
-                    <div key={race.id} style={{padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:winner==="draw"?"#f9f9f9":winner==="me"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)"}}>
-                      <div className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,marginBottom:5}}>{race.name}</div>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <span className="sy" style={{fontSize:15,fontWeight:700,color:myP>=0?C.green:C.red}}>{myP>=0?"+":""}{fmt(myP)}</span>
-                        <span className="sy" style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:winner==="me"?C.greenBg:winner==="opp"?C.redBg:"#f0f0f0",color:winner==="me"?C.green:winner==="opp"?C.red:C.soft}}>
-                          {winner==="me"?"You win ✓":winner==="opp"?"They win":"Draw"}
-                        </span>
-                        <span className="sy" style={{fontSize:15,fontWeight:700,color:oppP>=0?C.green:C.red}}>{oppP>=0?"+":""}{fmt(oppP)}</span>
-                      </div>
+
+              {player2&&(
+                <>
+                  {/* Score summary */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,marginBottom:16,alignItems:"center"}}>
+                    <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(30,92,30,.05)",border:`2px solid ${C.green}`}}>
+                      <div style={{fontSize:28,marginBottom:4}}>🏠</div>
+                      <div className="cg" style={{fontSize:15,fontWeight:700}}>{player1.name}</div>
+                      <div className="cg" style={{fontSize:24,fontWeight:800,color:p1Total>=0?C.green:C.red,marginTop:4}}>{p1Total>=0?"+":""}{fmt(p1Total)}</div>
                     </div>
-                  );
-                })}
-                {finishedRaces.length===0&&<p className="sy" style={{fontSize:13,color:C.soft,textAlign:"center",padding:20}}>No settled races yet</p>}
-              </div>
+                    <div style={{textAlign:"center"}}>
+                      <div className="cg" style={{fontSize:24,fontWeight:900}}>{p1Wins} - {p2Wins}</div>
+                      {draws>0&&<div className="sy" style={{fontSize:11,color:C.soft}}>{draws} draw{draws>1?"s":""}</div>}
+                      <div className="sy" style={{fontSize:10,color:C.muted,marginTop:4}}>races won</div>
+                    </div>
+                    <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(184,134,11,.05)",border:`2px solid ${C.gold}`}}>
+                      <div style={{fontSize:28,marginBottom:4}}>⚔️</div>
+                      <div className="cg" style={{fontSize:15,fontWeight:700}}>{player2.name}</div>
+                      <div className="cg" style={{fontSize:24,fontWeight:800,color:p2Total>=0?C.green:C.red,marginTop:4}}>{p2Total>=0?"+":""}{fmt(p2Total)}</div>
+                    </div>
+                  </div>
+
+                  {/* Race by race */}
+                  <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:380,overflowY:"auto"}}>
+                    {finishedRaces.length===0&&<p className="sy" style={{fontSize:13,color:C.soft,textAlign:"center",padding:20}}>No settled races yet</p>}
+                    {finishedRaces.map(race=>{
+                      const p1P=p1fn(race), p2P=p2fn(race);
+                      const winner=p1P>p2P?"p1":p2P>p1P?"p2":"draw";
+                      return(
+                        <div key={race.id} style={{padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:winner==="draw"?"#f9f9f9":winner==="p1"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)"}}>
+                          <div className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,marginBottom:5}}>{race.name}</div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <span className="sy" style={{fontSize:15,fontWeight:700,color:p1P>=0?C.green:C.red}}>{p1P>=0?"+":""}{fmt(p1P)}</span>
+                            <span className="sy" style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:winner==="p1"?C.greenBg:winner==="p2"?C.redBg:"#f0f0f0",color:winner==="p1"?C.green:winner==="p2"?C.red:C.soft}}>
+                              {winner==="p1"?`${player1.name} ✓`:winner==="p2"?`${player2.name} ✓`:"Draw"}
+                            </span>
+                            <span className="sy" style={{fontSize:15,fontWeight:700,color:p2P>=0?C.green:C.red}}>{p2P>=0?"+":""}{fmt(p2P)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
