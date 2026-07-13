@@ -1265,11 +1265,16 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                           const sorted=Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,5);
                           if(!sorted.length) return null;
                           return(
-                            <div style={{marginTop:8,padding:"8px 12px",background:"rgba(30,92,30,.05)",border:`1px solid ${C.greenBd}`,borderRadius:8}}>
-                              <p className="sy" style={{fontSize:11,fontWeight:700,color:C.green,marginBottom:5}}>🏇 Who's backing what</p>
-                              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                                {sorted.map(([name,count])=>(
-                                  <span key={name} className="sy" style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:C.greenBg,border:`1px solid ${C.greenBd}`,color:C.green,fontWeight:600}}>
+                            <div style={{marginTop:10,padding:"12px 14px",background:"rgba(30,92,30,.07)",border:`2px solid ${C.green}`,borderRadius:10}}>
+                              <p className="sy" style={{fontSize:12,fontWeight:800,color:C.green,marginBottom:8}}>🏇 Who's backing what</p>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                                {sorted.map(([name,count],idx)=>(
+                                  <span key={name} className="sy" style={{
+                                    fontSize:13,padding:"5px 12px",borderRadius:20,fontWeight:700,
+                                    background:idx===0?C.green:"#fff",
+                                    color:idx===0?"#fff":C.green,
+                                    border:`2px solid ${C.green}`,
+                                  }}>
                                     {count}× {name}
                                   </span>
                                 ))}
@@ -2017,8 +2022,8 @@ function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfi
 function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
-  const [copied, setCopied] = useState(false);
-  const [h2h, setH2h] = useState(null); // opponent account id
+  const [h2h, setH2h] = useState(null);
+  const [compareId, setCompareId] = useState(null);
   const medals=["🥇","🥈","🥉"]; const medalC=["#ffd700","#c0c0c0","#cd7f32"];
 
   const copyStandings = () => {
@@ -2034,11 +2039,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
     <div className="fu">
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4,flexWrap:"wrap",gap:10}}>
         <h2 className="cg" style={{fontSize:isMobile?22:28,fontWeight:700}}>🏆 Leaderboard</h2>
-        {accounts.length>0&&(
-          <button className="sy" style={{fontSize:13,padding:"8px 16px",borderRadius:8,border:`1px solid ${C.border}`,background:copied?C.greenBg:"#fff",color:copied?C.green:C.text,cursor:"pointer",fontWeight:600,transition:"all .2s"}} onClick={copyStandings}>
-            {copied?"✓ Copied!":"📋 Copy Standings"}
-          </button>
-        )}
       </div>
       <p className="sy" style={{fontSize:13,color:C.soft,marginBottom:18}}>Ranked by net profit across all races.</p>
 
@@ -2204,7 +2204,13 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     )}
                     {a.id&&(
                       <button className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:8,border:`1.5px solid ${C.accent}`,background:C.accentGlow,color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0}}
-                        onClick={(e)=>{e.stopPropagation();setH2h(a.id);}}>
+                        onClick={(e)=>{
+                          e.stopPropagation();
+                          setH2h(a.id);
+                          // Default compare to first other player
+                          const other = accounts.find(x=>x.id!==a.id);
+                          setCompareId(other?.id||null);
+                        }}>
                         🥊 Head2Head
                       </button>
                     )}
@@ -2566,9 +2572,8 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
       {h2h&&(()=>{
         const player1 = accounts.find(a=>a.id===h2h);
         if(!player1) return null;
-        const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
-        const [compareId, setCompareId] = useState(accounts.find(a=>a.id!==h2h)?.id||null);
         const player2 = accounts.find(a=>a.id===compareId);
+        const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
 
         const getProfit=(acc)=>race=>{
           if(!acc) return 0;
