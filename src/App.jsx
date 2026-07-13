@@ -2083,12 +2083,12 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
             detail:biggestFF?`${fmt(biggestFF.payout||0)} · #${biggestFF.horses?.join("-")} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet",
           },
           {
-            emoji:"📈",label:"Hot Streak",
+            emoji:"🔥",label:"Hot Streak",
             name:luckiestPlayer?.name||"TBD",
             detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label} · ${luckiestRace?.name}`:"No wins yet",
           },
           {
-            emoji:"📉",label:"Biggest Loser",
+            emoji:"❄️",label:"Biggest Loser",
             name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",
             detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉",
           },
@@ -2136,11 +2136,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               .slice(-5);
 
             return(
-              <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`,cursor:myAccount&&a.id!==myAccount.id?"pointer":"default",transition:"box-shadow .15s",position:"relative"}}
-                onClick={()=>myAccount&&a.id!==myAccount.id&&setH2h(a.id)}
-                onMouseEnter={e=>{if(myAccount&&a.id!==myAccount.id)e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,.1)";}}
-                onMouseLeave={e=>e.currentTarget.style.boxShadow=""}>
-                {myAccount&&a.id!==myAccount.id&&<div className="sy" style={{position:"absolute",top:8,right:12,fontSize:10,color:C.muted}}>Tap for H2H →</div>}
+              <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`,position:"relative"}}>
                 {/* Main row */}
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
                   <div style={{fontSize:i<3?28:16,width:36,textAlign:"center",flexShrink:0,fontWeight:700}}>
@@ -2190,21 +2186,29 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                   </div>
 
                   {/* Best win */}
-                  {bestWin?(
-                    <div style={{display:"flex",alignItems:"center",gap:8,background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"6px 12px"}}>
-                      <span style={{fontSize:14}}>🌟</span>
-                      <div>
-                        <span className="sy" style={{fontSize:11,color:C.muted,display:"block"}}>Best win</span>
-                        <span className="sy" style={{fontSize:13,fontWeight:700,color:C.green}}>+{fmt(bestWin.payout||0)}</span>
-                        <span className="sy" style={{fontSize:11,color:C.soft}}> · {bestWinType?.label} · {bestWinRace?.name}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    {bestWin?(
+                      <div style={{display:"flex",alignItems:"center",gap:8,background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"6px 12px"}}>
+                        <span style={{fontSize:14}}>🌟</span>
+                        <div>
+                          <span className="sy" style={{fontSize:11,color:C.muted,display:"block"}}>Best win</span>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:C.green}}>+{fmt(bestWin.payout||0)}</span>
+                          <span className="sy" style={{fontSize:11,color:C.soft}}> · {bestWinType?.label} · {bestWinRace?.name}</span>
+                        </div>
                       </div>
-                    </div>
-                  ):(
-                    <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
-                      <span style={{fontSize:14}}>🥶</span>
-                      <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
-                    </div>
-                  )}
+                    ):(
+                      <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
+                        <span style={{fontSize:14}}>🥶</span>
+                        <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
+                      </div>
+                    )}
+                    {myAccount&&a.id!==myAccount.id&&(
+                      <button className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:8,border:`1.5px solid ${C.accent}`,background:C.accentGlow,color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0}}
+                        onClick={()=>setH2h(a.id)}>
+                        🥊 H2H
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
