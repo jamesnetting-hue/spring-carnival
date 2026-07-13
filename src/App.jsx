@@ -2062,12 +2062,36 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const biggestFF = [...wins].filter(b=>b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
         const biggestFFPlayer = biggestFF ? accounts.find(a=>a.id===biggestFF.playerId) : null;
         const awards = [
-          {emoji:"🏆",label:"Most Profitable",name:mostProfitable?.name||"TBD",detail:`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`},
-          {emoji:"🐎",label:"Biggest Roughie",name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)}`:"No winners yet"},
-          {emoji:"🍀",label:"Luckiest Win",name:luckiestPlayer?.name||"TBD",detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${luckiestRace?.name}`:"No wins yet"},
-          {emoji:"💸",label:"Biggest Loser",name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉"},
-          {emoji:"🎯",label:"Biggest Trifecta",name:biggestTriPlayer?.name||"TBD",detail:biggestTri?`${fmt(biggestTri.payout||0)} · ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet"},
-          {emoji:"4️⃣",label:"Biggest First Four",name:biggestFFPlayer?.name||"TBD",detail:biggestFF?`${fmt(biggestFF.payout||0)} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet"},
+          {
+            emoji:"🏆",label:"Most Profitable",
+            name:mostProfitable?.name||"TBD",
+            detail:mostProfitable?`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`:"—",
+          },
+          {
+            emoji:"🐎",label:"Biggest Roughie",
+            name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",
+            detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)} · ${races.find(r=>r.id===biggestRoughie.raceId)?.name||""}`:"No winners yet",
+          },
+          {
+            emoji:"💸",label:"Biggest Trifecta",
+            name:biggestTriPlayer?.name||"TBD",
+            detail:biggestTri?`${fmt(biggestTri.payout||0)} · #${biggestTri.horses?.join("-")} · ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet",
+          },
+          {
+            emoji:"🤑",label:"Biggest First Four",
+            name:biggestFFPlayer?.name||"TBD",
+            detail:biggestFF?`${fmt(biggestFF.payout||0)} · #${biggestFF.horses?.join("-")} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet",
+          },
+          {
+            emoji:"📈",label:"Hot Streak",
+            name:luckiestPlayer?.name||"TBD",
+            detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label} · ${luckiestRace?.name}`:"No wins yet",
+          },
+          {
+            emoji:"📉",label:"Biggest Loser",
+            name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",
+            detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉",
+          },
         ];
         return(
           <div style={{marginBottom:24}}>
