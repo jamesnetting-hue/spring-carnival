@@ -2589,7 +2589,8 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
       })()}
     </div>
   );
-} ──────────────────────────────────────────────────────────────────
+}
+
 function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCancelBet}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
