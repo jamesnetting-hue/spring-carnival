@@ -2045,6 +2045,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       {/* Season Awards — above leaderboard */}
       {accounts.length>0&&(()=>{
         const wins = bets.filter(b=>b.won===true);
+        const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
         const mostProfitable = [...accounts].sort((a,b)=>(b.totalWon-b.totalStaked)-(a.totalWon-a.totalStaked))[0];
         const mostProfitableProfit = mostProfitable ? parseFloat((mostProfitable.totalWon-mostProfitable.totalStaked).toFixed(2)) : 0;
         const biggestRoughie = wins.reduce((best,b)=>{
@@ -2088,9 +2089,33 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
             detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label} · ${luckiestRace?.name}`:"No wins yet",
           },
           {
-            emoji:"❄️",label:"Biggest Loser",
-            name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",
-            detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉",
+            emoji:"❄️",label:"Cold Streak",
+            name:(()=>{
+              // Find player with most consecutive losing races
+              const playerStreaks = accounts.map(a=>{
+                const playerRaces = finishedRaces.map(r=>{
+                  const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);
+                  const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
+                  return p;
+                });
+                let maxLoss=0,cur=0;
+                playerRaces.forEach(p=>{ if(p<0)cur++; else cur=0; maxLoss=Math.max(maxLoss,cur); });
+                return {name:a.name,streak:maxLoss};
+              }).sort((a,b)=>b.streak-a.streak)[0];
+              return playerStreaks?.streak>0?playerStreaks.name:"Everyone's winning!";
+            })(),
+            detail:(()=>{
+              const playerStreaks = accounts.map(a=>{
+                const playerRaces = finishedRaces.map(r=>{
+                  const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);
+                  return rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
+                });
+                let maxLoss=0,cur=0;
+                playerRaces.forEach(p=>{ if(p<0)cur++; else cur=0; maxLoss=Math.max(maxLoss,cur); });
+                return {name:a.name,streak:maxLoss};
+              }).sort((a,b)=>b.streak-a.streak)[0];
+              return playerStreaks?.streak>0?`${playerStreaks.streak} losing races in a row`:"🎉";
+            })(),
           },
         ];
         return(
