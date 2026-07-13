@@ -1421,16 +1421,27 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   // e.g. if you split $24 across 6 trifecta combos = $4 each = 400% flexi per combo
   const flexiPct = combos > 0 ? parseFloat(((stake / combos) * 100).toFixed(1)) : 0;
 
+  // Each Way costs stake x2 (one win bet + one place bet)
+  const totalCost = betType==="eachway" ? stake * 2 : stake;
+
   const isReady=()=>{
     if(stake<=0) return false;
     if(combos===0) return false;
-    if(stake>raceBalance) return false;
+    if(totalCost>raceBalance) return false;
     return true;
   };
 
   const handleAdd=()=>{
     if(!isReady()) return;
-    allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
+    if(betType==="eachway") {
+      // Each Way = two separate bets: one Win + one Place, each at full stake
+      allCombos.forEach(h=>{
+        onQueue(race.id,"win",h,stake);
+        onQueue(race.id,"place",h,stake);
+      });
+    } else {
+      allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
+    }
     setSel({});
     setStakeStr("");
   };
@@ -1774,7 +1785,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <span className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em"}}>Total Stake</span>
                   <span className="cg" style={{fontSize:20,fontWeight:700,color:C.text}}>{fmt(stake)}</span>
                 </div>
-                {stake>raceBalance&&<p className="sy" style={{fontSize:12,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
+                {betType==="eachway"&&stake>0&&(
+                  <div style={{padding:"8px 12px",background:"rgba(30,92,30,.06)",border:`1px solid ${C.greenBd}`,borderRadius:8,marginBottom:8}}>
+                    <div className="sy" style={{fontSize:13,fontWeight:700,color:C.accent}}>Each Way = {fmt(stake)} Win + {fmt(stake)} Place</div>
+                    <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>Total cost: <strong>{fmt(stake*2)}</strong> from your budget</div>
+                  </div>
+                )}
+                {totalCost>raceBalance&&<p className="sy" style={{fontSize:12,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
                 {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>1&&(
                   <p className="sy" style={{fontSize:12,color:C.soft,marginTop:6,lineHeight:1.5}}>
                     {combos} combination{combos!==1?"s":""} · {fmt(parseFloat((stake/combos).toFixed(2)))} each · <strong style={{color:C.accent}}>{flexiPct}% flexi</strong>
@@ -1793,9 +1810,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               {!isReady()
                 ? (stake<=0?"Enter a stake amount"
                   :combos===0?"Complete your selection"
-                  :stake>raceBalance?"Exceeds race budget"
+                  :totalCost>raceBalance?"Exceeds race budget"
                   :"Complete your selection")
-                : `Add ${combos} bet${combos>1?"s":""} to Betslip →`}
+                : betType==="eachway"
+                  ? `Add Each Way — ${fmt(totalCost)} total (${fmt(stake)} Win + ${fmt(stake)} Place)`
+                  : `Add ${combos} bet${combos>1?"s":""} to Betslip →`}
             </button>
 
             {/* Existing bets on this race */}
