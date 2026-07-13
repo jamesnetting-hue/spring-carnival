@@ -305,6 +305,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
 @keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -747,9 +748,24 @@ export default function App() {
     showToast("Bet cancelled — your budget has been refunded");
   };
 
+  const [scratchAlert, setScratchAlert] = useState(null); // {horseName, raceName, affectedBets}
+
   const scratchHorse = (raceId,num) => {
+    const race = races.find(r=>r.id===raceId);
+    const horse = race?.horses.find(h=>h.number===num);
     setRaces(p=>p.map(r=>r.id!==raceId?r:{...r,horses:r.horses.map(h=>h.number===num?{...h,scratched:true}:h)}));
-    showToast(`#${num} scratched`);
+    // Check if any active bets include this horse
+    const affectedBets = bets.filter(b=>
+      b.raceId===raceId &&
+      b.won===null &&
+      b.horses.includes(num)
+    );
+    if (affectedBets.length > 0) {
+      const affectedPlayers = [...new Set(affectedBets.map(b=>b.playerId))]
+        .map(id=>accounts.find(a=>a.id===id)?.name).filter(Boolean);
+      setScratchAlert({ horseName:horse?.name, raceName:race?.name, affectedBets, affectedPlayers });
+    }
+    showToast(`#${num} ${horse?.name} scratched`);
   };
 
   const leaderboard = [...accounts].sort((a,b)=>{
@@ -792,6 +808,35 @@ export default function App() {
           <div style={{fontSize:56,marginBottom:16}}>🏇</div>
           <h2 className="cg" style={{fontSize:32,fontWeight:900,color:"#fff",marginBottom:10}}>Spring Carnival</h2>
           <p className="sy" style={{fontSize:15,color:"rgba(255,255,255,.7)"}}>Loading...</p>
+        </div>
+      )}
+
+      {scratchAlert&&(
+        <div className="modal-bg" onClick={()=>setScratchAlert(null)}>
+          <div className="modal sr" onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:48,marginBottom:8}}>⚠️</div>
+              <h3 className="cg" style={{fontSize:22,fontWeight:700,color:C.red,marginBottom:6}}>Horse Scratched!</h3>
+              <p className="sy" style={{fontSize:15,fontWeight:700,marginBottom:4}}>{scratchAlert.horseName} has been scratched from {scratchAlert.raceName}</p>
+              <p className="sy" style={{fontSize:13,color:C.soft}}>The following players have active bets that include this horse:</p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {scratchAlert.affectedPlayers.map(name=>{
+                const playerBets = scratchAlert.affectedBets.filter(b=>accounts.find(a=>a.id===b.playerId)?.name===name);
+                return (
+                  <div key={name} style={{padding:"10px 14px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:8}}>
+                    <div className="sy" style={{fontSize:14,fontWeight:700,color:C.red,marginBottom:4}}>🚨 {name}</div>
+                    {playerBets.map(b=>{
+                      const td=BET_TYPES.find(t=>t.id===b.type);
+                      return <div key={b.id} className="sy" style={{fontSize:12,color:C.soft}}>{td?.label} · #{b.horses.join(" → #")} · {fmt(b.stake)}</div>;
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="sy" style={{fontSize:12,color:C.soft,marginBottom:14,textAlign:"center"}}>These players will see a red alert on their race card and should update their bets before betting closes.</p>
+            <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:14}} onClick={()=>setScratchAlert(null)}>Got it</button>
+          </div>
         </div>
       )}
 
@@ -994,7 +1039,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontSize:60,marginBottom:8}}>🏇</div>
           <h1 className="cg" style={{fontSize:52,fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
-          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.7)",letterSpacing:".16em",textTransform:"uppercase"}}>Group 1 Tipping Competition</p>
+          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.7)",letterSpacing:".16em",textTransform:"uppercase"}}>GROUP 1 COMPETITION</p>
         </div>
         <div className="card fu">
           <div className="tog" style={{marginBottom:20}}>
@@ -1150,10 +1195,22 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                 const fav=race.horses.filter(h=>!h.scratched).sort((a,b)=>a.winOdds-b.winOdds)[0];
                 const raceBal = account ? getRaceBalance(account.id, race.id) : STARTING_BALANCE;
                 return (
-                  <div key={race.id} className="card" style={{marginBottom:8,borderLeft:`3px solid ${race.status==="finished"?C.muted:race.status==="closed"?C.red:C.accent}`,cursor:race.status==="upcoming"?"pointer":"default",transition:"all .15s"}}
-                    onMouseEnter={e=>{if(race.status==="upcoming"){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 28px rgba(0,0,0,.5)";}}}
+                  <div key={race.id} className="card" style={{marginBottom:8,borderLeft:`4px solid ${race.status==="finished"?C.muted:race.status==="closed"?C.red:raceBal===STARTING_BALANCE&&race.status==="upcoming"?C.red:raceBal===0?C.green:C.accent}`,cursor:race.status==="upcoming"?"pointer":"default",transition:"all .15s"}}
+                    onMouseEnter={e=>{if(race.status==="upcoming"){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 28px rgba(0,0,0,.1)";}}}
                     onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="";}}
                     onClick={()=>race.status==="upcoming"&&onSelect(race.id)}>
+
+                    {/* Scratch warning — if player has a bet on a scratched horse */}
+                    {account&&rb.length>0&&rb.some(b=>b.won===null&&b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched))&&(
+                      <div style={{marginBottom:10,padding:"8px 12px",background:"#fff3cd",border:"1px solid #ffc107",borderRadius:8,display:"flex",gap:8,alignItems:"flex-start"}}>
+                        <span style={{fontSize:16,flexShrink:0}}>⚠️</span>
+                        <div>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:"#856404"}}>One of your selections has been scratched!</span>
+                          <p className="sy" style={{fontSize:12,color:"#856404",marginTop:2}}>Tap to view your bets and update your selection.</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
                       <div style={{flex:1}}>
                         <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
@@ -1165,8 +1222,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             fontSize:13,padding:"5px 12px",fontWeight:700
                           }}>{race.status==="closed"?"🔒 Closed":race.status}</span>
                           <span className="badge sy" style={{background:"#f0f0f0",color:C.text,border:`1px solid ${C.border}`,fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.raceNum}</span>
-                          {rb.length>0&&<span className="badge sy" style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBd}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>✓ {rb.length} bet{rb.length>1?"s":""}</span>}
-                          {account&&race.status==="upcoming"&&<span className="badge sy" style={{background:raceBal>0?C.accentGlow:C.redBg,color:raceBal>0?C.accent:C.red,border:`1px solid ${raceBal>0?C.accent:C.redBd}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{fmt(raceBal)} left</span>}
                         </div>
                         <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:3}}>{race.name}</h3>
                         <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
@@ -1183,14 +1238,31 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {race.status==="closed"&&(
                           <p className="sy" style={{fontSize:13,marginTop:4,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
                         )}
-                        {account&&race.status==="upcoming"&&raceBal===STARTING_BALANCE&&(
-                          <div style={{marginTop:6,padding:"6px 10px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:7}}>
-                            <p className="sy" style={{fontSize:12,color:C.red,fontWeight:700}}>⚠ No bets placed yet!</p>
-                          </div>
-                        )}
                       </div>
-                      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                        {race.status==="upcoming"&&<button className="btn btn-gold sy" style={{fontSize:16,padding:"14px 24px",borderRadius:12,fontWeight:800,letterSpacing:".02em",boxShadow:"0 4px 12px rgba(30,92,30,.3)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet →</button>}
+
+                      {/* Right side — bet status */}
+                      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+                        {race.status==="upcoming"&&account&&(
+                          raceBal===0?(
+                            // All $24 spent — green tick
+                            <button className="sy" style={{background:C.greenBg,border:`2px solid ${C.green}`,color:C.green,borderRadius:10,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",gap:6}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                              ✅ Bets In
+                            </button>
+                          ):raceBal>0&&rb.length>0?(
+                            // Some bets but not all spent — amber
+                            <button className="sy" style={{background:"rgba(184,134,11,.1)",border:`2px solid ${C.gold}`,color:C.gold,borderRadius:10,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:14}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                              ⚡ {fmt(raceBal)} left
+                            </button>
+                          ):(
+                            // No bets at all — red urgent
+                            <button className="sy" style={{background:C.redBg,border:`2px solid ${C.red}`,color:C.red,borderRadius:10,padding:"10px 16px",cursor:"pointer",fontWeight:800,fontSize:14,animation:"pulse 2s infinite"}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                              🚨 Bet Now!
+                            </button>
+                          )
+                        )}
                         {race.status==="finished"&&race.result&&(
                           <div className="sy" style={{fontSize:11,textAlign:"right"}}>
                             {["first","second","third","fourth"].map((k,i)=>{
@@ -1201,16 +1273,27 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         )}
                       </div>
                     </div>
+
+                    {/* Bets summary strip */}
                     {rb.length>0&&(
-                      <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:5}}>
-                        {rb.map(b=>{
-                          const def=BET_TYPES.find(t=>t.id===b.type);
-                          return (
-                            <div key={b.id} className="sy" style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:b.won===true?C.greenBg:b.won===false?C.redBg:"#f8f9fb",border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:b.won===true?C.green:b.won===false?C.red:C.soft}}>
-                              {def?.label} · {fmt(b.stake)}{b.won===true?` → Won ${fmt(b.payout)}! 🎉`:b.won===false?" · Lost":b.potential?` · pot. ${fmt(b.potential)}`:""}
-                            </div>
-                          );
-                        })}
+                      <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:5,flex:1}}>
+                          {rb.map(b=>{
+                            const def=BET_TYPES.find(t=>t.id===b.type);
+                            const hasScratched = b.won===null && b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched);
+                            return (
+                              <div key={b.id} className="sy" style={{fontSize:11,padding:"4px 10px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
+                                {hasScratched?"⚠️ ":b.won===true?"✓ ":""}{def?.label} · {fmt(b.stake)}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {race.status==="upcoming"&&rb.some(b=>b.won===null)&&(
+                          <button className="sy" style={{fontSize:12,padding:"5px 12px",borderRadius:7,border:`1.5px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700,flexShrink:0}}
+                            onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                            Cancel / Change ✕
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
