@@ -1355,7 +1355,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [sel,setSel]=useState({});      // {pos: horseNumber} for each position
   const [stakeStr,setStakeStr]=useState("");
   const [boxed,setBoxed]=useState(false);
-  
+  const [winSel,setWinSel]=useState(null);   // horse number selected for win
+  const [placeSel,setPlaceSel]=useState(null); // horse number selected for place
 
   const def=BET_TYPES.find(t=>t.id===betType);
   const om=getOddsMap(race.horses);
@@ -1366,7 +1367,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const numPositions=def.positions.length;
   const stake=parseFloat(stakeStr)||0;
 
-  const changeType=id=>{setBetType(id);setSel({});};
+  const changeType=id=>{setBetType(id);setSel({});setWinSel(null);setPlaceSel(null);};
 
   // sel is always {posIdx: [horse numbers]} — supports multiple per position
   const toggleHorse=(posIdx,num)=>{
@@ -1443,6 +1444,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
     }
     setSel({});
+    setWinSel(null);
+    setPlaceSel(null);
     setStakeStr("");
   };
 
@@ -1576,61 +1579,51 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     )}
                   </div>
 
-                  {/* Win & Place odds — TAB style tap-to-select buttons */}
+                  {/* Win & Place — independent tap toggles like TAB app */}
                   {!scr&&(
                     <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
-                      {/* WIN button — highlighted when win or eachway selected on this horse */}
-                      {(() => {
-                        const winActive = (betType==="win"||betType==="eachway") && (sel[0]||[]).includes(h.number);
-                        return (
-                          <button className="sy" style={{
-                            width:isMobile?68:78, padding:"10px 0", borderRadius:8,
-                            border:`2px solid ${winActive?C.accent:"rgba(30,92,30,.3)"}`,
-                            background:winActive?C.accent:C.accentGlow,
-                            color:winActive?"#fff":C.accent,
-                            cursor:"pointer", textAlign:"center", transition:"all .15s",
-                          }}
-                            onClick={e=>{
-                              e.stopPropagation();
-                              if(betType==="place" && (sel[0]||[]).includes(h.number)){
-                                changeType("eachway");
-                              } else if(betType==="eachway" && (sel[0]||[]).includes(h.number)){
-                                changeType("place"); setSel({0:[h.number]});
-                              } else {
-                                changeType("win"); setSel({0:[h.number]});
-                              }
-                            }}>
-                            <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
-                            <div style={{fontSize:9,fontWeight:700,opacity:.8,marginTop:1}}>WIN</div>
-                          </button>
-                        );
-                      })()}
-                      {/* PLACE button — highlighted when place or eachway selected on this horse */}
-                      {(() => {
-                        const placeActive = (betType==="place"||betType==="eachway") && (sel[0]||[]).includes(h.number);
-                        return (
-                          <button className="sy" style={{
-                            width:isMobile?68:78, padding:"10px 0", borderRadius:8,
-                            border:`2px solid ${placeActive?"#2563eb":"#d1d5db"}`,
-                            background:placeActive?"#2563eb":"#f8f9fb",
-                            color:placeActive?"#fff":"#6b7280",
-                            cursor:"pointer", textAlign:"center", transition:"all .15s",
-                          }}
-                            onClick={e=>{
-                              e.stopPropagation();
-                              if(betType==="win" && (sel[0]||[]).includes(h.number)){
-                                changeType("eachway");
-                              } else if(betType==="eachway" && (sel[0]||[]).includes(h.number)){
-                                changeType("win"); setSel({0:[h.number]});
-                              } else {
-                                changeType("place"); setSel({0:[h.number]});
-                              }
-                            }}>
-                            <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
-                            <div style={{fontSize:9,fontWeight:700,opacity:.8,marginTop:1}}>PLACE</div>
-                          </button>
-                        );
-                      })()}
+                      {/* WIN */}
+                      <button className="sy" style={{
+                        width:isMobile?68:78, padding:"10px 0", borderRadius:8,
+                        border:`2px solid ${winSel===h.number?"#1e5c1e":"rgba(30,92,30,.25)"}`,
+                        background:winSel===h.number?C.accent:C.accentGlow,
+                        color:winSel===h.number?"#fff":C.accent,
+                        cursor:"pointer", textAlign:"center", transition:"all .13s",
+                        fontFamily:"inherit",
+                      }} onClick={e=>{
+                        e.stopPropagation();
+                        const next = winSel===h.number ? null : h.number;
+                        setWinSel(next);
+                        // Sync bet type
+                        if(next && placeSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
+                        else if(next) { setBetType("win"); setSel({0:[h.number]}); }
+                        else if(placeSel===h.number) { setBetType("place"); setSel({0:[h.number]}); }
+                        else { setBetType("win"); setSel({}); }
+                      }}>
+                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
+                        <div style={{fontSize:9,fontWeight:700,marginTop:1,opacity:.85}}>WIN</div>
+                      </button>
+                      {/* PLACE */}
+                      <button className="sy" style={{
+                        width:isMobile?68:78, padding:"10px 0", borderRadius:8,
+                        border:`2px solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,
+                        background:placeSel===h.number?"#2563eb":"#f8f9fb",
+                        color:placeSel===h.number?"#fff":"#6b7280",
+                        cursor:"pointer", textAlign:"center", transition:"all .13s",
+                        fontFamily:"inherit",
+                      }} onClick={e=>{
+                        e.stopPropagation();
+                        const next = placeSel===h.number ? null : h.number;
+                        setPlaceSel(next);
+                        // Sync bet type
+                        if(next && winSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
+                        else if(next) { setBetType("place"); setSel({0:[h.number]}); }
+                        else if(winSel===h.number) { setBetType("win"); setSel({0:[h.number]}); }
+                        else { setBetType("place"); setSel({}); }
+                      }}>
+                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
+                        <div style={{fontSize:9,fontWeight:700,marginTop:1,opacity:.85}}>PLACE</div>
+                      </button>
                     </div>
                   )}
                   {scr&&(
