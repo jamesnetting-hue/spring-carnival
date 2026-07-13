@@ -2207,22 +2207,54 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
   if (!account) return null;
 
-  const settled = bets.filter(b=>b.won!==null);
+  // Build race-level data — the fundamental unit
+  const allRaces = [...new Set(bets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)).filter(Boolean);
+  const finishedRaces = allRaces.filter(r=>r.status==="finished"||r.status==="archived");
+  const upcomingRaces = allRaces.filter(r=>r.status==="upcoming"||r.status==="closed");
+
+  const raceStats = finishedRaces.map(race => {
+    const rb = bets.filter(b=>b.raceId===race.id&&b.won!==null);
+    const staked = rb.reduce((s,b)=>s+b.stake,0);
+    const returned = rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+    const raceProfit = parseFloat((returned-staked).toFixed(2));
+    const hadWin = rb.some(b=>b.won===true);
+    const bestBet = rb.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+    return { race, rb, staked, returned, profit:raceProfit, hadWin, bestBet };
+  });
+
+  const racesWon   = raceStats.filter(r=>r.profit>0).length;
+  const racesLost  = raceStats.filter(r=>r.profit<=0).length;
+  const totalSettledRaces = raceStats.length;
+  const raceWinRate = totalSettledRaces ? Math.round((racesWon/totalSettledRaces)*100) : 0;
+
+  const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
+  const settledStaked = raceStats.reduce((s,r)=>s+r.staked,0);
+  const roi = settledStaked>0 ? parseFloat(((profit/settledStaked)*100).toFixed(1)) : 0;
+
+  const pending = bets.filter(b=>b.won===null);
+
+  // Best race
+  const bestRaceStat = raceStats.sort((a,b)=>b.profit-a.profit)[0];
+  const worstRaceStat = [...raceStats].sort((a,b)=>a.profit-b.profit)[0];
+
+  // Best single win across all races
+  const bestWin = bets.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+  const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
+
+  // Current streak — by race
+  const streak = (() => {
+    const s=[...raceStats].reverse();
+    if(!s.length) return null;
+    const type = s[0].profit>0 ? "win" : "loss";
+    let count=0;
+    for(const r of s){ if((r.profit>0&&type==="win")||(r.profit<=0&&type==="loss")) count++; else break; }
+    return { type, count };
+  })();
+
+  // Profit by bet type — based on race-level context
   const won = bets.filter(b=>b.won===true);
   const lost = bets.filter(b=>b.won===false);
-  const pending = bets.filter(b=>b.won===null);
-  const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
-  const winRate = settled.length ? Math.round((won.length/settled.length)*100) : 0;
-  const settledStaked = settled.reduce((s,b)=>s+b.stake,0);
-  const roi = settledStaked > 0 ? parseFloat(((profit/settledStaked)*100).toFixed(1)) : 0;
-
-  // Best and worst bets
-  const bestWin = won.length ? won.reduce((b,a)=>(a.payout||0)>(b.payout||0)?a:b) : null;
-  const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
-  const biggestLoss = lost.length ? lost.reduce((b,a)=>a.stake>b.stake?a:b) : null;
-  const biggestLossRace = biggestLoss ? races.find(r=>r.id===biggestLoss.raceId) : null;
-
-  // Bet type breakdown
+  const settled = bets.filter(b=>b.won!==null);
   const byType = BET_TYPES.map(t=>{
     const tb = settled.filter(b=>b.type===t.id);
     const tw = tb.filter(b=>b.won===true);
@@ -2230,21 +2262,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
     const staked = tb.reduce((s,b)=>s+b.stake,0);
     return { label:t.label, total:tb.length, wins:tw.length, payout, staked, profit:parseFloat((payout-staked).toFixed(2)) };
   }).filter(t=>t.total>0);
-
-  // Streak — current winning/losing streak
-  const streak = (() => {
-    const s=[...settled].reverse();
-    if(!s.length) return null;
-    const type = s[0].won ? "win" : "loss";
-    let count = 0;
-    for(const b of s){ if((b.won&&type==="win")||(!b.won&&type==="loss")) count++; else break; }
-    return { type, count };
-  })();
-
-  // Group bets by race
-  const allRaces = [...new Set(bets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)).filter(Boolean);
-  const finishedRaces = allRaces.filter(r=>r.status==="finished"||r.status==="archived");
-  const upcomingRaces = allRaces.filter(r=>r.status==="upcoming"||r.status==="closed");
 
   const handleNewPin = () => { if(newPin.length<4) return; setPinStep("confirm"); setNewPin2(""); setPinErr(""); };
   const handleConfirmPin = val => {
@@ -2278,13 +2295,13 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         </div>
       </div>
 
-      {/* Main stats */}
+      {/* Main stats — per race */}
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:16}}>
         {[
-          ["Bets Placed", bets.length, null],
-          ["Settled", settled.length, null],
-          ["Wins", won.length, C.green],
-          ["Losses", lost.length||0, C.red],
+          ["Races Entered", totalSettledRaces||0, null],
+          ["Profitable Races", racesWon, C.green],
+          ["Losing Races", racesLost, C.red],
+          ["Pending", pending.length, null],
         ].map(([l,v,col])=>(
           <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
             <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
@@ -2295,7 +2312,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:20}}>
         {[
-          ["Win Rate", `${winRate}%`, winRate>=30?C.green:C.red],
+          ["Race Win Rate", `${raceWinRate}%`, raceWinRate>=50?C.green:raceWinRate>=30?C.gold:C.red],
           ["ROI", `${roi}%`, roi>=0?C.green:C.red],
           ["Total Staked", fmt(settledStaked), null],
           ["Total Returned", fmt(account.totalWon), C.green],
@@ -2307,28 +2324,37 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         ))}
       </div>
 
-      {/* Highlights row */}
+      {/* Highlights — race-based */}
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10,marginBottom:20}}>
         {bestWin&&(
           <div className="card" style={{background:"rgba(21,128,61,.05)",border:`1px solid ${C.greenBd}`}}>
-            <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🌟 Best Win</div>
+            <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🌟 Best Single Win</div>
             <div className="cg" style={{fontSize:22,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</div>
             <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{BET_TYPES.find(t=>t.id===bestWin.type)?.label} · {bestWinRace?.name}</div>
             <div className="sy" style={{fontSize:11,color:C.muted,marginTop:1}}>#{bestWin.horses.join(" → #")}</div>
           </div>
         )}
-        {streak&&streak.count>1&&(
-          <div className="card" style={{background:streak.type==="win"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)",border:`1px solid ${streak.type==="win"?C.greenBd:C.redBd}`}}>
-            <div className="sy" style={{fontSize:11,color:streak.type==="win"?C.green:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>{streak.type==="win"?"🔥 Win Streak":"📉 Losing Streak"}</div>
-            <div className="cg" style={{fontSize:22,fontWeight:800,color:streak.type==="win"?C.green:C.red}}>{streak.count} in a row</div>
-            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>Current {streak.type==="win"?"winning":"losing"} streak</div>
+        {bestRaceStat&&(
+          <div className="card" style={{background:"rgba(21,128,61,.05)",border:`1px solid ${C.greenBd}`}}>
+            <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🏆 Best Race</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:C.green}}>+{fmt(bestRaceStat.profit)}</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{bestRaceStat.race.name}</div>
+            <div className="sy" style={{fontSize:11,color:C.muted,marginTop:1}}>{bestRaceStat.rb.length} bet{bestRaceStat.rb.length!==1?"s":""} · Staked {fmt(bestRaceStat.staked)}</div>
           </div>
         )}
-        {biggestLoss&&(
+        {streak&&streak.count>1&&(
+          <div className="card" style={{background:streak.type==="win"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)",border:`1px solid ${streak.type==="win"?C.greenBd:C.redBd}`}}>
+            <div className="sy" style={{fontSize:11,color:streak.type==="win"?C.green:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>{streak.type==="win"?"🔥 Winning Streak":"📉 Losing Streak"}</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:streak.type==="win"?C.green:C.red}}>{streak.count} races in a row</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>Current {streak.type==="win"?"profitable":"losing"} run</div>
+          </div>
+        )}
+        {worstRaceStat&&worstRaceStat.profit<0&&(
           <div className="card" style={{background:"rgba(185,28,28,.05)",border:`1px solid ${C.redBd}`}}>
-            <div className="sy" style={{fontSize:11,color:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>💸 Biggest Loss</div>
-            <div className="cg" style={{fontSize:22,fontWeight:800,color:C.red}}>-{fmt(biggestLoss.stake)}</div>
-            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{BET_TYPES.find(t=>t.id===biggestLoss.type)?.label} · {biggestLossRace?.name}</div>
+            <div className="sy" style={{fontSize:11,color:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>💸 Worst Race</div>
+            <div className="cg" style={{fontSize:22,fontWeight:800,color:C.red}}>{fmt(worstRaceStat.profit)}</div>
+            <div className="sy" style={{fontSize:12,color:C.soft,marginTop:3}}>{worstRaceStat.race.name}</div>
+            <div className="sy" style={{fontSize:11,color:C.muted,marginTop:1}}>{worstRaceStat.rb.length} bet{worstRaceStat.rb.length!==1?"s":""} · Staked {fmt(worstRaceStat.staked)}</div>
           </div>
         )}
       </div>
@@ -2348,7 +2374,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   <span className="sy" style={{fontSize:12,color:C.soft}}>{t.total} bets</span>
                   <span className="sy" style={{fontSize:12,color:C.green}}>{t.wins} won</span>
                   <span className="sy" style={{fontSize:12,color:C.red}}>{t.total-t.wins} lost</span>
-                  <span className="sy" style={{fontSize:12,color:C.soft}}>{t.total?Math.round((t.wins/t.total)*100):0}% win rate</span>
+                  <span className="sy" style={{fontSize:12,color:C.soft}}>{t.total?Math.round((t.wins/t.total)*100):0}% hit rate</span>
                   <span className="sy" style={{fontSize:12,color:C.soft}}>{fmt(t.staked)} staked</span>
                 </div>
               </div>
@@ -2358,25 +2384,25 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
       )}
 
       {/* ── VISUAL STATS SECTION ── */}
-      {settled.length === 0 ? (
+      {totalSettledRaces === 0 ? (
         <div className="card" style={{marginBottom:20,textAlign:"center",padding:"32px 20px",background:"rgba(30,92,30,.03)",border:`1px dashed ${C.border}`}}>
           <div style={{fontSize:48,marginBottom:12}}>📈</div>
-          <div className="cg" style={{fontSize:18,fontWeight:700,marginBottom:6}}>Your stats will appear here</div>
-          <div className="sy" style={{fontSize:14,color:C.soft}}>Once races are settled you'll see your profit curve, win rate ring, bet type breakdown and race-by-race results.</div>
+          <div className="cg" style={{fontSize:18,fontWeight:700,marginBottom:6}}>Your charts will appear here</div>
+          <div className="sy" style={{fontSize:14,color:C.soft}}>Once races are settled you'll see your profit curve, win rate ring, bet type breakdown and more.</div>
         </div>
-      ) : settled.length > 0 && (()=>{
-        // Profit curve — cumulative profit over each settled bet
+      ) : totalSettledRaces > 0 && (()=>{
+        // Profit curve — cumulative profit per race (not per bet)
         const profitCurve = [];
         let running = 0;
-        settled.forEach(b => {
-          running = parseFloat((running + (b.won ? (b.payout||0) - b.stake : -b.stake)).toFixed(2));
-          profitCurve.push(running);
+        raceStats.forEach(r => {
+          running = parseFloat((running + r.profit).toFixed(2));
+          profitCurve.push({ val:running, name:r.race.name });
         });
-        const maxVal = Math.max(...profitCurve, 0.01);
-        const minVal = Math.min(...profitCurve, 0);
+        const maxVal = Math.max(...profitCurve.map(p=>p.val), 0.01);
+        const minVal = Math.min(...profitCurve.map(p=>p.val), 0);
         const range = maxVal - minVal || 1;
 
-        // Profit by bet type — bar chart data
+        // Profit by bet type bars
         const typeData = BET_TYPES.map(t => {
           const tb = settled.filter(b=>b.type===t.id);
           if (!tb.length) return null;
@@ -2385,19 +2411,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           return { label:t.label, profit:parseFloat(p.toFixed(2)), count:tb.length, wins:tw.length };
         }).filter(Boolean);
 
-        // Win/loss donut data
-        const totalSettled = settled.length;
-
-        // Race profit heatmap
-        const raceData = [...new Set(settled.map(b=>b.raceId))].map(rid => {
-          const rb = settled.filter(b=>b.raceId===rid);
-          const race = races.find(r=>r.id===rid);
-          const p = rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
-          return { name: race?.name?.replace(/Handicap|Stakes|Cup/g,'').trim() || rid, profit: parseFloat(p.toFixed(2)) };
-        }).sort((a,b)=>b.profit-a.profit);
-
         const barMax = typeData.length ? Math.max(...typeData.map(t=>Math.abs(t.profit)), 0.01) : 1;
-        const raceMax = raceData.length ? Math.max(...raceData.map(r=>Math.abs(r.profit)), 0.01) : 1;
+        const raceMax = raceStats.length ? Math.max(...raceStats.map(r=>Math.abs(r.profit)), 0.01) : 1;
 
         return (
           <div style={{marginBottom:24}}>
@@ -2406,47 +2421,45 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* 1. Profit Curve */}
             <div className="card" style={{marginBottom:12,padding:"18px 16px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
-                <span className="sy" style={{fontSize:13,fontWeight:700}}>Profit Over Time</span>
-                <span className="cg" style={{fontSize:16,fontWeight:800,color:running>=0?C.green:C.red}}>{running>=0?"+":""}{fmt(running)}</span>
+                <span className="sy" style={{fontSize:13,fontWeight:700}}>Profit Per Race</span>
+                <span className="cg" style={{fontSize:16,fontWeight:800,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</span>
               </div>
               <div style={{position:"relative",height:isMobile?60:80,display:"flex",alignItems:"flex-end",gap:isMobile?1:2}}>
                 {/* Zero line */}
                 <div style={{position:"absolute",left:0,right:0,bottom:`${(Math.abs(minVal)/range)*100}%`,height:1,background:C.border,zIndex:1}}/>
-                {profitCurve.map((v,i)=>{
-                  const isUp = i===0 ? v>=0 : v >= profitCurve[i-1];
-                  const h = Math.max(2, Math.abs(v-minVal)/range*100);
-                  const bottom = minVal<0 ? (v<0?(Math.abs(minVal+v)/range*100):(Math.abs(minVal)/range*100)) : 0;
-                  return (
-                    <div key={i} style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"flex-end"}}>
-                      <div style={{position:"absolute",bottom:`${((-minVal)/range)*100}%`,left:0,right:0,
-                        height:`${(v/range)*100}%`,background:v>=0?`rgba(21,128,61,${0.4+0.6*(v/maxVal)})`:C.red,
-                        borderRadius:"2px 2px 0 0",minHeight:2,transform:v<0?"scaleY(-1) translateY(100%)":"none",transformOrigin:"bottom"
-                      }}/>
-                    </div>
-                  );
-                })}
+                {profitCurve.map((p,i)=>(
+                  <div key={i} title={`${p.name}: ${p.val>=0?"+":""}$${Math.abs(p.val).toFixed(2)}`} style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"flex-end",cursor:"default"}}>
+                    <div style={{position:"absolute",bottom:`${((-minVal)/range)*100}%`,left:0,right:0,
+                      height:`${Math.max(2,Math.abs(p.val)/range*100)}%`,
+                      background:p.val>=0?`rgba(21,128,61,${0.4+0.6*(Math.abs(p.val)/Math.max(maxVal,0.01))})`:C.red,
+                      borderRadius:"2px 2px 0 0",
+                      transform:p.val<0?"scaleY(-1) translateY(100%)":"none",
+                      transformOrigin:"bottom"
+                    }}/>
+                  </div>
+                ))}
               </div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                <span className="sy" style={{fontSize:10,color:C.muted}}>Bet 1</span>
-                <span className="sy" style={{fontSize:10,color:C.muted}}>Bet {profitCurve.length}</span>
+                <span className="sy" style={{fontSize:10,color:C.muted}}>Race 1</span>
+                <span className="sy" style={{fontSize:10,color:C.muted}}>Race {profitCurve.length}</span>
               </div>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
               {/* Win Rate Ring */}
               <div className="card" style={{textAlign:"center",padding:"20px 16px"}}>
-                <span className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,display:"block",marginBottom:10}}>Win Rate</span>
+                <span className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,display:"block",marginBottom:10}}>Race Win Rate</span>
                 <div style={{position:"relative",width:90,height:90,margin:"0 auto 10px"}}>
                   <svg viewBox="0 0 36 36" style={{transform:"rotate(-90deg)",width:90,height:90}}>
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke={C.border} strokeWidth="3"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke={winRate>=50?C.green:winRate>=25?C.gold:C.red}
-                      strokeWidth="3" strokeDasharray={`${winRate} ${100-winRate}`} strokeLinecap="round"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke={raceWinRate>=50?C.green:raceWinRate>=25?C.gold:C.red}
+                      strokeWidth="3" strokeDasharray={`${raceWinRate} ${100-raceWinRate}`} strokeLinecap="round"/>
                   </svg>
                   <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                    <span className="cg" style={{fontSize:20,fontWeight:800,color:winRate>=50?C.green:winRate>=25?C.gold:C.red}}>{winRate}%</span>
+                    <span className="cg" style={{fontSize:20,fontWeight:800,color:raceWinRate>=50?C.green:raceWinRate>=25?C.gold:C.red}}>{raceWinRate}%</span>
                   </div>
                 </div>
-                <div className="sy" style={{fontSize:12,color:C.soft}}>{won.length}W · {lost.length}L</div>
+                <div className="sy" style={{fontSize:12,color:C.soft}}>{racesWon}W · {racesLost}L</div>
               </div>
 
               {/* Current streak */}
@@ -2485,24 +2498,22 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             )}
 
             {/* 4. Race by race profit heatmap */}
-            {raceData.length>0&&(
+            {raceStats.length>0&&(
               <div className="card" style={{padding:"18px 16px"}}>
                 <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:12}}>Profit Per Race</span>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {raceData.map(r=>(
-                    <div key={r.name}>
+                  {raceStats.map(r=>(
+                    <div key={r.race.id}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span className="sy" style={{fontSize:12,fontWeight:600,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</span>
+                        <span className="sy" style={{fontSize:12,fontWeight:600,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.race.name}</span>
                         <span className="sy" style={{fontSize:12,fontWeight:700,color:r.profit>=0?C.green:C.red,marginLeft:8,flexShrink:0}}>{r.profit>=0?"+":""}{fmt(r.profit)}</span>
                       </div>
                       <div style={{height:10,background:C.surface,borderRadius:5,overflow:"hidden",position:"relative"}}>
                         <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:C.border}}/>
                         <div style={{
-                          position:"absolute",
-                          height:"100%",
+                          position:"absolute",height:"100%",
                           width:`${Math.min(50,Math.abs(r.profit)/raceMax*50)}%`,
-                          left:r.profit>=0?"50%":"auto",
-                          right:r.profit<0?"50%":"auto",
+                          left:r.profit>=0?"50%":"auto",right:r.profit<0?"50%":"auto",
                           background:r.profit>=0?C.green:C.red,
                           borderRadius:r.profit>=0?"0 5px 5px 0":"5px 0 0 5px",
                         }}/>
