@@ -1421,11 +1421,14 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [betType,setBetType]=useState("win");
-  const [sel,setSel]=useState({});      // {pos: horseNumber} for each position
+  const [sel,setSel]=useState({});
   const [stakeStr,setStakeStr]=useState("");
   const [boxed,setBoxed]=useState(false);
-  const [winSel,setWinSel]=useState(null);   // horse number selected for win
-  const [placeSel,setPlaceSel]=useState(null); // horse number selected for place
+  const [winSel,setWinSel]=useState(null);
+  const [placeSel,setPlaceSel]=useState(null);
+
+  // Bet lock countdown — always called at top level (not inside callback)
+  const countdown = useCountdown(race.date, race.raceTime);
 
   const def=BET_TYPES.find(t=>t.id===betType);
   const om=getOddsMap(race.horses);
@@ -1531,9 +1534,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       <button className="btn btn-ghost sy" style={{marginBottom:14,fontSize:10}} onClick={onBack}>← Back to Races</button>
 
       {/* Bet lock countdown banner */}
-      {race.status==="upcoming"&&race.raceTime&&race.date&&(()=>{
-        const r=useCountdown(race.date,race.raceTime);
-        if(!r||r.expired) return null;
+      {race.status==="upcoming"&&race.raceTime&&race.date&&countdown&&!countdown.expired&&(()=>{
+        const r=countdown;
         const totalMins=r.h*60+r.m;
         if(totalMins>30) return null;
         const urgent=totalMins<5;
