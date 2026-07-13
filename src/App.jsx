@@ -2187,16 +2187,20 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
 
                   {/* Best win */}
                   <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    {bestWin?(
-                      <div style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"8px 12px"}}>
-                        <span className="sy" style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>🌟 Best Win</span>
-                        <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}}>
-                          <span className="cg" style={{fontSize:16,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</span>
-                          <span className="sy" style={{fontSize:11,color:C.soft}}>· {bestWinType?.label}</span>
+                    {bestWin?(()=>{
+                      const bestWinHorse = bestWinRace?.horses?.find(h=>h.number===bestWin.horses[0]);
+                      return(
+                        <div style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"8px 12px"}}>
+                          <span className="sy" style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>🌟 Best Win</span>
+                          <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}}>
+                            <span className="cg" style={{fontSize:16,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</span>
+                            <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:600}}>{bestWinType?.label}</span>
+                          </div>
+                          {bestWinHorse&&<span className="sy" style={{fontSize:12,fontWeight:700,color:C.text,display:"block",marginTop:3}}>{bestWinHorse.name} <span style={{color:C.muted,fontWeight:400}}>@ ${bestWinHorse.winOdds?.toFixed(2)}</span></span>}
+                          <span className="sy" style={{fontSize:11,color:C.soft,display:"block",marginTop:1}}>{bestWinRace?.name}</span>
                         </div>
-                        <span className="sy" style={{fontSize:11,color:C.soft,display:"block",marginTop:2}}>{bestWinRace?.name}</span>
-                      </div>
-                    ):(
+                      );
+                    })():(
                       <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
                         <span style={{fontSize:14}}>🥶</span>
                         <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
@@ -2953,77 +2957,51 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             )}
 
-            {/* 4. Profit Per Race — column chart */}
-            {raceStats.length>0&&(()=>{
-              const chartH = isMobile ? 140 : 180;
-              const barW = Math.max(20, Math.min(48, Math.floor((isMobile?300:500) / raceStats.length) - 6));
-              const maxAbs = Math.max(...raceStats.map(r=>Math.abs(r.profit)), 1);
-              const zeroY = chartH * 0.55;
-              const posH = chartH * 0.55;
-              const negH = chartH * 0.45;
-              const hoveredIdx = hoveredRaceIdx;
-              return(
-                <div className="card" style={{padding:"18px 16px"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:14}}>
-                    <span className="sy" style={{fontSize:13,fontWeight:700}}>📊 Profit Per Race</span>
-                    <span className="cg" style={{fontSize:13,fontWeight:700,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)} total</span>
-                  </div>
-                  {/* Tooltip */}
-                  {hoveredIdx!==null&&(
-                    <div style={{marginBottom:8,padding:"6px 12px",background:raceStats[hoveredIdx].profit>=0?C.greenBg:C.redBg,border:`1px solid ${raceStats[hoveredIdx].profit>=0?C.greenBd:C.redBd}`,borderRadius:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span className="sy" style={{fontSize:12,fontWeight:600}}>{raceStats[hoveredIdx].race.name}</span>
-                      <span className="sy" style={{fontSize:13,fontWeight:800,color:raceStats[hoveredIdx].profit>=0?C.green:C.red}}>{raceStats[hoveredIdx].profit>=0?"+":""}{fmt(raceStats[hoveredIdx].profit)}</span>
+            {/* 4. Bet type hit rate tracker */}
+            <div className="card" style={{padding:"18px 16px"}}>
+              <span className="sy" style={{fontSize:13,fontWeight:700,display:"block",marginBottom:14}}>🎯 Bet Type Results</span>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {BET_TYPES.map(t=>{
+                  const tb = settled.filter(b=>b.type===t.id);
+                  if(!tb.length) return null;
+                  const tw = tb.filter(b=>b.won===true);
+                  const hitRate = Math.round((tw.length/tb.length)*100);
+                  const typeProfit = parseFloat((tw.reduce((s,b)=>s+(b.payout||0),0)-tb.reduce((s,b)=>s+b.stake,0)).toFixed(2));
+                  const colors = {win:"#1e5c1e",place:"#1d4ed8",eachway:"#7c3aed",quinella:"#b45309",exacta:"#0e7490",trifecta:"#be185d",firstfour:"#d97706"};
+                  const col = colors[t.id]||C.accent;
+                  return(
+                    <div key={t.id}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span className="sy" style={{fontSize:13,fontWeight:700}}>{t.label}</span>
+                          <span className="sy" style={{fontSize:11,color:C.soft}}>{tw.length}/{tb.length} correct</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <span className="sy" style={{fontSize:12,fontWeight:700,color:col}}>{hitRate}%</span>
+                          <span className="sy" style={{fontSize:12,fontWeight:700,color:typeProfit>=0?C.green:C.red}}>{typeProfit>=0?"+":""}{fmt(typeProfit)}</span>
+                        </div>
+                      </div>
+                      {/* Progress bar — showing hit rate */}
+                      <div style={{height:8,background:"#f0f0f0",borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${hitRate}%`,background:col,borderRadius:4,transition:"width .4s ease"}}/>
+                      </div>
+                      {/* Individual result dots */}
+                      <div style={{display:"flex",gap:3,marginTop:5,flexWrap:"wrap"}}>
+                        {tb.map((b,bi)=>(
+                          <div key={bi} title={b.won?"Won +"+fmt(b.payout||0):"Lost -"+fmt(b.stake)} style={{
+                            width:14,height:14,borderRadius:3,
+                            background:b.won?col:"#e5e7eb",
+                            border:`1px solid ${b.won?col:"#d1d5db"}`,
+                            cursor:"default",
+                          }}/>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                  {/* Chart */}
-                  <div style={{overflowX:"auto",paddingBottom:4}}>
-                    <div style={{display:"flex",alignItems:"flex-end",gap:4,height:chartH+30,paddingTop:8,minWidth:raceStats.length*(barW+4),position:"relative"}}>
-                      {/* Zero line */}
-                      <div style={{position:"absolute",left:0,right:0,top:zeroY,height:1.5,background:C.border,zIndex:1}}/>
-                      {raceStats.map((r,i)=>{
-                        const isPos = r.profit >= 0;
-                        const barH = Math.max(4, (Math.abs(r.profit)/maxAbs) * (isPos?posH:negH));
-                        const isHov = hoveredIdx===i;
-                        return(
-                          <div key={r.race.id} style={{display:"flex",flexDirection:"column",alignItems:"center",width:barW,flexShrink:0,cursor:"pointer",height:chartH+30}}
-                            onMouseEnter={()=>setHoveredRaceIdx(i)} onMouseLeave={()=>setHoveredRaceIdx(null)}
-                            onTouchStart={()=>setHoveredRaceIdx(i)} onTouchEnd={()=>setTimeout(()=>setHoveredRaceIdx(null),2000)}>
-                            {/* Space above zero */}
-                            <div style={{height:posH,display:"flex",alignItems:"flex-end",paddingBottom:0}}>
-                              {isPos&&<div style={{width:"100%",height:barH,background:isHov?C.accent:C.green,borderRadius:"4px 4px 0 0",transition:"all .15s",opacity:isHov?1:.85}}/>}
-                              {!isPos&&<div style={{width:"100%",height:4,background:"transparent"}}/>}
-                            </div>
-                            {/* Zero line space */}
-                            <div style={{height:2}}/>
-                            {/* Below zero */}
-                            <div style={{height:negH,display:"flex",alignItems:"flex-start"}}>
-                              {!isPos&&<div style={{width:"100%",height:barH,background:isHov?"#dc2626":C.red,borderRadius:"0 0 4px 4px",transition:"all .15s",opacity:isHov?1:.85}}/>}
-                              {isPos&&<div style={{width:"100%",height:4,background:"transparent"}}/>}
-                            </div>
-                            {/* Race label */}
-                            <div style={{marginTop:4,width:barW,overflow:"hidden",textAlign:"center"}}>
-                              <span className="sy" style={{fontSize:8,color:isHov?C.accent:C.muted,fontWeight:isHov?700:400,display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                                {r.race.name.replace(/Handicap|Stakes|Cup/g,'').trim()}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                    <div style={{display:"flex",alignItems:"center",gap:5}}>
-                      <div style={{width:10,height:10,borderRadius:2,background:C.green}}/>
-                      <span className="sy" style={{fontSize:10,color:C.muted}}>Profit</span>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:5}}>
-                      <span className="sy" style={{fontSize:10,color:C.muted}}>Loss</span>
-                      <div style={{width:10,height:10,borderRadius:2,background:C.red}}/>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+                  );
+                }).filter(Boolean)}
+              </div>
+              <p className="sy" style={{fontSize:10,color:C.muted,marginTop:12}}>Coloured squares = correct · Grey = missed</p>
+            </div>
           </div>
         );
       })()}
