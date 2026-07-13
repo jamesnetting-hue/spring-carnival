@@ -316,21 +316,26 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
   .desktop-nav{display:none!important}
   .mobile-nav{display:flex!important}
   .mobile-hide{display:none!important}
-  .card{padding:16px;border-radius:10px}
-  .surface{padding:12px}
-  .modal{border-radius:20px 20px 0 0;padding:24px 18px 40px;max-height:90vh}
+  .card{padding:14px;border-radius:10px}
+  .surface{padding:10px}
+  .modal{border-radius:20px 20px 0 0;padding:20px 16px 40px;max-height:92vh}
   .btn{font-size:15px;padding:13px 18px}
   .inp{font-size:16px;padding:12px 14px}
   .inp-sm{font-size:14px;padding:8px 10px}
-  h2.cg{font-size:22px!important}
-  h3.cg{font-size:19px!important}
-  .badge{font-size:10px;padding:3px 8px}
+  h2.cg{font-size:20px!important}
+  h3.cg{font-size:17px!important}
+  h4.cg{font-size:15px!important}
+  .badge{font-size:11px;padding:4px 9px}
+  .hrow{padding:8px 10px!important}
 }
 @media(min-width:641px){
   .desktop-nav{display:flex!important}
   .mobile-nav{display:none!important}
   .modal-bg{align-items:center;padding:16px}
-  .modal{border-radius:16px;padding:28px;max-width:520px;max-height:90vh}
+  .modal{border-radius:16px;padding:28px;max-width:540px;max-height:90vh}
+}
+@media(min-width:641px) and (max-width:900px){
+  .card{padding:16px}
 }
 `;
 
@@ -858,7 +863,7 @@ export default function App() {
 
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
-      {screen!=="auth"&&<main style={{maxWidth:980,margin:"0 auto",padding:"22px 14px 80px 14px"}}>
+      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`18px ${window.innerWidth<641?"12px":"20px"} 90px`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement}/>}
@@ -2346,7 +2351,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 <span className="sy" style={{fontSize:13,fontWeight:700}}>Profit Over Time</span>
                 <span className="cg" style={{fontSize:16,fontWeight:800,color:running>=0?C.green:C.red}}>{running>=0?"+":""}{fmt(running)}</span>
               </div>
-              <div style={{position:"relative",height:80,display:"flex",alignItems:"flex-end",gap:2}}>
+              <div style={{position:"relative",height:isMobile?60:80,display:"flex",alignItems:"flex-end",gap:isMobile?1:2}}>
                 {/* Zero line */}
                 <div style={{position:"absolute",left:0,right:0,bottom:`${(Math.abs(minVal)/range)*100}%`,height:1,background:C.border,zIndex:1}}/>
                 {profitCurve.map((v,i)=>{
@@ -2369,7 +2374,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             </div>
 
-            {/* 2. Win Rate Ring + Streak */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
               {/* Win Rate Ring */}
               <div className="card" style={{textAlign:"center",padding:"20px 16px"}}>
@@ -2584,6 +2588,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
 function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast}) {
+  const w = useWindowWidth();
+  const isMobile = w < 700;
   const [inputs, setInputs] = useState({});
   const [adminPinEntry, setAdminPinEntry] = useState("");
   const [adminTab, setAdminTab] = useState("races");
@@ -2955,7 +2961,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
               const wb = rb.filter(b => b.won === true);
               return (
                 <div key={race.id} className="card">
-                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12}}>
+                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap"}}>
                     <div>
                       <div style={{display:"flex", gap:5, marginBottom:6}}>
                         <span className="badge sy" style={{background:C.accentGlow, color:C.accent, border:"1px solid rgba(26,86,160,.2)"}}>{race.grade}</span>
