@@ -396,6 +396,8 @@ export default function App() {
             date: r.date || "",
             distance: r.distance || "",
             raceNum: r.race_num || "Group 1",
+            raceTime: r.race_time || "",
+            oddsAsOf: r.odds_as_of || "",
             grade: "Group 1",
             status: r.status || "upcoming",
             horses: r.horses ? (Array.isArray(r.horses) ? r.horses : JSON.parse(r.horses)) : [],
@@ -681,6 +683,7 @@ export default function App() {
       id: race.id, name: race.name, venue: race.venue,
       date: race.date, race_time: race.raceTime, distance: race.distance,
       race_num: race.raceNum, status: "upcoming",
+      odds_as_of: race.oddsAsOf || null,
       horses: JSON.stringify([]), result: null,
     });
     showToast(`${race.name} added!`);
@@ -699,8 +702,13 @@ export default function App() {
   const editRace = (raceId, updates) => {
     setRaces(p => p.map(r => r.id !== raceId ? r : {...r, ...updates}));
     sb.update("races", raceId, {
-      name: updates.name, venue: updates.venue, date: updates.date,
-      race_time: updates.raceTime, distance: updates.distance, race_num: updates.raceNum,
+      name: updates.name,
+      venue: updates.venue,
+      date: updates.date,
+      race_time: updates.raceTime,
+      distance: updates.distance,
+      race_num: updates.raceNum,
+      odds_as_of: updates.oddsAsOf || null,
     });
     showToast("Race updated!");
   };
@@ -717,18 +725,16 @@ export default function App() {
     showToast("Horse updated!");
   };
 
-  const deleteRace = (raceId) => {
+  const deleteRace = async (raceId) => {
     const race = races.find(r => r.id === raceId);
     if (!race) return;
-    if (race.status === "finished") {
-      // Archive finished races — hides from lobby but keeps all bet/win history
+    if (race.status === "finished" || race.status === "archived") {
       setRaces(p => p.map(r => r.id !== raceId ? r : {...r, status:"archived"}));
-      sb.update("races", raceId, { status: "archived" });
+      await sb.update("races", raceId, { status: "archived" });
       showToast("Race archived — removed from calendar, history kept");
     } else {
-      // Fully delete upcoming/closed races with no bets
       setRaces(p => p.filter(r => r.id !== raceId));
-      sb.update("races", raceId, { status: "deleted" });
+      await sb.update("races", raceId, { status: "deleted" });
       showToast("Race deleted");
     }
   };
@@ -750,15 +756,16 @@ export default function App() {
 
   const [scratchAlert, setScratchAlert] = useState(null); // {horseName, raceName, affectedBets}
 
-  const scratchHorse = (raceId,num) => {
+  const scratchHorse = (raceId, num) => {
     const race = races.find(r=>r.id===raceId);
     const horse = race?.horses.find(h=>h.number===num);
-    setRaces(p=>p.map(r=>r.id!==raceId?r:{...r,horses:r.horses.map(h=>h.number===num?{...h,scratched:true}:h)}));
+    const updatedHorses = race.horses.map(h=>h.number===num?{...h,scratched:true}:h);
+    setRaces(p=>p.map(r=>r.id!==raceId?r:{...r,horses:updatedHorses}));
+    // Save to Supabase
+    sb.update("races", raceId, { horses: JSON.stringify(updatedHorses) });
     // Check if any active bets include this horse
     const affectedBets = bets.filter(b=>
-      b.raceId===raceId &&
-      b.won===null &&
-      b.horses.includes(num)
+      b.raceId===raceId && b.won===null && b.horses.includes(num)
     );
     if (affectedBets.length > 0) {
       const affectedPlayers = [...new Set(affectedBets.map(b=>b.playerId))]
