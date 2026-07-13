@@ -2041,6 +2041,51 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         )}
       </div>
       <p className="sy" style={{fontSize:13,color:C.soft,marginBottom:18}}>Ranked by net profit across all races.</p>
+
+      {/* Season Awards — above leaderboard */}
+      {accounts.length>0&&(()=>{
+        const wins = bets.filter(b=>b.won===true);
+        const mostProfitable = [...accounts].sort((a,b)=>(b.totalWon-b.totalStaked)-(a.totalWon-a.totalStaked))[0];
+        const mostProfitableProfit = mostProfitable ? parseFloat((mostProfitable.totalWon-mostProfitable.totalStaked).toFixed(2)) : 0;
+        const biggestRoughie = wins.reduce((best,b)=>{
+          const h=races.find(r=>r.id===b.raceId)?.horses?.find(x=>x.number===b.horses[0]);
+          const odds=h?.winOdds||0;
+          return odds>(best?.odds||0)?{...b,odds,horse:h?.name,player:accounts.find(a=>a.id===b.playerId)?.name}:best;
+        },{odds:0});
+        const luckiestWin = [...wins].sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const luckiestPlayer = luckiestWin ? accounts.find(a=>a.id===luckiestWin.playerId) : null;
+        const luckiestRace = luckiestWin ? races.find(r=>r.id===luckiestWin.raceId) : null;
+        const biggestLoser = [...accounts].sort((a,b)=>(a.totalWon-a.totalStaked)-(b.totalWon-b.totalStaked))[0];
+        const biggestLoserProfit = biggestLoser ? parseFloat((biggestLoser.totalWon-biggestLoser.totalStaked).toFixed(2)) : 0;
+        const biggestTri = [...wins].filter(b=>b.type==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestTriPlayer = biggestTri ? accounts.find(a=>a.id===biggestTri.playerId) : null;
+        const biggestFF = [...wins].filter(b=>b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestFFPlayer = biggestFF ? accounts.find(a=>a.id===biggestFF.playerId) : null;
+        const awards = [
+          {emoji:"🏆",label:"Most Profitable",name:mostProfitable?.name||"TBD",detail:`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`},
+          {emoji:"🐎",label:"Biggest Roughie",name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)}`:"No winners yet"},
+          {emoji:"🍀",label:"Luckiest Win",name:luckiestPlayer?.name||"TBD",detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${luckiestRace?.name}`:"No wins yet"},
+          {emoji:"💸",label:"Biggest Loser",name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉"},
+          {emoji:"🎯",label:"Biggest Trifecta",name:biggestTriPlayer?.name||"TBD",detail:biggestTri?`${fmt(biggestTri.payout||0)} · ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet"},
+          {emoji:"4️⃣",label:"Biggest First Four",name:biggestFFPlayer?.name||"TBD",detail:biggestFF?`${fmt(biggestFF.payout||0)} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet"},
+        ];
+        return(
+          <div style={{marginBottom:24}}>
+            <h3 className="cg" style={{fontSize:isMobile?17:20,fontWeight:700,marginBottom:12}}>🎖️ Season Awards</h3>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
+              {awards.map(a=>(
+                <div key={a.label} className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                  <div style={{fontSize:28,marginBottom:5}}>{a.emoji}</div>
+                  <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.soft,marginBottom:4}}>{a.label}</div>
+                  <div className="cg" style={{fontSize:14,fontWeight:700,marginBottom:3}}>{a.name}</div>
+                  <div className="sy" style={{fontSize:11,color:C.soft,lineHeight:1.3}}>{a.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {accounts.length===0?<p className="sy soft">No players yet.</p>:(
         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
           {accounts.map((a,i)=>{
@@ -2132,7 +2177,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     </div>
                   ):(
                     <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
-                      <span style={{fontSize:14}}>🎯</span>
+                      <span style={{fontSize:14}}>🥶</span>
                       <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
                     </div>
                   )}
@@ -2206,44 +2251,6 @@ function SeasonScreen({accounts, bets, races}) {
           ))}
         </div>
       )}
-
-      {/* Season Awards */}
-      {finishedRaces.length > 0 && playerStats.length > 0 && (()=>{
-        const mostProfitable = playerStats[0];
-        const biggestPunter = [...playerStats].sort((a,b)=>b.totalStaked-a.totalStaked)[0];
-        const luckiestWin = (() => {
-          const allWins = bets.filter(b=>b.won===true);
-          if(!allWins.length) return null;
-          const w = allWins.reduce((best,b)=>{
-            const h = races.find(r=>r.id===b.raceId)?.horses?.find(x=>x.number===b.horses[0]);
-            const odds = h?.winOdds||0;
-            return odds>(best?.odds||0)?{...b,odds,horseName:h?.name}:best;
-          },{odds:0});
-          return w?.playerId ? {...w, playerName:accounts.find(a=>a.id===w.playerId)?.name} : null;
-        })();
-        const biggestLoser = [...playerStats].sort((a,b)=>a.profit-b.profit)[0];
-        const awards = [
-          {emoji:"🏆",label:"Most Profitable",name:mostProfitable?.name,detail:fmt(mostProfitable?.profit>=0?mostProfitable.profit:0)+" profit"},
-          {emoji:"🎲",label:"Biggest Punter",name:biggestPunter?.name,detail:fmt(biggestPunter?.totalStaked)+" staked"},
-          {emoji:"🍀",label:"Luckiest Win",name:luckiestWin?.playerName,detail:luckiestWin?`${luckiestWin.horseName} at $${luckiestWin.odds?.toFixed(2)}`:"No wins yet"},
-          {emoji:"💸",label:"Biggest Loser",name:biggestLoser?.profit<0?biggestLoser?.name:"Everyone's profitable!",detail:biggestLoser?.profit<0?fmt(Math.abs(biggestLoser.profit))+" down":"🎉"},
-        ];
-        return(
-          <div style={{marginBottom:24}}>
-            <h3 className="cg" style={{fontSize:20,fontWeight:700,marginBottom:12}}>🎖️ Season Awards</h3>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:10}}>
-              {awards.map(a=>(
-                <div key={a.label} className="card" style={{textAlign:"center",padding:"16px 12px"}}>
-                  <div style={{fontSize:36,marginBottom:6}}>{a.emoji}</div>
-                  <div className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.soft,marginBottom:4}}>{a.label}</div>
-                  <div className="cg" style={{fontSize:15,fontWeight:700,marginBottom:2}}>{a.name||"TBD"}</div>
-                  <div className="sy" style={{fontSize:12,color:C.soft}}>{a.detail}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Leaderboard */}
       {/* Best bet callout */}
