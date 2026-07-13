@@ -3534,9 +3534,11 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
               </div>
             </div>
             <div>
-                <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Silk Image URL <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
-                <input className="inp sy" placeholder="https://..." value={horseForm.silkUrl||""} onChange={e=>setHorseForm(p=>({...p,silkUrl:e.target.value}))}/>
-              </div>
+              <label className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Silk Image URL <span style={{fontWeight:400,textTransform:"none"}}>(optional)</span></label>
+              <input className="inp sy" placeholder="https://..." value={horseForm.silkUrl||""} onChange={e=>setHorseForm(p=>({...p,silkUrl:e.target.value}))}/>
+            </div>
+            {horseErr&&<p className="sy" style={{color:C.red,fontSize:12,marginTop:6}}>{horseErr}</p>}
+            <div style={{display:"flex",gap:8,marginTop:12}}>
               <button className="btn btn-gold" style={{flex:1,padding:12,fontSize:13}} onClick={()=>{
                 if(!horseForm.name.trim()) return setHorseErr("Horse name is required.");
                 if(!horseForm.winOdds||parseFloat(horseForm.winOdds)<=0) return setHorseErr("Win odds are required.");
@@ -3556,10 +3558,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   scratched: false,
                 };
                 onAddHorse(addHorseFor, horse);
-                setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});
+                setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:"",weight:"",silkUrl:""});
                 setHorseErr("");
               }}>Add Horse</button>
-              <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>{setAddHorseFor(null);setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:""});setHorseErr("");}}>Done</button>
+              <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>{setAddHorseFor(null);setHorseForm({name:"",jockey:"",trainer:"",winOdds:"",placeOdds:"",form:"",weight:"",silkUrl:""});setHorseErr("");}}>Done</button>
             </div>
             <p className="sy soft" style={{fontSize:11,marginTop:10}}>You can keep adding horses one by one. Click Done when the full field is entered.</p>
           </div>
