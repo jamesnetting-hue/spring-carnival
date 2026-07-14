@@ -1604,7 +1604,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div style={{flex:1,padding:isMobile?"6px 8px":"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
                     onClick={()=>{if(scr)return;if(betType==="win"||betType==="place")toggleHorse(0,h.number);if(canShowBoxed&&boxed)toggleHorse(0,h.number);}}>
                     <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap",marginBottom:1}}>
-                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name} <span style={{fontWeight:400,color:C.muted,fontSize:isMobile?11:14}}>({h.barrier||h.number})</span></span>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?11:14}}> ({h.barrier})</span>:""}</span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:11,padding:"2px 8px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:9,padding:"1px 5px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
                       {posLabels.map(pl=>(<span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
@@ -3355,18 +3355,17 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
 
       let num, name, jockey = "TBA", trainer = "TBA", winOdds, placeOdds, form = [], weight = "", silkUrl = "";
 
-      // Try pipe-separated format: "1. Name | Jockey | Trainer | 5.00 | 1.95 | 1x2x3"
+      // Try pipe-separated format: "1. Name (barrier) | Jockey | Trainer | 5.00 | 1.95 | form | weight | silkUrl"
       if (raw.includes("|")) {
         const parts = raw.split("|").map(p => p.trim());
-        const firstPart = parts[0].replace(/^\d+[\.\)]\s*/, "").trim();
         const numMatch = parts[0].match(/^(\d+)/);
         num = numMatch ? parseInt(numMatch[1]) : existingCount + horses.length + 1;
-        name = firstPart || parts[0].trim();
+        // Strip leading number from name
+        name = parts[0].replace(/^\d+[\.\):\s]+/, "").trim();
         jockey = parts[1] || "TBA";
         trainer = parts[2] || "TBA";
         winOdds = parseFloat(parts[3]);
         placeOdds = parseFloat(parts[4]);
-        // Form is optional 6th field — e.g. "1x2x3x4" or "1-2-3"
         if (parts[5]) form = parts[5].split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean);
         if (parts[6]) weight = parts[6].trim();
         if (parts[7]) silkUrl = parts[7].trim();
@@ -3398,14 +3397,15 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         }
       }
 
-      // Extract barrier from horse name if it contains "(N)" e.g. "Sacrify (1)"
+      // Extract barrier from horse name if it contains "(N)" e.g. "Red Sentinel (2)"
+      // The number in brackets = barrier, the leading number = runner number
       const barrierMatch = name.match(/\((\d+)\)\s*$/);
       let barrier = "";
       if (barrierMatch) {
         barrier = barrierMatch[1];
         name = name.replace(/\s*\(\d+\)\s*$/, "").trim();
       }
-      // Remove leading number from name if still there
+      // Remove any remaining leading number from name
       name = name.replace(/^\d+[\.\):\s]+/, "").trim();
 
       if (!name) { errors.push(`Line ${i+1}: couldn't read horse name`); return; }
@@ -3874,7 +3874,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <p className="cg" style={{fontSize:16,fontWeight:700,marginBottom:4}}>{races.find(r=>r.id===bulkImportFor)?.name}</p>
             <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format:</p>
             <div style={{padding:"10px 14px",background:"#f0f4ff",border:`1px solid rgba(26,86,160,.2)`,borderRadius:8,marginBottom:14,fontFamily:"monospace",fontSize:11,color:C.soft,lineHeight:1.8}}>
-              1. Horse Name | J Jockey | T Trainer | 5.00 | 1.95 | 1x2x3 | 58 | https://silk-image-url.png<br/>
+              1. Red Sentinel (2) | J D Gibbons | T G Ryan & S Alexiou | 15.00 | 3.60 | f6 | 58.5<br/>
               <span style={{opacity:.6}}>form, weight and silk URL (last 3 columns) are all optional</span>
             </div>
             <textarea
