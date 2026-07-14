@@ -1492,188 +1492,158 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
   return (
     <div className="sr">
-      <button className="btn btn-ghost sy" style={{marginBottom:14,fontSize:10}} onClick={onBack}>← Back to Races</button>
+      {/* Compact header */}
+      <div style={{marginBottom:isMobile?8:16}}>
+        <button className="btn btn-ghost sy" style={{marginBottom:8,fontSize:10,padding:"4px 0"}} onClick={onBack}>← Back</button>
 
-      {/* Bet lock countdown banner */}
-      {race.status==="upcoming"&&race.raceTime&&race.date&&countdown&&!countdown.expired&&(()=>{
-        const r=countdown;
-        const totalMins=r.h*60+r.m;
-        if(totalMins>30) return null;
-        const urgent=totalMins<5;
-        const label=r.h>0?`${r.h}h ${String(r.m).padStart(2,"0")}m`:`${String(r.m).padStart(2,"0")}:${String(r.s).padStart(2,"0")}`;
-        return(
-          <div style={{marginBottom:12,padding:"14px 18px",borderRadius:12,background:urgent?"#dc2626":"#b45309",display:"flex",alignItems:"center",justifyContent:"space-between",animation:urgent?"pulse 1s infinite":"none",boxShadow:urgent?"0 0 20px rgba(220,38,38,.4)":"none"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:22}}>⏰</span>
-              <div>
-                <div className="sy" style={{fontSize:15,fontWeight:800,color:"#fff"}}>Betting closes in {label}</div>
-                <div className="sy" style={{fontSize:12,color:"rgba(255,255,255,.8)",marginTop:1}}>{urgent?"Last chance! Place your bets NOW":"Make sure your full $24 is allocated"}</div>
+        {/* Countdown */}
+        {race.status==="upcoming"&&race.raceTime&&race.date&&countdown&&!countdown.expired&&(()=>{
+          const r=countdown; const totalMins=r.h*60+r.m;
+          if(totalMins>30) return null;
+          const urgent=totalMins<5;
+          const label=r.h>0?`${r.h}h ${String(r.m).padStart(2,"0")}m`:`${String(r.m).padStart(2,"0")}:${String(r.s).padStart(2,"0")}`;
+          return(
+            <div style={{marginBottom:8,padding:"10px 14px",borderRadius:10,background:urgent?"#dc2626":"#b45309",display:"flex",alignItems:"center",justifyContent:"space-between",animation:urgent?"pulse 1s infinite":"none"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:18}}>⏰</span>
+                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff"}}>Closes in {label} {urgent?"— Last chance!":""}</div>
               </div>
+              {!isMobile&&<div className="cg" style={{fontSize:22,fontWeight:900,color:"#fff"}}>{label}</div>}
             </div>
-            <div className="cg" style={{fontSize:28,fontWeight:900,color:"#fff"}}>{label}</div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
-      {/* Race header */}
-      <div className="card" style={{marginBottom:16,borderLeft:`3px solid ${C.accent}`,background:`linear-gradient(135deg,${C.card},rgba(26,86,160,.03))`}}>
-        <div style={{display:"flex",gap:5,marginBottom:7}}>
-          <span className="badge sy" style={{background:C.accentGlow,color:C.accentL,border:"1px solid rgba(26,86,160,.2)"}}>{race.grade}</span>
-          <span className="badge sy" style={{background:C.blueBg,color:C.blue,border:`1px solid ${C.blueBd}`}}>{race.raceNum}</span>
-          {fav&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`}}>FAV: {fav.name} ${fav.winOdds.toFixed(1)}</span>}
-        </div>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:3}}>
-          <h2 className="cg" style={{fontSize:28,fontWeight:700}}>{race.name}</h2>
+        {/* Race title row */}
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:isMobile?4:6}}>
+          <div style={{flex:1,minWidth:0}}>
+            <h2 className="cg" style={{fontSize:isMobile?17:28,fontWeight:700,lineHeight:1.2}}>{race.name}</h2>
+            <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft,marginTop:2}}>{race.venue} · {race.distance}{race.raceNum?` · ${race.raceNum}`:""}</p>
+          </div>
           {race.oddsAsOf&&(
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",background:"rgba(184,134,11,0.1)",border:`1px solid rgba(184,134,11,0.3)`,borderRadius:6,flexShrink:0,marginTop:4}}>
-              <span style={{fontSize:13}}>🕐</span>
-              <span className="sy" style={{fontSize:12,fontWeight:600,color:C.gold,whiteSpace:"nowrap"}}>Odds as of {race.oddsAsOf}</span>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"3px 8px",background:"rgba(184,134,11,0.1)",border:"1px solid rgba(184,134,11,0.3)",borderRadius:6,flexShrink:0}}>
+              <span style={{fontSize:10}}>🕐</span>
+              <span className="sy" style={{fontSize:10,fontWeight:600,color:C.gold,whiteSpace:"nowrap"}}>{race.oddsAsOf}</span>
             </div>
           )}
         </div>
-        <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
 
-        {/* Budget — bold and impossible to miss */}
-        <div style={{marginTop:10,padding:"12px 16px",borderRadius:10,background:raceBalance===0?"rgba(21,128,61,0.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,0.07)":"rgba(30,92,30,0.06)",border:`2px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.accent}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-          <div>
-            <span className="sy" style={{fontSize:15,fontWeight:800,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
-              {raceBalance===0?"✓ Full $24 spent!":raceBalance===STARTING_BALANCE?`⚠ You must spend all $24.00`:`$${raceBalance.toFixed(2)} remaining to bet`}
-            </span>
-            {raceBalance>0&&raceBalance<STARTING_BALANCE&&(
-              <p className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>You must spend your full $24 budget on this race</p>
-            )}
-            {raceBalance===STARTING_BALANCE&&(
-              <p className="sy" style={{fontSize:12,color:C.red,marginTop:2}}>Every player must place bets totalling exactly $24 on this race</p>
-            )}
-          </div>
-          <div className="cg" style={{fontSize:22,fontWeight:900,color:raceBalance===0?C.green:C.accent}}>{fmt(raceBalance)}<span style={{fontSize:13,fontWeight:400,color:C.soft}}> / $24.00</span></div>
+        {/* Budget bar */}
+        <div style={{padding:isMobile?"8px 12px":"12px 16px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,0.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,0.07)":"rgba(30,92,30,0.06)",border:`2px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.accent}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+          <span className="sy" style={{fontSize:isMobile?12:14,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
+            {raceBalance===0?"✓ Full $24 spent!":raceBalance===STARTING_BALANCE?"⚠ No bets yet":`${fmt(raceBalance)} left to bet`}
+          </span>
+          <div className="cg" style={{fontSize:isMobile?14:20,fontWeight:800,color:raceBalance===0?C.green:C.accent,flexShrink:0}}>{fmt(raceBalance)}<span style={{fontSize:10,fontWeight:400,color:C.soft}}> / $24</span></div>
         </div>
       </div>
 
+      {/* TAB-style bet type tabs — scrollable horizontal */}
+      {isMobile&&(
+        <div style={{display:"flex",gap:0,overflowX:"auto",marginBottom:10,borderBottom:`2px solid ${C.border}`,paddingBottom:0,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+          {BET_TYPES.map(t=>(
+            <button key={t.id} className="sy" style={{
+              flexShrink:0,padding:"8px 14px",fontSize:12,fontWeight:betType===t.id?700:500,
+              background:"transparent",border:"none",cursor:"pointer",
+              color:betType===t.id?C.accent:C.soft,
+              borderBottom:`2px solid ${betType===t.id?C.accent:"transparent"}`,
+              marginBottom:-2,whiteSpace:"nowrap",
+            }} onClick={()=>changeType(t.id)}>{t.label}</button>
+          ))}
+        </div>
+      )}
+
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
-        {/* Field */}
+        {/* Horse field */}
         <div>
-          {/* Column headers */}
-          <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"0 12px",marginBottom:4}}>
-            <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:isMobile?70:80,textAlign:"center"}}>WIN</span>
-            <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:isMobile?70:80,textAlign:"center"}}>PLACE</span>
-          </div>
+          {/* Desktop column headers */}
+          {!isMobile&&(
+            <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"0 12px",marginBottom:4}}>
+              <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:80,textAlign:"center"}}>WIN</span>
+              <span className="sy" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,width:80,textAlign:"center"}}>PLACE</span>
+            </div>
+          )}
 
           {race.horses.map((h,idx)=>{
             const scr=h.scratched;
             const posLabels=horsePositions(h.number);
             const isSel=posLabels.length>0;
             const isBoxedSel = boxed&&(sel[0]||[]).includes(h.number);
-            const isWinSel = (betType==="win"||betType==="place")&&(sel[0]||[]).includes(h.number);
-            const highlighted = isSel||isBoxedSel||isWinSel;
+            const highlighted = isSel||isBoxedSel;
+            const winActive=(betType==="win"||betType==="eachway")&&winSel===h.number;
+            const placeActive=(betType==="place"||betType==="eachway")&&placeSel===h.number;
 
             return (
               <div key={h.number} style={{
-                marginBottom:8,
-                borderRadius:12,
-                border:`2px solid ${highlighted?C.accent:scr?"#e5e7eb":C.border}`,
-                background:highlighted?"rgba(30,92,30,.06)":scr?"#f9f9f9":"#fff",
-                overflow:"hidden",
-                opacity:scr?0.55:1,
-                transition:"all .15s",
+                marginBottom:isMobile?4:8,
+                borderRadius:isMobile?8:12,
+                border:`${isMobile?"1.5px":"2px"} solid ${(winActive||placeActive||highlighted)?C.accent:scr?"#e5e7eb":C.border}`,
+                background:(winActive||placeActive||highlighted)?"rgba(30,92,30,.06)":scr?"#f9f9f9":"#fff",
+                overflow:"hidden",opacity:scr?0.55:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Horse number / silk */}
-                  <div style={{width:44,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"14px 0",borderRight:`1px solid ${C.border}`}}>
-                    {h.silkUrl ? (
-                      <img src={h.silkUrl} alt={`${h.name} silk`}
-                        style={{width:32,height:32,objectFit:"contain",borderRadius:4}}
-                        onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}
-                      />
-                    ) : null}
-                    <div style={{width:28,height:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>
-                      {h.number}
-                    </div>
+                  {/* Silk / number */}
+                  <div style={{width:isMobile?34:44,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"8px 0":"14px 0",borderRight:`1px solid ${C.border}`}}>
+                    {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:isMobile?22:32,height:isMobile?22:32,objectFit:"contain",borderRadius:3}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>:null}
+                    <div style={{width:isMobile?20:28,height:isMobile?20:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?9:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
                   </div>
 
                   {/* Horse info */}
-                  <div style={{flex:1,padding:"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
-                    onClick={()=>{
-                      if(scr) return;
-                      if(betType==="win"||betType==="place") toggleHorse(0,h.number);
-                      if(canShowBoxed&&boxed) toggleHorse(0,h.number);
-                    }}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
-                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?15:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name} <span style={{fontWeight:500,color:C.muted,fontSize:isMobile?13:14}}>({h.barrier||h.number})</span></span>
-                      {!scr&&h.number===fav?.number&&<span style={{fontSize:10,padding:"1px 7px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
-                      {scr&&<span style={{fontSize:11,padding:"2px 8px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
-                      {posLabels.map(pl=>(
-                        <span key={pl} style={{fontSize:10,padding:"1px 7px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>
-                      ))}
+                  <div style={{flex:1,padding:isMobile?"6px 8px":"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
+                    onClick={()=>{if(scr)return;if(betType==="win"||betType==="place")toggleHorse(0,h.number);if(canShowBoxed&&boxed)toggleHorse(0,h.number);}}>
+                    <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap",marginBottom:1}}>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name} <span style={{fontWeight:400,color:C.muted,fontSize:isMobile?11:14}}>({h.barrier||h.number})</span></span>
+                      {!scr&&h.number===fav?.number&&<span style={{fontSize:8,padding:"1px 5px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
+                      {scr&&<span style={{fontSize:9,padding:"1px 5px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
+                      {posLabels.map(pl=>(<span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
                     </div>
-                    <div className="sy" style={{fontSize:11,color:C.soft}}>
-                      <strong style={{color:C.text}}>J</strong> {h.jockey.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text}}>T</strong> {h.trainer.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
+                    <div className="sy" style={{fontSize:isMobile?9:11,color:C.soft,lineHeight:1.3}}>
+                      <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
                     </div>
-                    {/* Form dots */}
                     {h.form&&h.form.length>0&&(
-                      <div style={{display:"flex",gap:3,marginTop:5}}>
-                        {h.form.map((f,fi)=>(
-                          <span key={fi} style={{width:18,height:18,borderRadius:4,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:"#fff"}}>{f}</span>
-                        ))}
+                      <div style={{display:"flex",gap:2,marginTop:isMobile?2:4}}>
+                        {h.form.map((f,fi)=>(<span key={fi} style={{width:isMobile?12:16,height:isMobile?12:16,borderRadius:2,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?7:9,fontWeight:800,color:"#fff"}}>{f}</span>))}
+                      </div>
+                    )}
+                    {/* Mobile: position pills for exotics inline */}
+                    {isMobile&&!scr&&canShowBoxed&&!boxed&&(
+                      <div style={{display:"flex",gap:3,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
+                        {def.positions.map((pos,pi)=>{const isThis=(sel[pi]||[]).includes(h.number);return(<button key={pi} className="sy" style={{fontSize:10,padding:"2px 7px",borderRadius:5,border:`1.5px solid ${isThis?"#1e5c1e":"#d1d5db"}`,background:isThis?C.accent:"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>{pos.label}</button>);})}
+                        <span className="sy" style={{fontSize:9,color:C.accent,fontWeight:600}}>${h.winOdds.toFixed(2)}W</span>
+                        <span className="sy" style={{fontSize:9,color:C.soft}}>${h.placeOdds.toFixed(2)}P</span>
+                      </div>
+                    )}
+                    {isMobile&&!scr&&canShowBoxed&&boxed&&(
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                        <button className="sy" style={{fontSize:10,padding:"2px 8px",borderRadius:5,border:`1.5px solid ${(sel[0]||[]).includes(h.number)?"#1e5c1e":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?C.accent:"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>{(sel[0]||[]).includes(h.number)?"✓":"Select"}</button>
+                        <span className="sy" style={{fontSize:9,color:C.accent}}>${h.winOdds.toFixed(2)}W · ${h.placeOdds.toFixed(2)}P</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Right side buttons — position pills for exotics, Win/Place for simple bets */}
-                  {!scr&&canShowBoxed&&!boxed ? (
-                    /* TAB-style 1st/2nd/3rd/4th position pills with prices */
+                  {/* Right side buttons — desktop only for position pills, Win/Place for all */}
+                  {!scr&&canShowBoxed&&!boxed&&!isMobile ? (
                     <div style={{display:"flex",flexDirection:"column",gap:5,padding:"12px 10px",flexShrink:0,alignItems:"flex-start"}}>
                       <div style={{display:"flex",gap:5}}>
-                        {def.positions.map((pos,pi)=>{
-                          const isThis=(sel[pi]||[]).includes(h.number);
-                          return(
-                            <button key={pi} className="sy" style={{
-                              minWidth:44,padding:"8px 8px 6px",borderRadius:8,
-                              border:`2px solid ${isThis?"#1e5c1e":"#d1d5db"}`,
-                              background:isThis?C.accent:"#fff",
-                              color:isThis?"#fff":"#374151",
-                              cursor:"pointer",fontWeight:700,fontSize:13,
-                              textAlign:"center",transition:"all .13s",
-                              fontFamily:"inherit",
-                            }}
-                              onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
-                              {pos.label}
-                            </button>
-                          );
-                        })}
+                        {def.positions.map((pos,pi)=>{const isThis=(sel[pi]||[]).includes(h.number);return(<button key={pi} className="sy" style={{minWidth:44,padding:"8px 8px 6px",borderRadius:8,border:`2px solid ${isThis?"#1e5c1e":"#d1d5db"}`,background:isThis?C.accent:"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:13,textAlign:"center",transition:"all .13s",fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>{pos.label}</button>);})}
                       </div>
                       <div style={{display:"flex",gap:10,paddingLeft:2}}>
                         <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:700}}>${h.winOdds.toFixed(2)} W</span>
                         <span className="sy" style={{fontSize:11,color:"#6b7280",fontWeight:600}}>${h.placeOdds.toFixed(2)} P</span>
                       </div>
                     </div>
-                  ) : !scr&&canShowBoxed&&boxed ? (
-                    /* Boxed — single "Select" toggle with prices */
+                  ) : !scr&&canShowBoxed&&boxed&&!isMobile ? (
                     <div style={{display:"flex",flexDirection:"column",gap:5,padding:"12px 10px",flexShrink:0,alignItems:"center"}}>
-                      <button className="sy" style={{
-                        minWidth:72,padding:"10px 8px",borderRadius:8,
-                        border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1e5c1e":"#d1d5db"}`,
-                        background:(sel[0]||[]).includes(h.number)?C.accent:"#fff",
-                        color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",
-                        cursor:"pointer",fontWeight:700,fontSize:13,
-                        textAlign:"center",transition:"all .13s",
-                        fontFamily:"inherit",
-                      }}
-                        onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
-                        {(sel[0]||[]).includes(h.number)?"✓ In":"Select"}
-                      </button>
+                      <button className="sy" style={{minWidth:72,padding:"10px 8px",borderRadius:8,border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1e5c1e":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?C.accent:"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:13,textAlign:"center",transition:"all .13s",fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>{(sel[0]||[]).includes(h.number)?"✓ In":"Select"}</button>
                       <div style={{display:"flex",gap:8}}>
                         <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:700}}>${h.winOdds.toFixed(2)} W</span>
                         <span className="sy" style={{fontSize:11,color:"#6b7280",fontWeight:600}}>${h.placeOdds.toFixed(2)} P</span>
                       </div>
                     </div>
-                  ) : !scr ? (
                     /* Win/Place buttons for Win, Place, Each Way */
-                    <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
+                    <div style={{display:"flex",gap:isMobile?4:6,padding:isMobile?"8px 6px":"12px 10px",flexShrink:0}}>
                       {/* WIN */}
                       <button className="sy" style={{
-                        width:isMobile?68:78, padding:"10px 0", borderRadius:8,
-                        border:`2px solid ${winSel===h.number?"#1e5c1e":"rgba(30,92,30,.25)"}`,
+                        width:isMobile?56:78, padding:isMobile?"7px 0":"10px 0", borderRadius:isMobile?6:8,
+                        border:`${isMobile?"1.5px":"2px"} solid ${winSel===h.number?"#1e5c1e":"rgba(30,92,30,.25)"}`,
                         background:winSel===h.number?C.accent:C.accentGlow,
                         color:winSel===h.number?"#fff":C.accent,
                         cursor:"pointer", textAlign:"center", transition:"all .13s",
@@ -1682,19 +1652,18 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         e.stopPropagation();
                         const next = winSel===h.number ? null : h.number;
                         setWinSel(next);
-                        // Sync bet type
                         if(next && placeSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
                         else if(next) { setBetType("win"); setSel({0:[h.number]}); }
                         else if(placeSel===h.number) { setBetType("place"); setSel({0:[h.number]}); }
                         else { setBetType("win"); setSel({}); }
                       }}>
-                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
-                        <div style={{fontSize:9,fontWeight:700,marginTop:1,opacity:.85}}>WIN</div>
+                        <div style={{fontSize:isMobile?13:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
+                        <div style={{fontSize:isMobile?8:9,fontWeight:700,marginTop:1,opacity:.85}}>WIN</div>
                       </button>
                       {/* PLACE */}
                       <button className="sy" style={{
-                        width:isMobile?68:78, padding:"10px 0", borderRadius:8,
-                        border:`2px solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,
+                        width:isMobile?56:78, padding:isMobile?"7px 0":"10px 0", borderRadius:isMobile?6:8,
+                        border:`${isMobile?"1.5px":"2px"} solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,
                         background:placeSel===h.number?"#2563eb":"#f8f9fb",
                         color:placeSel===h.number?"#fff":"#6b7280",
                         cursor:"pointer", textAlign:"center", transition:"all .13s",
@@ -1703,14 +1672,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         e.stopPropagation();
                         const next = placeSel===h.number ? null : h.number;
                         setPlaceSel(next);
-                        // Sync bet type
                         if(next && winSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
                         else if(next) { setBetType("place"); setSel({0:[h.number]}); }
                         else if(winSel===h.number) { setBetType("win"); setSel({0:[h.number]}); }
                         else { setBetType("place"); setSel({}); }
                       }}>
-                        <div style={{fontSize:isMobile?15:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
-                        <div style={{fontSize:9,fontWeight:700,marginTop:1,opacity:.85}}>PLACE</div>
+                        <div style={{fontSize:isMobile?13:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
+                        <div style={{fontSize:isMobile?8:9,fontWeight:700,marginTop:1,opacity:.85}}>PLACE</div>
                       </button>
                     </div>
                   ) : null}
@@ -1730,22 +1698,47 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           })}
         </div>
 
-        {/* Bet panel */}
-        <div style={{position:isMobile?"static":"sticky",top:70}}>
-          <div className="card">
-            <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
-
-            {/* Bet type selector */}
-            <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
-            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
-              {BET_TYPES.map(t=>(
-                <button key={t.id} onClick={()=>changeType(t.id)} className="sy"
-                  style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}>
-                  <span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span>
-                  <span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span>
+        {/* Bet panel — sticky right on desktop, slide-up overlay on mobile */}
+        {isMobile ? (
+          /* Mobile: fixed slide-up only when horse selected */
+          (winSel||placeSel||(sel[0]||[]).length>0) ? (
+            <div style={{position:"fixed",bottom:70,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"16px 16px 0 0",boxShadow:"0 -4px 24px rgba(0,0,0,.15)",padding:"14px 14px 16px",maxHeight:"50vh",overflowY:"auto"}}>
+              <div style={{width:36,height:3,borderRadius:2,background:C.border,margin:"0 auto 12px"}}/>
+              {/* Bet type tabs in panel */}
+              <div style={{display:"flex",gap:0,overflowX:"auto",borderBottom:`1px solid ${C.border}`,marginBottom:12,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+                {["win","place","eachway","quinella","exacta","trifecta","firstfour"].map(id=>{const t=BET_TYPES.find(x=>x.id===id);if(!t)return null;return(<button key={id} className="sy" style={{flexShrink:0,padding:"6px 12px",fontSize:11,fontWeight:betType===id?700:500,background:"transparent",border:"none",cursor:"pointer",color:betType===id?C.accent:C.soft,borderBottom:`2px solid ${betType===id?C.accent:"transparent"}`,marginBottom:-1,whiteSpace:"nowrap"}} onClick={()=>changeType(id)}>{t.label}</button>);})}
+              </div>
+              {/* Selected horse summary */}
+              {(()=>{const selHorseNum=winSel||placeSel||(sel[0]||[])[0];const selHorse=race.horses.find(x=>x.number===selHorseNum);return selHorse?(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"7px 10px",background:C.accentGlow,borderRadius:8}}><div style={{width:18,height:18,borderRadius:"50%",background:silkCol(selHorse.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:"#fff"}}>{selHorse.number}</div><span className="sy" style={{fontSize:12,fontWeight:700,flex:1}}>{selHorse.name} ({selHorse.barrier||selHorse.number})</span><span className="sy" style={{fontSize:11,color:C.accent,fontWeight:700}}>{betType==="eachway"?"EW":betType==="win"?"Win":"Place"}</span></div>):null;})()}
+              {/* Stake input */}
+              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10}}>
+                <div style={{position:"relative",flex:1}}>
+                  <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:14,fontWeight:600}}>$</span>
+                  <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="Stake" value={stakeStr} onChange={e=>setStakeStr(e.target.value)} style={{paddingLeft:24,fontSize:15,padding:"10px 10px 10px 24px",width:"100%"}}/>
+                </div>
+                <div style={{display:"flex",gap:4}}>
+                  {[5,10,24].map(v=>(<button key={v} className="sy" style={{padding:"8px 10px",borderRadius:6,border:`1px solid ${C.border}`,background:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={()=>setStakeStr(String(v))}>+${v}</button>))}
+                </div>
+              </div>
+              {betType==="eachway"&&stake>0&&<div className="sy" style={{fontSize:11,color:C.accent,marginBottom:8}}>EW = {fmt(stake)} Win + {fmt(stake)} Place = <strong>{fmt(totalCost)}</strong> total</div>}
+              {totalCost>raceBalance&&<p className="sy" style={{fontSize:11,color:C.red,marginBottom:8}}>⚠ Exceeds budget ({fmt(raceBalance)} left)</p>}
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn btn-gold" disabled={!isReady()} onClick={handleAdd} style={{flex:1,padding:"11px",fontSize:13}}>
+                  {!isReady()?(stake<=0?"Enter stake":combos===0?"Select a horse":"Over budget"):`Add to Betslip — ${fmt(totalCost)}`}
                 </button>
-              ))}
+                <button className="sy" style={{padding:"11px 14px",borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",fontSize:13,cursor:"pointer",color:C.soft}} onClick={()=>{setSel({});setWinSel(null);setPlaceSel(null);}}>✕</button>
+              </div>
             </div>
+          ) : null
+        ) : (
+          /* Desktop: sticky right column with full bet panel */
+          <div style={{position:"sticky",top:70}}>
+            <div className="card">
+              <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
+              <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
+                {BET_TYPES.map(t=>(<button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}><span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span><span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span></button>))}
+              </div>
 
             {/* Boxed toggle for trifecta/firstfour */}
             {canShowBoxed&&(
@@ -1940,13 +1933,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               </>
             )}
           </div>
+          </div>
         </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── BETSLIP MODAL ────────────────────────────────────────────────────────────
+// ─── BETSLIP MODAL
 function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfirm,onClose}) {
   const total=pendingBets.reduce((s,b)=>s+b.stake,0);
 
