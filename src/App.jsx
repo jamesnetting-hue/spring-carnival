@@ -1638,6 +1638,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         <span className="sy" style={{fontSize:11,color:"#6b7280",fontWeight:600}}>${h.placeOdds.toFixed(2)} P</span>
                       </div>
                     </div>
+                  ) : !scr ? (
                     /* Win/Place buttons for Win, Place, Each Way */
                     <div style={{display:"flex",gap:isMobile?4:6,padding:isMobile?"8px 6px":"12px 10px",flexShrink:0}}>
                       {/* WIN */}
