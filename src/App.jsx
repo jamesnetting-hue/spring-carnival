@@ -1229,7 +1229,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       <div style={{flex:1}}>
                         <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
                           <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.grade}</span>
-                          {race.venue&&<span className="badge sy" style={{background:"#f4f5f7",color:C.text,border:`1px solid ${C.border}`,fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.venue}</span>}
+                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.venue}</span>}
                           <span className="badge sy" style={{background:"#f0f0f0",color:C.text,border:`1px solid ${C.border}`,fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.raceNum}</span>
                           <span className="badge sy" style={{
                             background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,
@@ -1240,7 +1240,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         </div>
                         <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:3}}>{race.name}</h3>
                         <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
-                        {fav&&<p className="sy" style={{fontSize:13,marginTop:3,color:C.text}}>FAV: <strong>{fav.name}</strong> <span style={{color:C.accent,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
+                        {fav&&<p className="sy" style={{fontSize:14,marginTop:4,color:C.text,fontWeight:600}}>⭐ <strong>{fav.name}</strong> <span style={{color:C.gold,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
                         {race.raceTime&&race.status==="upcoming"&&(
                           <div style={{marginTop:4}}>
                             <p className="sy" style={{fontSize:13,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
@@ -1326,9 +1326,12 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                           {rb.map(b=>{
                             const def=BET_TYPES.find(t=>t.id===b.type);
                             const hasScratched = b.won===null && b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched);
+                            const horseName = race.horses.find(h=>h.number===b.horses[0])?.name||"";
+                            const horseDisplay = b.horses.length===1 ? horseName : b.horses.map(n=>race.horses.find(h=>h.number===n)?.name||`#${n}`).join(" / ");
+                            const pot = b.won===null&&b.potential ? ` · pot. ${fmt(b.potential)}` : "";
                             return (
-                              <div key={b.id} className="sy" style={{fontSize:11,padding:"4px 10px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
-                                {hasScratched?"⚠️ ":b.won===true?"✓ ":""}{def?.label} · {fmt(b.stake)}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
+                              <div key={b.id} className="sy" style={{fontSize:12,padding:"5px 12px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
+                                {hasScratched?"⚠️ ":b.won===true?"✓ ":""}<strong>{def?.label}</strong> · {horseDisplay} · {fmt(b.stake)}{pot}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
                               </div>
                             );
                           })}
@@ -1519,7 +1522,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           <div style={{display:"flex",gap:5,marginBottom:isMobile?4:6,flexWrap:"wrap"}}>
             <span className="badge sy" style={{background:C.accentGlow,color:C.accentL,border:"1px solid rgba(26,86,160,.2)"}}>{race.grade}</span>
             <span className="badge sy" style={{background:C.blueBg,color:C.blue,border:`1px solid ${C.blueBd}`}}>{race.raceNum}</span>
-            {fav&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`}}>FAV: {fav.name} ${fav.winOdds?.toFixed(1)}</span>}
+            {fav&&<span className="badge sy" style={{background:"#fffbeb",color:C.gold,border:`1.5px solid ${C.gold}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>⭐ FAV: {fav.name} ${fav.winOdds?.toFixed(1)}</span>}
           </div>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
@@ -1602,7 +1605,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     onClick={()=>{if(scr)return;if(betType==="win"||betType==="place")toggleHorse(0,h.number);if(canShowBoxed&&boxed)toggleHorse(0,h.number);}}>
                     <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap",marginBottom:1}}>
                       <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name} <span style={{fontWeight:400,color:C.muted,fontSize:isMobile?11:14}}>({h.barrier||h.number})</span></span>
-                      {!scr&&h.number===fav?.number&&<span style={{fontSize:8,padding:"1px 5px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
+                      {!scr&&h.number===fav?.number&&<span style={{fontSize:11,padding:"2px 8px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:9,padding:"1px 5px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
                       {posLabels.map(pl=>(<span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
                     </div>
