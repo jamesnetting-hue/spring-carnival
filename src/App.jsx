@@ -1230,7 +1230,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
                           <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.grade}</span>
                           {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.venue}</span>}
-                          <span className="badge sy" style={{background:"#f0f0f0",color:C.text,border:`1px solid ${C.border}`,fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.raceNum}</span>
+                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.raceNum}</span>
                           <span className="badge sy" style={{
                             background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,
                             color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,
@@ -1326,12 +1326,12 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                           {rb.map(b=>{
                             const def=BET_TYPES.find(t=>t.id===b.type);
                             const hasScratched = b.won===null && b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched);
-                            const horseName = race.horses.find(h=>h.number===b.horses[0])?.name||"";
-                            const horseDisplay = b.horses.length===1 ? horseName : b.horses.map(n=>race.horses.find(h=>h.number===n)?.name||`#${n}`).join(" / ");
-                            const pot = b.won===null&&b.potential ? ` · pot. ${fmt(b.potential)}` : "";
+                            const horseDisplay = b.horses.length===1
+                              ? `#${b.horses[0]} ${race.horses.find(h=>h.number===b.horses[0])?.name||""}`
+                              : b.horses.map(n=>`#${n}`).join("-");
                             return (
                               <div key={b.id} className="sy" style={{fontSize:12,padding:"5px 12px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
-                                {hasScratched?"⚠️ ":b.won===true?"✓ ":""}<strong>{def?.label}</strong> · {horseDisplay} · {fmt(b.stake)}{pot}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
+                                {hasScratched?"⚠️ ":b.won===true?"✓ ":""}<strong>{def?.label}</strong> · {horseDisplay} · {fmt(b.stake)}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
                               </div>
                             );
                           })}
@@ -1498,7 +1498,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     <div className="sr">
       {/* Compact header */}
       <div style={{marginBottom:isMobile?8:16}}>
-        <button className="btn btn-ghost sy" style={{marginBottom:8,fontSize:10,padding:"4px 0"}} onClick={onBack}>← Back</button>
+        <button className="btn btn-ghost sy" style={{marginBottom:10,fontSize:13,padding:"8px 14px",fontWeight:600}} onClick={onBack}>← Back</button>
 
         {/* Countdown */}
         {race.status==="upcoming"&&race.raceTime&&race.date&&countdown&&!countdown.expired&&(()=>{
