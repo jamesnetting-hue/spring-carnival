@@ -1226,90 +1226,66 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     )}
 
                     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:isMobile?5:8}}>
-                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700}}>{race.grade}</span>
-                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:600}}>{race.venue}</span>}
-                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700}}>{race.raceNum}</span>
-                          <span className="badge sy" style={{
-                            background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,
-                            color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,
-                            border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`,
-                            fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700
-                          }}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        {/* Badges — single compact row on mobile */}
+                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:isMobile?4:8}}>
+                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.grade}</span>
+                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:600}}>{race.venue}</span>}
+                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.raceNum}</span>
+                          <span className="badge sy" style={{background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`,fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
                         </div>
-                        <h3 className="cg" style={{fontSize:isMobile?16:22,fontWeight:700,marginBottom:2,lineHeight:1.2}}>{race.name}</h3>
-                        <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
-                        {fav&&<p className="sy" style={{fontSize:isMobile?12:14,marginTop:3,color:C.text,fontWeight:600}}>⭐ <strong>{fav.name}</strong> <span style={{color:C.gold,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
+
+                        {/* Race name */}
+                        <h3 className="cg" style={{fontSize:isMobile?14:22,fontWeight:700,marginBottom:1,lineHeight:1.2}}>{race.name}</h3>
+
+                        {/* One-liner info row */}
+                        <p className="sy" style={{fontSize:isMobile?10:13,color:C.soft,marginBottom:isMobile?2:4}}>{race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}{fav?` · ⭐ ${fav.name} $${fav.winOdds.toFixed(1)}`:""}</p>
+
+                        {/* Countdown + odds as of — compact */}
                         {race.raceTime&&race.status==="upcoming"&&(
-                          <div style={{marginTop:3}}>
-                            <p className="sy" style={{fontSize:isMobile?11:13,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
+                          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                             <RaceCountdown date={race.date} time={race.raceTime}/>
+                            {race.oddsAsOf&&<span className="sy" style={{fontSize:isMobile?9:11,color:C.soft}}>· Odds: {race.oddsAsOf}</span>}
                           </div>
                         )}
-                        {race.oddsAsOf&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:isMobile?11:12,marginTop:3,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
-                        )}
-                        {race.status==="closed"&&(
-                          <p className="sy" style={{fontSize:13,marginTop:4,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
-                        )}
-                        {/* Who's backing what */}
+
+                        {/* Who's backing what — compact chips on one line */}
                         {(race.status==="closed"||race.status==="finished")&&(()=>{
                           const raceBets=bets.filter(b=>b.raceId===race.id&&(b.type==="win"||b.type==="eachway"));
                           if(!raceBets.length) return null;
                           const counts={};
-                          raceBets.forEach(b=>{
-                            const n=b.horses[0];
-                            const h=race.horses.find(x=>x.number===n);
-                            if(h&&!h.scratched) counts[h.name]=(counts[h.name]||0)+1;
-                          });
-                          const sorted=Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,5);
+                          raceBets.forEach(b=>{const n=b.horses[0];const h=race.horses.find(x=>x.number===n);if(h&&!h.scratched)counts[h.name]=(counts[h.name]||0)+1;});
+                          const sorted=Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,4);
                           if(!sorted.length) return null;
                           return(
-                            <div style={{marginTop:10,padding:"12px 14px",background:"rgba(30,92,30,.07)",border:`2px solid ${C.green}`,borderRadius:10}}>
-                              <p className="sy" style={{fontSize:12,fontWeight:800,color:C.green,marginBottom:8}}>🏇 Who's backing what</p>
-                              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                                {sorted.map(([name,count],idx)=>(
-                                  <span key={name} className="sy" style={{
-                                    fontSize:13,padding:"5px 12px",borderRadius:20,fontWeight:700,
-                                    background:idx===0?C.green:"#fff",
-                                    color:idx===0?"#fff":C.green,
-                                    border:`2px solid ${C.green}`,
-                                  }}>
-                                    {count}× {name}
-                                  </span>
-                                ))}
-                              </div>
+                            <div style={{marginTop:isMobile?4:8,display:"flex",flexWrap:"wrap",alignItems:"center",gap:4}}>
+                              <span className="sy" style={{fontSize:isMobile?9:11,color:C.green,fontWeight:700}}>🏇</span>
+                              {sorted.map(([name,count],idx)=>(
+                                <span key={name} className="sy" style={{fontSize:isMobile?9:11,padding:isMobile?"2px 6px":"3px 9px",borderRadius:20,fontWeight:700,background:idx===0?C.green:"rgba(30,92,30,.08)",color:idx===0?"#fff":C.green,border:`1px solid ${C.green}`}}>
+                                  {count}× {name}
+                                </span>
+                              ))}
                             </div>
                           );
                         })()}
                       </div>
 
                       {/* Right side — bet status */}
-                      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+                      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
                         {race.status==="upcoming"&&account&&(
                           raceBal===0?(
-                            // All $24 spent — green tick
-                            <button className="sy" style={{background:C.greenBg,border:`2px solid ${C.green}`,color:C.green,borderRadius:10,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:14,display:"flex",alignItems:"center",gap:6}}
-                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                              ✅ Bets In
-                            </button>
+                            <button className="sy" style={{background:C.greenBg,border:`2px solid ${C.green}`,color:C.green,borderRadius:10,padding:isMobile?"8px 10px":"10px 16px",cursor:"pointer",fontWeight:700,fontSize:isMobile?12:14,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>✅ {isMobile?"Done":"Bets In"}</button>
                           ):raceBal>0&&rb.length>0?(
-                            // Some bets but not all spent — amber
-                            <button className="sy" style={{background:"rgba(184,134,11,.1)",border:`2px solid ${C.gold}`,color:C.gold,borderRadius:10,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:14}}
-                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                              ⚡ {fmt(raceBal)} left
-                            </button>
+                            <button className="sy" style={{background:"rgba(184,134,11,.1)",border:`2px solid ${C.gold}`,color:C.gold,borderRadius:10,padding:isMobile?"8px 10px":"10px 16px",cursor:"pointer",fontWeight:700,fontSize:isMobile?12:14,whiteSpace:"nowrap"}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>⚡ {fmt(raceBal)}</button>
                           ):(
-                            // No bets at all — red urgent
-                            <button className="sy" style={{background:C.red,border:`2px solid ${C.red}`,color:"#fff",borderRadius:10,padding:"12px 20px",cursor:"pointer",fontWeight:900,fontSize:15,animation:"pulse 1.5s infinite",boxShadow:"0 4px 14px rgba(185,28,28,.4)",letterSpacing:".02em"}}
-                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                              🚨 Bet Now!
-                            </button>
+                            <button className="sy" style={{background:C.red,border:`2px solid ${C.red}`,color:"#fff",borderRadius:10,padding:isMobile?"10px 12px":"12px 20px",cursor:"pointer",fontWeight:900,fontSize:isMobile?13:15,animation:"pulse 1.5s infinite",boxShadow:"0 4px 14px rgba(185,28,28,.4)",whiteSpace:"nowrap"}}
+                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>🚨 Bet Now!</button>
                           )
                         )}
                         {race.status==="finished"&&race.result&&(
-                          <div className="sy" style={{fontSize:11,textAlign:"right"}}>
+                          <div className="sy" style={{fontSize:isMobile?9:11,textAlign:"right",lineHeight:1.4}}>
                             {["first","second","third","fourth"].map((k,i)=>{
                               const h=race.horses.find(x=>x.number===race.result[k]);
                               return h?<div key={k} style={{color:i===0?C.accentL:C.soft}}>{["1st","2nd","3rd","4th"][i]}: #{h.number} {h.name}</div>:null;
@@ -1330,7 +1306,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                               ? `#${b.horses[0]} ${race.horses.find(h=>h.number===b.horses[0])?.name||""}`
                               : b.horses.map(n=>`#${n}`).join("-");
                             return (
-                              <div key={b.id} className="sy" style={{fontSize:12,padding:"5px 12px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
+                              <div key={b.id} className="sy" style={{fontSize:isMobile?10:12,padding:isMobile?"3px 9px":"5px 12px",borderRadius:20,background:hasScratched?"#fff3cd":b.won===true?C.greenBg:b.won===false?C.redBg:"#f4f5f4",border:`1px solid ${hasScratched?"#ffc107":b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,color:hasScratched?"#856404":b.won===true?C.green:b.won===false?C.red:C.text,fontWeight:600}}>
                                 {hasScratched?"⚠️ ":b.won===true?"✓ ":""}<strong>{def?.label}</strong> · {horseDisplay} · {fmt(b.stake)}{b.won===true?` → +${fmt(b.payout)}`:b.won===false?" · Lost":""}
                               </div>
                             );
