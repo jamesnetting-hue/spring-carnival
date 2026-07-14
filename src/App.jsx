@@ -905,7 +905,7 @@ export default function App() {
           </header>
 
           {/* ── MOBILE BOTTOM NAV ── */}
-          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"env(safe-area-inset-bottom, 8px)"}}>
+          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 12px), 12px)"}}>
             {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
@@ -922,7 +922,7 @@ export default function App() {
 
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
-      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`18px ${window.innerWidth<641?"12px":"20px"} 100px`}}>
+      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`18px ${window.innerWidth<641?"12px":"20px"} 120px`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
@@ -1225,30 +1225,30 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       </div>
                     )}
 
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
                       <div style={{flex:1}}>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
-                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.grade}</span>
-                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:13,padding:"5px 12px",fontWeight:600}}>{race.venue}</span>}
-                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:13,padding:"5px 12px",fontWeight:700}}>{race.raceNum}</span>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:isMobile?5:8}}>
+                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700}}>{race.grade}</span>
+                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:600}}>{race.venue}</span>}
+                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700}}>{race.raceNum}</span>
                           <span className="badge sy" style={{
                             background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,
                             color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,
                             border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`,
-                            fontSize:13,padding:"5px 12px",fontWeight:700
+                            fontSize:isMobile?10:13,padding:isMobile?"3px 8px":"5px 12px",fontWeight:700
                           }}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
                         </div>
-                        <h3 className="cg" style={{fontSize:22,fontWeight:700,marginBottom:3}}>{race.name}</h3>
-                        <p className="sy" style={{fontSize:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
-                        {fav&&<p className="sy" style={{fontSize:14,marginTop:4,color:C.text,fontWeight:600}}>⭐ <strong>{fav.name}</strong> <span style={{color:C.gold,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
+                        <h3 className="cg" style={{fontSize:isMobile?16:22,fontWeight:700,marginBottom:2,lineHeight:1.2}}>{race.name}</h3>
+                        <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft}}>{race.venue} · {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}</p>
+                        {fav&&<p className="sy" style={{fontSize:isMobile?12:14,marginTop:3,color:C.text,fontWeight:600}}>⭐ <strong>{fav.name}</strong> <span style={{color:C.gold,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></p>}
                         {race.raceTime&&race.status==="upcoming"&&(
-                          <div style={{marginTop:4}}>
-                            <p className="sy" style={{fontSize:13,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
+                          <div style={{marginTop:3}}>
+                            <p className="sy" style={{fontSize:isMobile?11:13,color:C.accent,fontWeight:700}}>🕐 Closes at {race.raceTime} AEST</p>
                             <RaceCountdown date={race.date} time={race.raceTime}/>
                           </div>
                         )}
                         {race.oddsAsOf&&race.status==="upcoming"&&(
-                          <p className="sy" style={{fontSize:12,marginTop:4,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
+                          <p className="sy" style={{fontSize:isMobile?11:12,marginTop:3,color:C.soft}}>Odds as of: {race.oddsAsOf}</p>
                         )}
                         {race.status==="closed"&&(
                           <p className="sy" style={{fontSize:13,marginTop:4,color:C.red,fontWeight:700}}>🔒 Betting closed — awaiting result</p>
@@ -1713,14 +1713,74 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           })}
         </div>
 
-        {/* Bet panel — below field on mobile, sticky right on desktop */}
-        <div style={{position:isMobile?"static":"sticky",top:70}}>
-          <div className="card">
-            <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
-            <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
-            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
-              {BET_TYPES.map(t=>(<button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}><span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span><span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span></button>))}
+        {/* Mobile slide-up bet panel — appears when horse selected */}
+        {isMobile&&(winSel||placeSel||(sel[0]||[]).length>0)&&(
+          <>
+            {/* Dim overlay */}
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.3)",zIndex:899}} onClick={()=>{setSel({});setWinSel(null);setPlaceSel(null);}}/>
+            {/* Panel */}
+            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"20px 20px 0 0",boxShadow:"0 -8px 40px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,16px)"}}>
+              {/* Drag handle */}
+              <div style={{width:40,height:4,borderRadius:2,background:"#e5e7eb",margin:"12px auto 0"}}/>
+              {/* Bet type tabs */}
+              <div style={{display:"flex",overflowX:"auto",borderBottom:`1px solid ${C.border}`,padding:"0 16px",WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+                {BET_TYPES.map(t=>(
+                  <button key={t.id} className="sy" style={{flexShrink:0,padding:"10px 14px",fontSize:13,fontWeight:betType===t.id?700:500,background:"transparent",border:"none",cursor:"pointer",color:betType===t.id?C.accent:C.soft,borderBottom:`2.5px solid ${betType===t.id?C.accent:"transparent"}`,marginBottom:-1,whiteSpace:"nowrap"}}
+                    onClick={()=>changeType(t.id)}>{t.label}</button>
+                ))}
+              </div>
+              <div style={{padding:"14px 16px 4px"}}>
+                {/* Selected horse */}
+                {(()=>{
+                  const selNum=winSel||placeSel||(sel[0]||[])[0];
+                  const selH=race.horses.find(x=>x.number===selNum);
+                  return selH?(
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 12px",background:C.accentGlow,borderRadius:10}}>
+                      {selH.silkUrl
+                        ?<img src={selH.silkUrl} alt="" style={{width:36,height:36,objectFit:"contain",borderRadius:4,flexShrink:0}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
+                        :null}
+                      <div style={{width:36,height:36,borderRadius:"50%",background:silkCol(selH.number),display:selH.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff",flexShrink:0}}>{selH.number}</div>
+                      <div style={{flex:1}}>
+                        <div className="cg" style={{fontSize:15,fontWeight:700}}>{selH.name} <span style={{color:C.muted,fontWeight:400,fontSize:13}}>({selH.barrier||selH.number})</span></div>
+                        <div className="sy" style={{fontSize:12,color:C.soft,marginTop:1}}>{betType==="win"?`Win $${selH.winOdds.toFixed(2)}`:betType==="place"?`Place $${selH.placeOdds.toFixed(2)}`:betType==="eachway"?`EW $${selH.winOdds.toFixed(2)}W / $${selH.placeOdds.toFixed(2)}P`:BET_TYPES.find(t=>t.id===betType)?.label}</div>
+                      </div>
+                      <div className="cg" style={{fontSize:22,fontWeight:800,color:C.accent}}>{fmt(raceBalance)}<span style={{fontSize:11,color:C.soft,fontWeight:400}}> left</span></div>
+                    </div>
+                  ):null;
+                })()}
+                {/* Stake input */}
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10}}>
+                  <div style={{position:"relative",flex:1}}>
+                    <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.muted,fontSize:16,fontWeight:600}}>$</span>
+                    <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="Stake" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
+                      style={{paddingLeft:28,fontSize:16,padding:"12px 12px 12px 28px",width:"100%",borderRadius:10}}/>
+                  </div>
+                  <div style={{display:"flex",gap:6}}>
+                    {[5,10,24].map(v=>(<button key={v} className="sy" style={{padding:"10px 12px",borderRadius:8,border:`1.5px solid ${C.border}`,background:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>setStakeStr(String(v))}>+${v}</button>))}
+                  </div>
+                </div>
+                {betType==="eachway"&&stake>0&&<div className="sy" style={{fontSize:12,color:C.accent,marginBottom:8}}>EW = {fmt(stake)} Win + {fmt(stake)} Place = <strong>{fmt(totalCost)}</strong> total</div>}
+                {totalCost>raceBalance&&stake>0&&<p className="sy" style={{fontSize:12,color:C.red,marginBottom:8}}>⚠ Exceeds your remaining budget of {fmt(raceBalance)}</p>}
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <button className="btn btn-gold" disabled={!isReady()} onClick={()=>{handleAdd();}} style={{flex:1,padding:"14px",fontSize:15,fontWeight:700,borderRadius:12}}>
+                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Add to Betslip — ${fmt(totalCost)}`}
+                  </button>
+                  <button className="sy" style={{padding:"14px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,background:"#fff",fontSize:16,cursor:"pointer",color:C.soft,fontWeight:700}} onClick={()=>{setSel({});setWinSel(null);setPlaceSel(null);}}>✕</button>
+                </div>
+              </div>
             </div>
+          </>
+        )}
+
+        {/* Desktop: sticky right bet panel */}
+        {!isMobile&&(
+          <div style={{position:"sticky",top:70}}>
+            <div className="card">
+              <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
+              <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
+                {BET_TYPES.map(t=>(<button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}><span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span><span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span></button>))}
+              </div>
 
             {/* Boxed toggle for trifecta/firstfour */}
             {canShowBoxed&&(
@@ -1916,6 +1976,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
