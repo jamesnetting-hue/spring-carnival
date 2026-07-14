@@ -1935,7 +1935,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             )}
           </div>
           </div>
-        </div>
         )}
       </div>
     </div>
