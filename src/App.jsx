@@ -1770,8 +1770,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           {/* Odds disclaimer */}
           {race.oddsAsOf&&race.status==="upcoming"&&(
             <div style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(184,134,11,.06)",border:"1px solid rgba(184,134,11,.2)",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:12}}>📊</span>
-              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds — final odds will be updated closer to jump time and may change</span>
+              <span style={{fontSize:12}}>ℹ️</span>
+              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds — actual dividends are confirmed once the race is settled</span>
             </div>
           )}
           <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(184,134,11,.06)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:"rgba(184,134,11,.3)"}`}}>
@@ -1819,25 +1819,23 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
             return (
               <div key={h.number} style={{
-                marginBottom:isMobile?4:8,
+                marginBottom:isMobile?3:8,
                 borderRadius:isMobile?8:12,
                 border:`${isMobile?"1.5px":"2px"} solid ${(winActive||placeActive||highlighted)?C.accent:scr?"#e5e7eb":C.border}`,
-                background:(winActive||placeActive||highlighted)?"rgba(30,92,30,.06)":scr?"#f9f9f9":"#fff",
-                overflow:"hidden",opacity:scr?0.55:1,transition:"all .15s",
+                background:(winActive||placeActive||highlighted)?"rgba(30,92,30,.05)":scr?"#f9f9f9":"#fff",
+                overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Number + Silk column — TAB style */}
-                  <div style={{flexShrink:0,display:"flex",alignItems:"center",borderRight:`1px solid ${C.border}`,background:scr?"#f9f9f9":"#1a1a2e",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",overflow:"hidden"}}>
-                    {/* Runner number */}
-                    <div style={{width:isMobile?26:34,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"10px 0":"14px 0",flexShrink:0}}>
-                      <span style={{fontSize:isMobile?11:13,fontWeight:800,color:scr?"#9ca3af":"#fff"}}>{h.number}</span>
+                  {/* Number + Silk — compact TAB style */}
+                  <div style={{flexShrink:0,display:"flex",alignItems:"stretch",borderRight:`1px solid ${C.border}`,overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px"}}>
+                    <div style={{width:isMobile?28:34,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a1a2e",padding:"0 4px"}}>
+                      <span style={{fontSize:isMobile?12:14,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
-                    {/* Silk */}
-                    <div style={{width:isMobile?34:44,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"8px 4px":"12px 6px",background:"#fff",borderLeft:"1px solid #e5e7eb"}}>
+                    <div style={{width:isMobile?38:46,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"6px 4px":"8px 6px",background:"#fff"}}>
                       {h.silkUrl
-                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?22:30,height:isMobile?22:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
+                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?26:34,height:isMobile?26:34,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
                         :null}
-                      <div style={{width:isMobile?22:28,height:isMobile?22:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?9:11,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                      <div style={{width:isMobile?24:30,height:isMobile?24:30,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?10:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
                     </div>
                   </div>
 
