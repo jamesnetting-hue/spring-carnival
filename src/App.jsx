@@ -438,6 +438,46 @@ export default function App() {
     })();
   }, []);
 
+  const manualRefresh = async () => {
+    showToast("Refreshing…");
+    try {
+      const [accs, dbBets, dbRaces] = await Promise.all([
+        sb.select("accounts", "order=created_at.asc"),
+        sb.select("bets", "order=placed_at.asc"),
+        sb.select("races"),
+      ]);
+      if (Array.isArray(accs) && accs.length > 0) {
+        setAccounts(accs.map(a => ({
+          id: a.id, name: a.name, email: a.email, pin: a.pin,
+          totalWon: parseFloat(a.total_won || 0),
+          totalStaked: parseFloat(a.total_staked || 0),
+        })));
+      }
+      if (Array.isArray(dbBets)) {
+        setBets(dbBets.map(b => ({
+          id: b.id, playerId: b.player_id, raceId: b.race_id,
+          type: b.type,
+          horses: Array.isArray(b.horses) ? b.horses : (typeof b.horses === "string" ? JSON.parse(b.horses) : []),
+          stake: parseFloat(b.stake || 0),
+          potential: parseFloat(b.potential || 0),
+          won: b.won, payout: b.payout ? parseFloat(b.payout) : null,
+          placedAt: b.placed_at,
+        })));
+      }
+      if (Array.isArray(dbRaces) && dbRaces.length > 0) {
+        setRaces(dbRaces.map(r => ({
+          id: r.id, name: r.name, venue: r.venue, date: r.date,
+          raceTime: r.race_time, distance: r.distance,
+          raceNum: r.race_num, grade: r.grade || "Group 1",
+          oddsAsOf: r.odds_as_of,
+          horses: Array.isArray(r.horses) ? r.horses : (typeof r.horses === "string" ? JSON.parse(r.horses) : []),
+          status: r.status, result: r.result,
+        })));
+      }
+      showToast("✓ Up to date");
+    } catch(e) { showToast("Refresh failed — check connection", "err"); }
+  };
+
   const showToast = (msg, type="ok") => {
     setToast({msg,type});
     setTimeout(()=>setToast(null),3500);
@@ -516,9 +556,8 @@ export default function App() {
         if (r.status !== "upcoming") return r;
         if (!r.raceTime || !r.date) return r;
         const raceDateTime = new Date(`${r.date}T${r.raceTime}:00`);
-        // Guard: invalid date or more than 24h in the past = don't auto-close (stale data)
         if (isNaN(raceDateTime.getTime())) return r;
-        if (now - raceDateTime > 24 * 60 * 60 * 1000) return r; // more than 24h ago, skip
+        if (now - raceDateTime > 24 * 60 * 60 * 1000) return r;
         if (now >= raceDateTime) {
           sb.update("races", r.id, { status: "closed" });
           return { ...r, status: "closed" };
@@ -526,6 +565,49 @@ export default function App() {
         return r;
       }));
     }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Poll Supabase every 30s — keeps all clients in sync and catches failed saves
+  useEffect(() => {
+    const refresh = async () => {
+      try {
+        const [accs, dbBets, dbRaces] = await Promise.all([
+          sb.select("accounts", "order=created_at.asc"),
+          sb.select("bets", "order=placed_at.asc"),
+          sb.select("races"),
+        ]);
+        if (Array.isArray(accs) && accs.length > 0) {
+          setAccounts(accs.map(a => ({
+            id: a.id, name: a.name, email: a.email, pin: a.pin,
+            totalWon: parseFloat(a.total_won || 0),
+            totalStaked: parseFloat(a.total_staked || 0),
+          })));
+        }
+        if (Array.isArray(dbBets) && dbBets.length > 0) {
+          setBets(dbBets.map(b => ({
+            id: b.id, playerId: b.player_id, raceId: b.race_id,
+            type: b.type,
+            horses: Array.isArray(b.horses) ? b.horses : (typeof b.horses === "string" ? JSON.parse(b.horses) : []),
+            stake: parseFloat(b.stake || 0),
+            potential: parseFloat(b.potential || 0),
+            won: b.won, payout: b.payout ? parseFloat(b.payout) : null,
+            placedAt: b.placed_at,
+          })));
+        }
+        if (Array.isArray(dbRaces) && dbRaces.length > 0) {
+          setRaces(dbRaces.map(r => ({
+            id: r.id, name: r.name, venue: r.venue, date: r.date,
+            raceTime: r.race_time, distance: r.distance,
+            raceNum: r.race_num, grade: r.grade || "Group 1",
+            oddsAsOf: r.odds_as_of,
+            horses: Array.isArray(r.horses) ? r.horses : (typeof r.horses === "string" ? JSON.parse(r.horses) : []),
+            status: r.status, result: r.result,
+          })));
+        }
+      } catch(e) { console.warn("Refresh poll failed", e); }
+    };
+    const interval = setInterval(refresh, 30000);
     return () => clearInterval(interval);
   }, []);
   const queueBet = (raceId, type, horses, stake) => {
@@ -950,6 +1032,7 @@ export default function App() {
               {liveAccount&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span className="sy mobile-hide" style={{fontSize:13,color:"rgba(255,255,255,.85)"}}>Hi, <strong style={{color:"#fff"}}>{liveAccount.name}</strong></span>
+                  <button className="sy" style={{fontSize:12,padding:"6px 10px",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:8,color:"rgba(255,255,255,.85)",cursor:"pointer",fontWeight:600}} onClick={manualRefresh}>↻</button>
                   <button className="sy" style={{fontSize:12,padding:"6px 10px",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:8,color:"rgba(255,255,255,.85)",cursor:"pointer",fontWeight:600}} onClick={doLogout}>Log out</button>
                 </div>
               )}
