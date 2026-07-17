@@ -145,15 +145,15 @@ const BET_TYPES = [
     multiplier:(horses,om) => om[horses[0]]?.placeOdds || 0,
   },
   {
-    id:"eachway", label:"Each Way", desc:"Win + Place on the same horse",
+    id:"eachway", label:"Each Way", desc:"Win + Place — costs 2× your stake",
     positions:[{label:"Horse",key:"horse"}],
     check:(horses,res) => horses[0]===res.first || [res.first,res.second,res.third].includes(horses[0]),
     multiplier:(horses,om) => (om[horses[0]]?.winOdds||0) + (om[horses[0]]?.placeOdds||0),
     eachway: true,
   },
   {
-    id:"quinella", label:"Quinella", desc:"Pick 1st & 2nd in any order",
-    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
+    id:"quinella", label:"Quinella", desc:"Pick 2 horses to finish 1st & 2nd — any order",
+    positions:[{label:"Horse A",key:"p1"},{label:"Horse B",key:"p2"}],
     check:(horses,res) => {
       const top2=[res.first,res.second];
       return horses.length===2 && top2.includes(horses[0]) && top2.includes(horses[1]);
@@ -169,11 +169,11 @@ const BET_TYPES = [
     check:(horses,res) => horses[0]===res.first && horses[1]===res.second,
     multiplier:(horses,om) => {
       const o = n => om[n]?.winOdds||1;
-      return parseFloat((o(horses[0])*o(horses[1])/2).toFixed(2));
+      return parseFloat((o(horses[0])*o(horses[1])).toFixed(2));
     },
   },
   {
-    id:"trifecta", label:"Trifecta", desc:"Pick 1st, 2nd & 3rd in order",
+    id:"trifecta", label:"Trifecta", desc:"Pick 1st, 2nd & 3rd in exact order",
     positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"},{label:"3rd",key:"p3"}],
     check:(horses,res) => horses[0]===res.first && horses[1]===res.second && horses[2]===res.third,
     multiplier:(horses,om) => {
@@ -182,7 +182,7 @@ const BET_TYPES = [
     },
   },
   {
-    id:"firstfour", label:"First Four", desc:"Pick 1st, 2nd, 3rd & 4th in order",
+    id:"firstfour", label:"First Four", desc:"Pick 1st, 2nd, 3rd & 4th in exact order",
     positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"},{label:"3rd",key:"p3"},{label:"4th",key:"p4"}],
     check:(horses,res) => horses[0]===res.first && horses[1]===res.second && horses[2]===res.third && horses[3]===res.fourth,
     multiplier:(horses,om) => {
@@ -1382,7 +1382,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
   const changeType=id=>{setBetType(id);setSel({});setWinSel(null);setPlaceSel(null);};
 
-  // sel is always {posIdx: [horse numbers]} — supports multiple per position
+  // Sync winSel/placeSel → sel so combo counting works for win/place/eachway
+  const effectiveSelNum = winSel||placeSel;
+  const effectiveSel = (betType==="win"||betType==="place"||betType==="eachway")&&effectiveSelNum
+    ? {0:[effectiveSelNum]}
+    : sel;
   const toggleHorse=(posIdx,num)=>{
     if(race.horses.find(h=>h.number===num)?.scratched) return;
     setSel(prev=>{
@@ -1403,16 +1407,16 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
   // Build combinations
   const getUnboxedCombos=()=>{
-    if(betType==="win"||betType==="place"){
-      return (sel[0]||[]).map(n=>[n]);
+    if(betType==="win"||betType==="place"||betType==="eachway"){
+      return (effectiveSel[0]||[]).map(n=>[n]);
     }
-    const posArrays=def.positions.map((_,i)=>sel[i]||[]);
+    const posArrays=def.positions.map((_,i)=>effectiveSel[i]||[]);
     if(posArrays.some(a=>a.length===0)) return [];
     return cartesian(posArrays);
   };
 
   const getBoxedCombos=()=>{
-    const allSel=[...new Set(Object.values(sel).flat())];
+    const allSel=[...new Set(Object.values(effectiveSel).flat())];
     if(allSel.length<numPositions) return [];
     // Quinella boxed = unordered pairs (combinations, not permutations)
     if(betType==="quinella"){
@@ -1427,7 +1431,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     return perms(allSel,numPositions);
   };
 
-  const allCombos = boxed&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella") ? getBoxedCombos() : getUnboxedCombos();
+  const allCombos = boxed&&canShowBoxed ? getBoxedCombos() : getUnboxedCombos();
   const combos = allCombos.length;
   const unitStake = combos > 0 ? parseFloat((stake / combos).toFixed(4)) : stake;
 
@@ -1464,8 +1468,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
   // Which positions each horse is selected for
   const horsePositions=(num)=>{
-    if(boxed) return (sel[0]||[]).includes(num)?["Selected"]:[];
-    return def.positions.map((p,i)=>(sel[i]||[]).includes(num)?p.label:null).filter(Boolean);
+    if(boxed) return (effectiveSel[0]||[]).includes(num)?["Selected"]:[];
+    return def.positions.map((p,i)=>(effectiveSel[i]||[]).includes(num)?p.label:null).filter(Boolean);
   };
 
   const canShowBoxed=betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella";
@@ -1776,17 +1780,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             {/* Selection summary */}
             <div className="divider"/>
             <div style={{marginBottom:12,minHeight:36}}>
-              {betType==="win"||betType==="place"?(
-                (sel[0]||[]).length===0
-                  ? <p className="sy" style={{fontSize:12,color:C.soft}}>
-                      {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&boxed
-                        ? "← Tap any horse to include in your boxed selection"
-                        : (betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")
-                        ? "← Use the position buttons on each horse to assign 1st, 2nd, 3rd..."
-                        : "← Tap a horse from the field to select"}
-                    </p>
+              {(betType==="win"||betType==="place"||betType==="eachway")?(
+                (sel[0]||[]).length===0 && !winSel && !placeSel
+                  ? <p className="sy" style={{fontSize:12,color:C.soft}}>← Tap WIN or PLACE on a horse to select</p>
                   : <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                      {(sel[0]||[]).map(n=>{
+                      {[...new Set([...(sel[0]||[]),winSel,placeSel].filter(Boolean))].map(n=>{
                         const h=race.horses.find(x=>x.number===n);
                         return <span key={n} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",background:C.accentGlow,border:`1px solid rgba(26,86,160,.22)`,borderRadius:20}}>
                           {h?.silkUrl
@@ -1794,7 +1792,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             : <div style={{width:16,height:16,borderRadius:"50%",background:silkCol(n),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{n}</div>
                           }
                           <span className="sy" style={{fontSize:12,fontWeight:700,color:C.text}}>{h?.name}</span>
-                          <span className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>${h?.winOdds.toFixed(2)}</span>
+                          <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:700}}>${h?.winOdds?.toFixed(2)}W · ${h?.placeOdds?.toFixed(2)}P</span>
                         </span>;
                       })}
                     </div>
@@ -1803,21 +1801,22 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div>
                     <p className="sy soft" style={{fontSize:10,marginBottom:5}}>Selected ({(sel[0]||[]).length} of {numPositions}+ needed):</p>
                     <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                      {(sel[0]||[]).length===0?<span className="sy soft" style={{fontSize:11}}>None — use Select buttons on each horse</span>:
+                      {(sel[0]||[]).length===0?<span className="sy soft" style={{fontSize:11}}>← Tap Select on each horse to include</span>:
                         (sel[0]||[]).map(n=>{
                           const h=race.horses.find(x=>x.number===n);
                           return <span key={n} className="sy" style={{fontSize:10,padding:"3px 8px",background:C.accentGlow,border:"1px solid rgba(26,86,160,.2)",borderRadius:20,color:C.accent}}>#{n} {h?.name}</span>;
                         })}
                     </div>
+                    {(sel[0]||[]).length>=numPositions&&<p className="sy" style={{fontSize:10,color:C.green,marginTop:4}}>✓ {combos} combination{combos!==1?"s":""} — enter your stake below</p>}
                   </div>
                 ):(
                   <div>
-                    <p className="sy soft" style={{fontSize:10,marginBottom:6}}>Use the position buttons on each horse row. You can select <strong style={{color:C.text}}>multiple horses per position</strong> for more combinations.</p>
+                    <p className="sy soft" style={{fontSize:10,marginBottom:6}}>Use the position buttons on each horse. You can pick <strong style={{color:C.text}}>multiple horses per position</strong> for more combos.</p>
                     {def.positions.map((pos,pi)=>{
                       const posHorses=(sel[pi]||[]).map(n=>race.horses.find(h=>h.number===n)).filter(Boolean);
                       return(
                         <div key={pi} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,flexWrap:"wrap"}}>
-                          <span className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:C.accent,width:26,flexShrink:0}}>{pos.label}</span>
+                          <span className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:C.accent,width:32,flexShrink:0}}>{pos.label}</span>
                           {posHorses.length===0
                             ? <span className="sy soft" style={{fontSize:10}}>— not selected</span>
                             : posHorses.map(h=>(
@@ -1874,7 +1873,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                   </>
                 )}
-                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>1&&(
+                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>0&&(
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:C.accentGlow,borderRadius:5}}>
                     <span className="sy" style={{fontSize:12,fontWeight:700,color:C.accent}}>Flexi %</span>
                     <span className="sy" style={{fontSize:14,fontWeight:800,color:C.accent}}>{flexiPct}%</span>
@@ -1912,8 +1911,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   :totalCost>raceBalance?"Exceeds race budget"
                   :"Complete your selection")
                 : betType==="eachway"
-                  ? `Add Each Way — ${fmt(totalCost)} total (${fmt(stake)} Win + ${fmt(stake)} Place)`
-                  : `Add ${combos} bet${combos>1?"s":""} to Betslip →`}
+                  ? `Add Each Way — ${fmt(totalCost)} total`
+                  : combos>1
+                  ? `Add ${combos} bets · ${flexiPct}% flexi · ${fmt(stake)} total →`
+                  : `Add to Betslip — ${fmt(totalCost)} →`}
             </button>
 
             {/* Existing bets on this race */}
