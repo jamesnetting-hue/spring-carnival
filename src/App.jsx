@@ -360,7 +360,13 @@ export default function App() {
   const [showBetslip, setShowBetslip] = useState(false);
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [seasonMessage, setSeasonMessage] = useState({ enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" });
+  const [seasonMessage, setSeasonMessage] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sc_season_msg");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" };
+  });
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -385,9 +391,11 @@ export default function App() {
           sb.select("settings", "key=eq.season_message"),
         ]);
 
-        // Load season message
+        // Load season message — Supabase overrides localStorage
         if (Array.isArray(dbSettings) && dbSettings.length > 0 && dbSettings[0].value) {
-          setSeasonMessage(dbSettings[0].value);
+          const msg = dbSettings[0].value;
+          setSeasonMessage(msg);
+          localStorage.setItem("sc_season_msg", JSON.stringify(msg));
         }
 
         let loadedAccounts = [];
@@ -1075,11 +1083,10 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={async (next)=>{
+        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
           setSeasonMessage(next);
-          const result = await sb.upsert("settings", { key: "season_message", value: next });
-          if (!result) showToast("Failed to save message", "err");
-          else showToast("✓ Message saved");
+          localStorage.setItem("sc_season_msg", JSON.stringify(next));
+          sb.upsert("settings", { key: "season_message", value: next });
         }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
 
@@ -3844,16 +3851,9 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <div style={{marginTop:12}}>
               <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Message text</label>
               <textarea className="inp sy" rows={3}
-                defaultValue={seasonMessage?.text||""}
-                id="season-msg-textarea"
+                value={seasonMessage?.text||""}
+                onChange={e=>onSeasonMessage({...seasonMessage,text:e.target.value})}
                 style={{fontSize:13,resize:"none",width:"100%"}}/>
-              <button className="btn btn-gold sy" style={{marginTop:8,fontSize:13,padding:"8px 18px"}}
-                onClick={()=>{
-                  const text = document.getElementById("season-msg-textarea").value;
-                  onSeasonMessage({...seasonMessage,text});
-                }}>
-                💾 Save Message
-              </button>
               {seasonMessage?.enabled&&<p className="sy" style={{fontSize:11,marginTop:6,color:C.green}}>✓ Message is live on the Race Calendar.</p>}
             </div>
           </div>
