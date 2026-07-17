@@ -195,7 +195,16 @@ const BET_TYPES = [
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
-const formColor = f => f==="1"?"#16803a":f==="2"?"#ca8a04":f==="3"?"#dc2626":"#9ca3af";
+const formColor = f => {
+  const v = String(f).toLowerCase();
+  if(v==="1") return "#16803a";
+  if(v==="2") return "#ca8a04";
+  if(v==="3") return "#dc2626";
+  if(v==="x") return "#6b7280"; // scratched/fell
+  if(v==="f") return "#7c3aed"; // fell
+  if(v==="0") return "#ef4444"; // unplaced
+  return "#9ca3af";
+};
 
 // Get how much a player has already staked on a specific race
 function raceStaked(bets, playerId, raceId) {
@@ -851,7 +860,16 @@ export default function App() {
       if (race) sb.update("races", raceId, { horses: race.horses });
       return updated;
     });
-    showToast(`${horse.name} added`);
+  };
+
+  const addHorsesToRace = (raceId, newHorses) => {
+    setRaces(p => {
+      const updated = p.map(r => r.id!==raceId ? r : {...r, horses:[...r.horses, ...newHorses]});
+      const race = updated.find(r=>r.id===raceId);
+      if (race) sb.update("races", raceId, { horses: race.horses });
+      return updated;
+    });
+    showToast(`${newHorses.length} horses imported!`);
   };
 
   const editRace = (raceId, updates) => {
@@ -1083,7 +1101,7 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
+        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onAddHorses={addHorsesToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
           setSeasonMessage(next);
           localStorage.setItem("sc_season_msg", JSON.stringify(next));
           sb.upsert("settings", { key: "season_message", value: next });
@@ -1393,11 +1411,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                           {race.venue&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:500}}>{race.venue}</span>}
                           <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:500}}>{race.raceNum}</span>
                           <span className="badge sy" style={{
-                            background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:race.status==="upcoming"?"#f0f4ff":"#f4f5f7",
-                            color:race.status==="finished"?C.green:race.status==="closed"?C.red:race.status==="upcoming"?"#4a6cf7":C.soft,
-                            border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:race.status==="upcoming"?"#c7d4ff":C.border}`,
-                            fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:600
-                          }}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
+                            background:race.status==="finished"?C.greenBg:race.status==="closed"?"#fff0f0":race.status==="upcoming"?"#f0fff4":"#f4f5f7",
+                            color:race.status==="finished"?C.green:race.status==="closed"?C.red:race.status==="upcoming"?C.green:C.soft,
+                            border:`1.5px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:race.status==="upcoming"?C.greenBd:C.border}`,
+                            fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:700
+                          }}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"🟢 Bets Open":race.status==="finished"?"✓ Finished":race.status}</span>
                         </div>
 
                         {/* Race name */}
@@ -1731,36 +1749,29 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           );
         })()}
 
-        {/* Race title row */}
-        <div style={{marginBottom:isMobile?6:10}}>
-          <div style={{display:"flex",gap:5,marginBottom:isMobile?4:6,flexWrap:"wrap"}}>
-            <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
-            <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
-            {fav&&<span className="badge sy" style={{background:"#fffbeb",color:C.gold,border:`1.5px solid ${C.gold}`,fontSize:12,padding:"4px 10px",fontWeight:700}}>⭐ FAV: {fav.name} ${fav.winOdds?.toFixed(1)}</span>}
+        {/* Race header card */}
+        <div style={{marginBottom:isMobile?8:14,padding:isMobile?"12px 14px":"16px 20px",background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,boxShadow:"0 1px 6px rgba(0,0,0,.06)"}}>
+          <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
+            <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
+            <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
+            {fav&&<span className="badge sy" style={{background:"#fffbeb",color:"#92400e",border:"1.5px solid #fcd34d",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:600}}>⭐ {fav.name} <strong>${fav.winOdds?.toFixed(1)}</strong></span>}
+            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.08)",color:C.gold,border:"1px solid rgba(184,134,11,.25)",fontSize:isMobile?10:11,padding:"3px 9px",fontWeight:600}}>🕐 Odds: {race.oddsAsOf}</span>}
           </div>
-          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
-              <h2 className="cg" style={{fontSize:isMobile?22:28,fontWeight:700,lineHeight:1.2,marginBottom:2}}>{race.name}</h2>
-              <p className="sy" style={{fontSize:isMobile?12:13,color:C.soft}}>{race.venue} · {race.distance}{race.raceNum?` · ${race.raceNum}`:""}</p>
+              <h2 className="cg" style={{fontSize:isMobile?19:26,fontWeight:800,lineHeight:1.2,marginBottom:2}}>{race.name}</h2>
+              <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft}}>{race.venue} · {race.distance}</p>
             </div>
-            {race.oddsAsOf&&(
-              <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(184,134,11,0.12)",border:"1.5px solid rgba(184,134,11,0.4)",borderRadius:8,flexShrink:0}}>
-                <span style={{fontSize:14}}>🕐</span>
-                <div>
-                  <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".06em",color:C.gold,opacity:.7}}>Odds as of</div>
-                  <div className="sy" style={{fontSize:15,fontWeight:800,color:C.gold,whiteSpace:"nowrap"}}>{race.oddsAsOf}</div>
-                </div>
-              </div>
-            )}
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent,lineHeight:1}}>{fmt(raceBalance)}</div>
+              <div className="sy" style={{fontSize:10,color:C.muted}}>of $24 left</div>
+            </div>
           </div>
-        </div>
-
-        {/* Budget bar */}
-        <div style={{padding:isMobile?"8px 12px":"12px 16px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,0.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,0.07)":"rgba(30,92,30,0.06)",border:`2px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.accent}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-          <span className="sy" style={{fontSize:isMobile?12:14,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
-            {raceBalance===0?"✓ Full $24 spent!":raceBalance===STARTING_BALANCE?"⚠ No bets yet":`${fmt(raceBalance)} left to bet`}
-          </span>
-          <div className="cg" style={{fontSize:isMobile?14:20,fontWeight:800,color:raceBalance===0?C.green:C.accent,flexShrink:0}}>{fmt(raceBalance)}<span style={{fontSize:10,fontWeight:400,color:C.soft}}> / $24</span></div>
+          <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(184,134,11,.06)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:"rgba(184,134,11,.3)"}`}}>
+            <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.gold}}>
+              {raceBalance===0?"✅ Full $24 bet — you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet — you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1828,7 +1839,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     </div>
                     {h.form&&h.form.length>0&&(
                       <div style={{display:"flex",gap:2,marginTop:isMobile?2:4}}>
-                        {h.form.map((f,fi)=>(<span key={fi} style={{width:isMobile?12:16,height:isMobile?12:16,borderRadius:2,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?7:9,fontWeight:800,color:"#fff"}}>{f}</span>))}
+                        {h.form.slice(-5).map((f,fi)=>(<span key={fi} style={{width:isMobile?12:16,height:isMobile?12:16,borderRadius:2,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?7:9,fontWeight:800,color:"#fff"}}>{f.toUpperCase()}</span>))}
                       </div>
                     )}
                     {/* Mobile: position pills for exotics inline */}
@@ -3496,7 +3507,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 }
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
-function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace}) {
+function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [inputs, setInputs] = useState({});
@@ -3577,7 +3588,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         trainer = parts[2] || "TBA";
         winOdds = parseFloat(parts[3]);
         placeOdds = parseFloat(parts[4]);
-        if (parts[5]) form = parts[5].split(/[x\-,\s]+/).map(s=>s.trim()).filter(Boolean);
+        if (parts[5]) form = parts[5].trim().split("").filter(c=>/[0-9xXfF]/.test(c));
         if (parts[6]) weight = parts[6].trim();
         if (parts[7]) silkUrl = parts[7].trim();
       } else {
@@ -4195,7 +4206,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <>
                   <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>setBulkPreview([])}>← Edit</button>
                   <button className="btn btn-gold" style={{flex:1,padding:12,fontSize:13}} onClick={()=>{
-                    bulkPreview.forEach(horse => onAddHorse(bulkImportFor, horse));
+                    onAddHorses(bulkImportFor, bulkPreview);
                     setBulkImportFor(null);
                     setBulkText("");
                     setBulkPreview([]);
