@@ -1755,15 +1755,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
             <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
             {fav&&<span className="badge sy" style={{background:"#fffbeb",color:"#92400e",border:"1.5px solid #fcd34d",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:600}}>⭐ {fav.name} <strong>${fav.winOdds?.toFixed(1)}</strong></span>}
-            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.12)",color:C.gold,border:"2px solid rgba(184,134,11,.4)",fontSize:isMobile?12:13,padding:"5px 12px",fontWeight:700}}>🕐 Odds as of: {race.oddsAsOf}</span>}
+            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.12)",color:C.gold,border:"2px solid rgba(184,134,11,.4)",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>🕐 Odds: {race.oddsAsOf}</span>}
           </div>
-          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
-              <h2 className="cg" style={{fontSize:isMobile?19:26,fontWeight:800,lineHeight:1.2,marginBottom:2}}>{race.name}</h2>
-              <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft}}>{race.venue} · {race.distance}</p>
+              <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:800,lineHeight:1.2,marginBottom:2}}>{race.name}</h2>
+              <p className="sy" style={{fontSize:isMobile?12:13,color:C.soft}}>{race.venue} · {race.distance} · {race.horses.filter(h=>!h.scratched).length} runners</p>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent,lineHeight:1}}>{fmt(raceBalance)}</div>
+              <div className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent,lineHeight:1}}>{fmt(raceBalance)}</div>
               <div className="sy" style={{fontSize:10,color:C.muted}}>of $24 left</div>
             </div>
           </div>
@@ -1826,29 +1826,31 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Number + Silk — compact TAB style */}
-                  <div style={{flexShrink:0,display:"flex",alignItems:"stretch",borderRight:`1px solid ${C.border}`,overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px"}}>
-                    <div style={{width:isMobile?28:34,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a1a2e",padding:"0 4px"}}>
-                      <span style={{fontSize:isMobile?12:14,fontWeight:800,color:"#fff"}}>{h.number}</span>
+                  {/* Number + Silk — dark green TAB style */}
+                  <div style={{flexShrink:0,display:"flex",alignItems:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
+                    {/* Dark green number */}
+                    <div style={{width:isMobile?36:44,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#6b7280":"#1a3a1a"}}>
+                      <span style={{fontSize:isMobile?15:17,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"}}>{h.number}</span>
                     </div>
-                    <div style={{width:isMobile?38:46,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"6px 4px":"8px 6px",background:"#fff"}}>
+                    {/* Silk */}
+                    <div style={{width:isMobile?46:56,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"6px 6px":"8px 8px",background:"#fff"}}>
                       {h.silkUrl
-                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?26:34,height:isMobile?26:34,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
+                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?32:40,height:isMobile?32:40,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
                         :null}
-                      <div style={{width:isMobile?24:30,height:isMobile?24:30,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?10:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                      <div style={{width:isMobile?30:36,height:isMobile?30:36,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?12:14,fontWeight:800,color:"#fff"}}>{h.number}</div>
                     </div>
                   </div>
 
                   {/* Horse info */}
-                  <div style={{flex:1,padding:isMobile?"6px 8px":"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
+                  <div style={{flex:1,padding:isMobile?"8px 8px":"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
                     onClick={()=>{if(scr)return;if(betType==="win"||betType==="place")toggleHorse(0,h.number);if(canShowBoxed&&boxed)toggleHorse(0,h.number);}}>
-                    <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap",marginBottom:1}}>
-                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?11:14}}> ({h.barrier})</span>:""}</span>
-                      {!scr&&h.number===fav?.number&&<span style={{fontSize:11,padding:"2px 8px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
-                      {scr&&<span style={{fontSize:9,padding:"1px 5px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
-                      {posLabels.map(pl=>(<span key={pl} style={{fontSize:9,padding:"1px 5px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
+                    <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:2}}>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?14:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
+                      {!scr&&h.number===fav?.number&&<span style={{fontSize:10,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
+                      {scr&&<span style={{fontSize:10,padding:"1px 6px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
+                      {posLabels.map(pl=>(<span key={pl} style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
                     </div>
-                    <div className="sy" style={{fontSize:isMobile?9:11,color:C.soft,lineHeight:1.3}}>
+                    <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>
                       <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
                     </div>
                     {h.form&&h.form.length>0&&(
