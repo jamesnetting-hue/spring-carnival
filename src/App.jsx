@@ -593,6 +593,38 @@ export default function App() {
     setRaces(p=>p.map(r=>r.id===raceId?{...r,result:fullResult,status:"finished"}:r));
     sb.upsert("races", { id: raceId, status: "finished", result: fullResult });
 
+    // AUTO-BET: any player who hasn't placed a bet gets $24 Win on horse #1 (top weight)
+    const defaultHorse = race.horses.filter(h=>!h.scratched).sort((a,b)=>a.number-b.number)[0];
+    const existingPlayerIds = [...new Set(bets.filter(b=>b.raceId===raceId).map(b=>b.playerId))];
+    const missingPlayers = accounts.filter(a=>!existingPlayerIds.includes(a.id));
+    const autoBets = defaultHorse ? missingPlayers.map(a=>({
+      id: `auto_${raceId}_${a.id}`,
+      playerId: a.id,
+      raceId,
+      type: "win",
+      horses: [defaultHorse.number],
+      stake: 24,
+      potential: parseFloat((24 * (defaultHorse.winOdds||0)).toFixed(2)),
+      won: null,
+      payout: null,
+      placedAt: new Date().toISOString(),
+      isAutobet: true,
+    })) : [];
+
+    // Save auto-bets to Supabase and state
+    if (autoBets.length > 0) {
+      autoBets.forEach(b => sb.insert("bets", {
+        id: b.id, player_id: b.playerId, race_id: b.raceId,
+        type: b.type, horses: JSON.stringify(b.horses),
+        stake: b.stake, potential: b.potential,
+        won: null, payout: null, placed_at: b.placedAt,
+      }));
+      // Update totalStaked for auto-bet players
+      autoBets.forEach(b => updateAccount(b.playerId, a=>({
+        totalStaked: parseFloat((a.totalStaked + 24).toFixed(2)),
+      })));
+    }
+
     // Payout calculator using real dividends
     const calcDividendPayout = (bet) => {
       const { type, horses, stake } = bet;
@@ -617,7 +649,8 @@ export default function App() {
     };
 
     let wins=0, paid=0;
-    const settled = bets.map(b=>{
+    const allBetsForRace = [...bets, ...autoBets];
+    const settled = allBetsForRace.map(b=>{
       if (b.raceId!==raceId||b.won!==null) return b;
       const def = BET_TYPES.find(t=>t.id===b.type);
       const won = def.check(b.horses, result);
@@ -625,12 +658,18 @@ export default function App() {
       if (won){wins++;paid=parseFloat((paid+payout).toFixed(2));}
       return {...b,won,payout};
     });
-    setBets(settled);
+    // Merge: keep existing bets, add/update auto-bets
+    const settledMap = Object.fromEntries(settled.map(b=>[b.id,b]));
+    const mergedBets = [
+      ...bets.map(b=>settledMap[b.id]||b),
+      ...autoBets.map(b=>settledMap[b.id]||b).filter(b=>!bets.find(x=>x.id===b.id)),
+    ];
+    setBets(mergedBets);
     // Persist bet outcomes to Supabase
-    settled.filter(b=>b.raceId===raceId).forEach(b=>{
+    mergedBets.filter(b=>b.raceId===raceId).forEach(b=>{
       sb.update("bets", b.id, { won: b.won, payout: b.payout });
     });
-    settled.filter(b=>b.raceId===raceId&&b.won===true).forEach(b=>{
+    mergedBets.filter(b=>b.raceId===raceId&&b.won===true).forEach(b=>{
       updateAccount(b.playerId,a=>({
         totalWon:parseFloat((a.totalWon+b.payout).toFixed(2)),
       }));
@@ -3929,13 +3968,13 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                       {(()=>{
                         const raceBets = bets.filter(b=>b.raceId===race.id&&b.won===null);
                         const playersDone = [...new Set(raceBets.map(b=>b.playerId))];
-                        const allPlayers = accounts.length;
+                        const missingPlayers = accounts.filter(a=>!playersDone.includes(a.id));
                         const inp = getInp(race.id);
-                        const hasResult = inp.finishers?.filter(Boolean).length>=1;
                         const hasWinDiv = parseFloat(inp.divs?.win||0)>0;
                         const hasPlace1Div = parseFloat(inp.divs?.place1||0)>0;
+                        const defaultHorse = race.horses.filter(h=>!h.scratched).sort((a,b)=>a.number-b.number)[0];
                         const checks = [
-                          {label:`All players have bet (${playersDone.length}/${allPlayers})`, done:playersDone.length===allPlayers},
+                          {label:`${playersDone.length}/${accounts.length} players have bet`, done:playersDone.length===accounts.length},
                           {label:"1st place selected", done:!!inp.finishers?.[0]},
                           {label:"2nd place selected", done:!!inp.finishers?.[1]},
                           {label:"Win dividend entered", done:hasWinDiv},
@@ -3943,17 +3982,34 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                         ];
                         const allGood = checks.every(c=>c.done);
                         return(
-                          <div style={{marginBottom:12,padding:"10px 14px",borderRadius:8,background:allGood?"rgba(21,128,61,.05)":"rgba(184,134,11,.05)",border:`1px solid ${allGood?C.greenBd:"rgba(184,134,11,.3)"}`}}>
-                            <div className="sy" style={{fontSize:11,fontWeight:700,marginBottom:6,color:allGood?C.green:C.gold}}>
-                              {allGood?"✅ Ready to settle":"📋 Pre-settlement checklist"}
+                          <div style={{marginBottom:12}}>
+                            <div style={{padding:"10px 14px",borderRadius:8,background:allGood?"rgba(21,128,61,.05)":"rgba(184,134,11,.05)",border:`1px solid ${allGood?C.greenBd:"rgba(184,134,11,.3)"}`,marginBottom:missingPlayers.length>0?8:0}}>
+                              <div className="sy" style={{fontSize:11,fontWeight:700,marginBottom:6,color:allGood?C.green:C.gold}}>
+                                {allGood?"✅ Ready to settle":"📋 Pre-settlement checklist"}
+                              </div>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                {checks.map(c=>(
+                                  <span key={c.label} className="sy" style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:c.done?C.greenBg:C.redBg,color:c.done?C.green:C.red,border:`1px solid ${c.done?C.greenBd:C.redBd}`,fontWeight:600}}>
+                                    {c.done?"✓":"✗"} {c.label}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
-                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                              {checks.map(c=>(
-                                <span key={c.label} className="sy" style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:c.done?C.greenBg:C.redBg,color:c.done?C.green:C.red,border:`1px solid ${c.done?C.greenBd:C.redBd}`,fontWeight:600}}>
-                                  {c.done?"✓":"✗"} {c.label}
-                                </span>
-                              ))}
-                            </div>
+                            {missingPlayers.length>0&&defaultHorse&&(
+                              <div style={{padding:"10px 14px",borderRadius:8,background:"rgba(184,134,11,.08)",border:"1px solid rgba(184,134,11,.4)"}}>
+                                <div className="sy" style={{fontSize:11,fontWeight:700,color:C.gold,marginBottom:4}}>
+                                  🤖 Auto-bet will be applied to {missingPlayers.length} player{missingPlayers.length>1?"s":""}:
+                                </div>
+                                <div className="sy" style={{fontSize:11,color:C.text,marginBottom:4}}>
+                                  <strong>$24 Win on #{defaultHorse.number} {defaultHorse.name}</strong> (horse #1 by runner number)
+                                </div>
+                                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                  {missingPlayers.map(a=>(
+                                    <span key={a.id} className="sy" style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(184,134,11,.15)",color:C.gold,border:"1px solid rgba(184,134,11,.3)",fontWeight:600}}>{a.name}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
