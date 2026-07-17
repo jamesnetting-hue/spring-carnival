@@ -1075,10 +1075,11 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={val=>{
-          const next = typeof val === "function" ? val(seasonMessage) : val;
+        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={async (next)=>{
           setSeasonMessage(next);
-          sb.upsert("settings", { key: "season_message", value: next });
+          const result = await sb.upsert("settings", { key: "season_message", value: next });
+          if (!result) showToast("Failed to save message", "err");
+          else showToast("✓ Message saved");
         }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
 
@@ -3833,20 +3834,28 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
               <div style={{flex:1,minWidth:0}}>
                 <p className="sy" style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:2}}>📢 Calendar Message</p>
-                <p className="sy soft" style={{fontSize:12}}>Show a message to players when no races are listed. Toggle on to activate.</p>
+                <p className="sy soft" style={{fontSize:12}}>Show a message to players when no races are listed.</p>
               </div>
-              <button onClick={()=>onSeasonMessage(p=>({...p,enabled:!p.enabled}))}
+              <button onClick={()=>onSeasonMessage({...seasonMessage,enabled:!seasonMessage?.enabled})}
                 style={{flexShrink:0,width:52,height:28,borderRadius:14,border:"none",background:seasonMessage?.enabled?C.accent:C.border,cursor:"pointer",position:"relative",transition:"background .2s"}}>
                 <div style={{position:"absolute",top:3,left:seasonMessage?.enabled?26:3,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
               </button>
             </div>
-            {seasonMessage?.enabled&&(
-              <div style={{marginTop:12}}>
-                <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Message shown to players</label>
-                <textarea className="inp sy" rows={2} value={seasonMessage?.text||""} onChange={e=>onSeasonMessage(p=>({...p,text:e.target.value}))} style={{fontSize:13,resize:"none"}}/>
-                <p className="sy soft" style={{fontSize:11,marginTop:4}}>✓ This message is showing on the Race Calendar right now.</p>
-              </div>
-            )}
+            <div style={{marginTop:12}}>
+              <label className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Message text</label>
+              <textarea className="inp sy" rows={3}
+                defaultValue={seasonMessage?.text||""}
+                id="season-msg-textarea"
+                style={{fontSize:13,resize:"none",width:"100%"}}/>
+              <button className="btn btn-gold sy" style={{marginTop:8,fontSize:13,padding:"8px 18px"}}
+                onClick={()=>{
+                  const text = document.getElementById("season-msg-textarea").value;
+                  onSeasonMessage({...seasonMessage,text});
+                }}>
+                💾 Save Message
+              </button>
+              {seasonMessage?.enabled&&<p className="sy" style={{fontSize:11,marginTop:6,color:C.green}}>✓ Message is live on the Race Calendar.</p>}
+            </div>
           </div>
 
           {races.length===0&&(
