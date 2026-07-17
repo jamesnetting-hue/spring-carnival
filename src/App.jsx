@@ -1388,11 +1388,16 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
                       <div style={{flex:1,minWidth:0}}>
                         {/* Badges — single compact row on mobile */}
-                        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:isMobile?4:8}}>
-                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.grade}</span>
-                          {race.venue&&<span className="badge sy" style={{background:"rgba(109,40,217,.1)",color:"#6d28d9",border:"1px solid rgba(109,40,217,.3)",fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:600}}>{race.venue}</span>}
-                          <span className="badge sy" style={{background:"rgba(234,88,12,.1)",color:"#ea580c",border:"1px solid rgba(234,88,12,.3)",fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.raceNum}</span>
-                          <span className="badge sy" style={{background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:C.blueBg,color:race.status==="finished"?C.green:race.status==="closed"?C.red:C.blue,border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:C.blueBd}`,fontSize:isMobile?9:13,padding:isMobile?"2px 6px":"5px 12px",fontWeight:700}}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:isMobile?4:8}}>
+                          <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:700}}>{race.grade}</span>
+                          {race.venue&&<span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:500}}>{race.venue}</span>}
+                          <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:500}}>{race.raceNum}</span>
+                          <span className="badge sy" style={{
+                            background:race.status==="finished"?C.greenBg:race.status==="closed"?C.redBg:race.status==="upcoming"?"#f0f4ff":"#f4f5f7",
+                            color:race.status==="finished"?C.green:race.status==="closed"?C.red:race.status==="upcoming"?"#4a6cf7":C.soft,
+                            border:`1px solid ${race.status==="finished"?C.greenBd:race.status==="closed"?C.redBd:race.status==="upcoming"?"#c7d4ff":C.border}`,
+                            fontSize:isMobile?10:12,padding:isMobile?"3px 8px":"4px 10px",fontWeight:600
+                          }}>{race.status==="closed"?"🔒 Closed":race.status==="upcoming"?"Upcoming":race.status==="finished"?"Finished":race.status}</span>
                         </div>
 
                         {/* Race name */}
@@ -1729,9 +1734,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         {/* Race title row */}
         <div style={{marginBottom:isMobile?6:10}}>
           <div style={{display:"flex",gap:5,marginBottom:isMobile?4:6,flexWrap:"wrap"}}>
-            <span className="badge sy" style={{background:C.accentGlow,color:C.accentL,border:"1px solid rgba(26,86,160,.2)"}}>{race.grade}</span>
-            <span className="badge sy" style={{background:C.blueBg,color:C.blue,border:`1px solid ${C.blueBd}`}}>{race.raceNum}</span>
-            {fav&&<span className="badge sy" style={{background:"#fffbeb",color:C.gold,border:`1.5px solid ${C.gold}`,fontSize:13,padding:"5px 12px",fontWeight:700}}>⭐ FAV: {fav.name} ${fav.winOdds?.toFixed(1)}</span>}
+            <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
+            <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
+            {fav&&<span className="badge sy" style={{background:"#fffbeb",color:C.gold,border:`1.5px solid ${C.gold}`,fontSize:12,padding:"4px 10px",fontWeight:700}}>⭐ FAV: {fav.name} ${fav.winOdds?.toFixed(1)}</span>}
           </div>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
