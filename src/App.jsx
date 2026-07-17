@@ -1767,6 +1767,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               <div className="sy" style={{fontSize:10,color:C.muted}}>of $24 left</div>
             </div>
           </div>
+          {/* Odds disclaimer */}
+          {race.oddsAsOf&&race.status==="upcoming"&&(
+            <div style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(184,134,11,.06)",border:"1px solid rgba(184,134,11,.2)",display:"flex",alignItems:"center",gap:5}}>
+              <span style={{fontSize:12}}>📊</span>
+              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds — final odds will be updated closer to jump time and may change</span>
+            </div>
+          )}
           <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(184,134,11,.06)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:"rgba(184,134,11,.3)"}`}}>
             <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.gold}}>
               {raceBalance===0?"✅ Full $24 bet — you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet — you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
