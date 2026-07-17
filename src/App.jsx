@@ -1819,10 +1819,19 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 overflow:"hidden",opacity:scr?0.55:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Silk / number */}
-                  <div style={{width:isMobile?34:44,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"8px 0":"14px 0",borderRight:`1px solid ${C.border}`}}>
-                    {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:isMobile?22:32,height:isMobile?22:32,objectFit:"contain",borderRadius:3}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>:null}
-                    <div style={{width:isMobile?20:28,height:isMobile?20:28,borderRadius:"50%",background:scr?"#9ca3af":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?9:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                  {/* Number + Silk column — TAB style */}
+                  <div style={{flexShrink:0,display:"flex",alignItems:"center",borderRight:`1px solid ${C.border}`,background:scr?"#f9f9f9":"#1a1a2e",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",overflow:"hidden"}}>
+                    {/* Runner number */}
+                    <div style={{width:isMobile?26:34,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"10px 0":"14px 0",flexShrink:0}}>
+                      <span style={{fontSize:isMobile?11:13,fontWeight:800,color:scr?"#9ca3af":"#fff"}}>{h.number}</span>
+                    </div>
+                    {/* Silk */}
+                    <div style={{width:isMobile?34:44,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"8px 4px":"12px 6px",background:"#fff",borderLeft:"1px solid #e5e7eb"}}>
+                      {h.silkUrl
+                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?22:30,height:isMobile?22:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.nextSibling.style.display="flex";}}/>
+                        :null}
+                      <div style={{width:isMobile?22:28,height:isMobile?22:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?9:11,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                    </div>
                   </div>
 
                   {/* Horse info */}
