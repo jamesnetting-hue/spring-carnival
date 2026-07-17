@@ -360,7 +360,17 @@ export default function App() {
   const [showBetslip, setShowBetslip] = useState(false);
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [seasonMessage, setSeasonMessage] = useState({ enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" });
+  const [seasonMessage, setSeasonMessage] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sc_season_message");
+      return saved ? JSON.parse(saved) : { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" };
+    } catch { return { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" }; }
+  });
+
+  // Persist seasonMessage to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("sc_season_message", JSON.stringify(seasonMessage));
+  }, [seasonMessage]);
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
