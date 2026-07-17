@@ -360,17 +360,7 @@ export default function App() {
   const [showBetslip, setShowBetslip] = useState(false);
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [seasonMessage, setSeasonMessage] = useState(() => {
-    try {
-      const saved = localStorage.getItem("sc_season_message");
-      return saved ? JSON.parse(saved) : { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" };
-    } catch { return { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" }; }
-  });
-
-  // Persist seasonMessage to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("sc_season_message", JSON.stringify(seasonMessage));
-  }, [seasonMessage]);
+  const [seasonMessage, setSeasonMessage] = useState({ enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" });
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -388,11 +378,17 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const [accs, dbBets, dbRaces] = await Promise.all([
+        const [accs, dbBets, dbRaces, dbSettings] = await Promise.all([
           sb.select("accounts", "order=created_at.asc"),
           sb.select("bets", "order=placed_at.asc"),
           sb.select("races"),
+          sb.select("settings", "key=eq.season_message"),
         ]);
+
+        // Load season message
+        if (Array.isArray(dbSettings) && dbSettings.length > 0 && dbSettings[0].value) {
+          setSeasonMessage(dbSettings[0].value);
+        }
 
         let loadedAccounts = [];
         if (Array.isArray(accs)) {
@@ -1079,7 +1075,11 @@ export default function App() {
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={setSeasonMessage} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
+        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={val=>{
+          const next = typeof val === "function" ? val(seasonMessage) : val;
+          setSeasonMessage(next);
+          sb.upsert("settings", { key: "season_message", value: next });
+        }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
 
       {showBetslip&&(
