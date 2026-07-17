@@ -219,8 +219,8 @@ function RaceCountdown({date, time}) {
   if (!r || r.expired) return null;
   const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
   return (
-    <span className="sy" style={{fontSize:12,fontWeight:700,color:r.urgent?C.red:C.accent,background:r.urgent?C.redBg:C.accentGlow,padding:"2px 8px",borderRadius:20,border:`1px solid ${r.urgent?C.redBd:C.accent}`,display:"inline-block",marginTop:3}}>
-      {r.urgent?"⚡ ":""}{r.urgent?"Closes in ":""}{label}
+    <span className="sy" style={{fontSize:14,fontWeight:800,color:r.urgent?C.red:C.accent,background:r.urgent?C.redBg:C.accentGlow,padding:"4px 12px",borderRadius:20,border:`2px solid ${r.urgent?C.redBd:C.accent}`,display:"inline-flex",alignItems:"center",gap:4,marginTop:3,animation:r.urgent?"pulse 1s infinite":"none"}}>
+      {r.urgent?"⚡ Closes in ":"🕐 "}{label}
     </span>
   );
 }
@@ -1428,7 +1428,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {race.raceTime&&race.status==="upcoming"&&(
                           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                             <RaceCountdown date={race.date} time={race.raceTime}/>
-                            {race.oddsAsOf&&<span className="sy" style={{fontSize:isMobile?9:11,color:C.soft}}>· Odds: {race.oddsAsOf}</span>}
+                            {race.oddsAsOf&&<span className="sy" style={{fontSize:isMobile?11:13,fontWeight:700,color:C.gold}}>🕐 Odds: {race.oddsAsOf}</span>}
                           </div>
                         )}
 
@@ -1755,7 +1755,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
             <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
             {fav&&<span className="badge sy" style={{background:"#fffbeb",color:"#92400e",border:"1.5px solid #fcd34d",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:600}}>⭐ {fav.name} <strong>${fav.winOdds?.toFixed(1)}</strong></span>}
-            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.08)",color:C.gold,border:"1px solid rgba(184,134,11,.25)",fontSize:isMobile?10:11,padding:"3px 9px",fontWeight:600}}>🕐 Odds: {race.oddsAsOf}</span>}
+            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.12)",color:C.gold,border:"2px solid rgba(184,134,11,.4)",fontSize:isMobile?12:13,padding:"5px 12px",fontWeight:700}}>🕐 Odds as of: {race.oddsAsOf}</span>}
           </div>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
