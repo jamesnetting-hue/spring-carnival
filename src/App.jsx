@@ -1924,17 +1924,27 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           </button>
                         </div>
                       ) : canShowBoxed&&!boxed ? (
-                        /* Mobile exotic unboxed — position buttons on card like TAB */
-                        <div style={{display:"flex",flexDirection:"column",gap:3,padding:"8px 8px",flexShrink:0,justifyContent:"center"}}>
-                          {def.positions.map((pos,pi)=>{
-                            const isThis=(sel[pi]||[]).includes(h.number);
-                            return(
-                              <button key={pi} className="sy" style={{padding:"6px 10px",borderRadius:7,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:11,fontFamily:"inherit",whiteSpace:"nowrap"}}
-                                onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
-                                {isThis?"✓ ":""}{pos.label}
-                              </button>
-                            );
-                          })}
+                        /* Mobile exotic unboxed — position buttons on RIGHT like Sportsbet */
+                        <div style={{display:"flex",flexDirection:"column",gap:3,padding:"8px 8px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
+                          <div style={{display:"flex",gap:3,flexWrap:"wrap",justifyContent:"flex-end",maxWidth:def.positions.length>3?84:130}}>
+                            {def.positions.map((pos,pi)=>{
+                              const isThis=(sel[pi]||[]).includes(h.number);
+                              return(
+                                <button key={pi} className="sy" style={{
+                                  width:38,height:34,borderRadius:6,
+                                  border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,
+                                  background:isThis?"#1a3a1a":"#fff",
+                                  color:isThis?"#fff":"#374151",
+                                  cursor:"pointer",fontWeight:700,fontSize:10,
+                                  fontFamily:"inherit",flexShrink:0,
+                                  display:"flex",alignItems:"center",justifyContent:"center",
+                                }} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
+                                  {pos.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {posLabels.length>0&&<div className="sy" style={{fontSize:9,color:"#1a3a1a",fontWeight:700,textAlign:"right"}}>{posLabels.join(" · ")}</div>}
                         </div>
                       ) : canShowBoxed&&boxed ? (
                         /* Mobile exotic boxed — single select button */
