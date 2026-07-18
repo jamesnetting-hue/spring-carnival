@@ -1780,6 +1780,30 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               {raceBalance===0?"✅ Full $24 bet — you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet — you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
             </span>
           </div>
+
+          {/* Your bets — right in the header so always visible */}
+          {myBets.length>0&&(
+            <div style={{marginTop:10,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+              <p className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Your Bets on This Race</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {myBets.map(b=>{
+                  const d=BET_TYPES.find(t=>t.id===b.type);
+                  const horse=race.horses.find(h=>h.number===b.horses[0]);
+                  const canCancel=b.won===null&&race.status==="upcoming";
+                  return(
+                    <div key={b.id} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",borderRadius:8,background:b.won===true?C.greenBg:b.won===false?C.redBg:"rgba(26,58,26,.06)",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:"#1a3a1a"}`}}>
+                      <span className="sy" style={{fontSize:12,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:"#1a3a1a"}}>{d?.label}</span>
+                      {horse&&<span className="sy" style={{fontSize:11,color:C.soft}}>#{horse.number} {horse.name}</span>}
+                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>{fmt(b.stake)}</span>
+                      {b.won===true&&<span className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>→ +{fmt(b.payout)}</span>}
+                      {b.won===false&&<span className="sy" style={{fontSize:11,color:C.red}}>Lost</span>}
+                      {canCancel&&<button className="sy" style={{fontSize:10,padding:"2px 7px",borderRadius:5,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}} onClick={()=>{if(window.confirm("Cancel this bet?"))onCancelBet(b.id);}}>✕</button>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
