@@ -1755,7 +1755,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <span className="badge sy" style={{background:race.grade==="Feature Race"?"rgba(184,134,11,.12)":C.accentGlow,color:race.grade==="Feature Race"?C.gold:C.accent,border:`1.5px solid ${race.grade==="Feature Race"?C.gold:C.accent}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>{race.grade}</span>
             <span className="badge sy" style={{background:"#f4f5f7",color:C.soft,border:`1px solid ${C.border}`,fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:500}}>{race.raceNum}</span>
             {fav&&<span className="badge sy" style={{background:"#fffbeb",color:"#92400e",border:"1.5px solid #fcd34d",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:600}}>⭐ {fav.name} <strong>${fav.winOdds?.toFixed(1)}</strong></span>}
-            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.12)",color:C.gold,border:"2px solid rgba(184,134,11,.4)",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>🕐 Odds: {race.oddsAsOf}</span>}
+            {race.oddsAsOf&&<span className="badge sy" style={{background:"rgba(184,134,11,.12)",color:C.gold,border:"2px solid rgba(184,134,11,.4)",fontSize:isMobile?11:12,padding:"4px 10px",fontWeight:700}}>🕐 Odds as of: {race.oddsAsOf}</span>}
           </div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
             <div style={{flex:1,minWidth:0}}>
@@ -1894,47 +1894,26 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       </div>
                     </div>
                   ) : !scr ? (
-                    /* Win/Place buttons for Win, Place, Each Way */
-                    <div style={{display:"flex",gap:isMobile?4:6,padding:isMobile?"8px 6px":"12px 10px",flexShrink:0}}>
-                      {/* WIN */}
+                    <div style={{display:"flex",gap:isMobile?4:5,padding:isMobile?"8px 6px":"10px 8px",flexShrink:0}}>
                       <button className="sy" style={{
-                        width:isMobile?56:78, padding:isMobile?"7px 0":"10px 0", borderRadius:isMobile?6:8,
-                        border:`${isMobile?"1.5px":"2px"} solid ${winSel===h.number?"#1e5c1e":"rgba(30,92,30,.25)"}`,
-                        background:winSel===h.number?C.accent:C.accentGlow,
-                        color:winSel===h.number?"#fff":C.accent,
-                        cursor:"pointer", textAlign:"center", transition:"all .13s",
-                        fontFamily:"inherit",
-                      }} onClick={e=>{
-                        e.stopPropagation();
-                        const next = winSel===h.number ? null : h.number;
-                        setWinSel(next);
-                        if(next && placeSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
-                        else if(next) { setBetType("win"); setSel({0:[h.number]}); }
-                        else if(placeSel===h.number) { setBetType("place"); setSel({0:[h.number]}); }
-                        else { setBetType("win"); setSel({}); }
-                      }}>
-                        <div style={{fontSize:isMobile?13:16,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
-                        <div style={{fontSize:isMobile?8:9,fontWeight:700,marginTop:1,opacity:.85}}>WIN</div>
+                        width:isMobile?56:72,padding:isMobile?"7px 0":"9px 0",borderRadius:7,
+                        border:`2px solid ${winSel===h.number?"#1a3a1a":"rgba(30,92,30,.3)"}`,
+                        background:winSel===h.number?"#1a3a1a":"rgba(30,92,30,.06)",
+                        color:winSel===h.number?"#fff":"#1a3a1a",
+                        cursor:"pointer",textAlign:"center",transition:"all .13s",fontFamily:"inherit",
+                      }} onClick={e=>{e.stopPropagation();const next=winSel===h.number?null:h.number;setWinSel(next);if(next&&placeSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("win");setSel({0:[h.number]});}else if(placeSel===h.number){setBetType("place");setSel({0:[h.number]});}else{setBetType("win");setSel({});}}}>
+                        <div style={{fontSize:isMobile?13:15,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
+                        <div style={{fontSize:isMobile?8:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>WIN</div>
                       </button>
-                      {/* PLACE */}
                       <button className="sy" style={{
-                        width:isMobile?56:78, padding:isMobile?"7px 0":"10px 0", borderRadius:isMobile?6:8,
-                        border:`${isMobile?"1.5px":"2px"} solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,
-                        background:placeSel===h.number?"#2563eb":"#f8f9fb",
-                        color:placeSel===h.number?"#fff":"#6b7280",
-                        cursor:"pointer", textAlign:"center", transition:"all .13s",
-                        fontFamily:"inherit",
-                      }} onClick={e=>{
-                        e.stopPropagation();
-                        const next = placeSel===h.number ? null : h.number;
-                        setPlaceSel(next);
-                        if(next && winSel===h.number) { setBetType("eachway"); setSel({0:[h.number]}); }
-                        else if(next) { setBetType("place"); setSel({0:[h.number]}); }
-                        else if(winSel===h.number) { setBetType("win"); setSel({0:[h.number]}); }
-                        else { setBetType("place"); setSel({}); }
-                      }}>
-                        <div style={{fontSize:isMobile?13:16,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
-                        <div style={{fontSize:isMobile?8:9,fontWeight:700,marginTop:1,opacity:.85}}>PLACE</div>
+                        width:isMobile?56:72,padding:isMobile?"7px 0":"9px 0",borderRadius:7,
+                        border:`2px solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,
+                        background:placeSel===h.number?"#1d4ed8":"#f8f9fb",
+                        color:placeSel===h.number?"#fff":"#4b5563",
+                        cursor:"pointer",textAlign:"center",transition:"all .13s",fontFamily:"inherit",
+                      }} onClick={e=>{e.stopPropagation();const next=placeSel===h.number?null:h.number;setPlaceSel(next);if(next&&winSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("place");setSel({0:[h.number]});}else if(winSel===h.number){setBetType("win");setSel({0:[h.number]});}else{setBetType("place");setSel({});}}}>
+                        <div style={{fontSize:isMobile?13:15,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
+                        <div style={{fontSize:isMobile?8:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>PLACE</div>
                       </button>
                     </div>
                   ) : null}
@@ -2015,168 +1994,132 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
         {/* Desktop: sticky right bet panel */}
         {!isMobile&&(
-          <div style={{position:"sticky",top:70}}>
-            <div className="card">
-              <h3 className="cg" style={{fontSize:18,fontWeight:700,marginBottom:12}}>Place a Bet</h3>
-              <p className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,color:C.soft}}>Bet Type</p>
-              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
-                {BET_TYPES.map(t=>(<button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{padding:"11px 14px",borderRadius:8,border:`2px solid ${betType===t.id?C.accent:C.border}`,background:betType===t.id?C.accentGlow:"#fff",color:C.text,cursor:"pointer",textAlign:"left",transition:"all .13s"}}><span style={{fontWeight:700,fontSize:14,color:betType===t.id?C.accent:C.text}}>{t.label}</span><span style={{color:C.soft,fontSize:13,marginLeft:6}}>— {t.desc}</span></button>))}
+          <div style={{position:"sticky",top:70,display:"flex",flexDirection:"column",gap:10}}>
+
+            {/* Bet type selector — compact pills */}
+            <div className="card" style={{padding:"16px"}}>
+              <p className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:C.muted,marginBottom:10}}>Bet Type</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:canShowBoxed?10:0}}>
+                {BET_TYPES.map(t=>(
+                  <button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{
+                    padding:"10px 8px",borderRadius:8,
+                    border:`2px solid ${betType===t.id?C.accent:C.border}`,
+                    background:betType===t.id?"#1a3a1a":"#fff",
+                    color:betType===t.id?"#fff":C.text,
+                    cursor:"pointer",textAlign:"center",transition:"all .13s",
+                    fontWeight:betType===t.id?700:500,fontSize:13,
+                  }}>{t.label}</button>
+                ))}
               </div>
 
-            {/* Boxed toggle for trifecta/firstfour */}
-            {canShowBoxed&&(
-              <div style={{marginBottom:12}}>
-                <div className="tog">
-                  <button className={`topt${!boxed?" on":""}`} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
-                  <button className={`topt${boxed?" on":""}`} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
+              {/* Boxed toggle */}
+              {canShowBoxed&&(
+                <div>
+                  <div className="tog" style={{marginBottom:6}}>
+                    <button className={`topt${!boxed?" on":""}`} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
+                    <button className={`topt${boxed?" on":""}`} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
+                  </div>
+                  <p className="sy" style={{fontSize:10,color:C.soft,lineHeight:1.5}}>
+                    {boxed?`Select ${numPositions}+ horses — all permutations covered`:`Tap position buttons next to each horse`}
+                  </p>
                 </div>
-                <p className="sy" style={{fontSize:10,color:C.soft,marginTop:6,lineHeight:1.5}}>
-                  {boxed
-                    ? `Boxed: select ${numPositions}+ horses in any order. All permutations are covered — one bet per combo.`
-                    : `Unboxed: click position buttons (${def.positions.map(p=>p.label).join(", ")}) next to each horse.`}
-                </p>
-              </div>
-            )}
-
-            {/* Selection summary */}
-            <div className="divider"/>
-            <div style={{marginBottom:12,minHeight:36}}>
-              {(betType==="win"||betType==="place"||betType==="eachway")?(
-                (sel[0]||[]).length===0 && !winSel && !placeSel
-                  ? <p className="sy" style={{fontSize:12,color:C.soft}}>← Tap WIN or PLACE on a horse to select</p>
-                  : <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                      {[...new Set([...(sel[0]||[]),winSel,placeSel].filter(Boolean))].map(n=>{
-                        const h=race.horses.find(x=>x.number===n);
-                        return <span key={n} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",background:C.accentGlow,border:`1px solid rgba(26,86,160,.22)`,borderRadius:20}}>
-                          {h?.silkUrl
-                            ? <img src={h.silkUrl} alt="" style={{width:22,height:22,objectFit:"contain",borderRadius:3}} onError={e=>e.target.style.display="none"}/>
-                            : <div style={{width:16,height:16,borderRadius:"50%",background:silkCol(n),display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{n}</div>
-                          }
-                          <span className="sy" style={{fontSize:12,fontWeight:700,color:C.text}}>{h?.name}</span>
-                          <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:700}}>${h?.winOdds?.toFixed(2)}W · ${h?.placeOdds?.toFixed(2)}P</span>
-                        </span>;
-                      })}
-                    </div>
-              ):(
-                boxed?(
-                  <div>
-                    <p className="sy soft" style={{fontSize:10,marginBottom:5}}>Selected ({(sel[0]||[]).length} of {numPositions}+ needed):</p>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                      {(sel[0]||[]).length===0?<span className="sy soft" style={{fontSize:11}}>← Tap Select on each horse to include</span>:
-                        (sel[0]||[]).map(n=>{
-                          const h=race.horses.find(x=>x.number===n);
-                          return <span key={n} className="sy" style={{fontSize:10,padding:"3px 8px",background:C.accentGlow,border:"1px solid rgba(26,86,160,.2)",borderRadius:20,color:C.accent}}>#{n} {h?.name}</span>;
-                        })}
-                    </div>
-                    {(sel[0]||[]).length>=numPositions&&<p className="sy" style={{fontSize:10,color:C.green,marginTop:4}}>✓ {combos} combination{combos!==1?"s":""} — enter your stake below</p>}
-                  </div>
-                ):(
-                  <div>
-                    <p className="sy soft" style={{fontSize:10,marginBottom:6}}>Use the position buttons on each horse. You can pick <strong style={{color:C.text}}>multiple horses per position</strong> for more combos.</p>
-                    {def.positions.map((pos,pi)=>{
-                      const posHorses=(sel[pi]||[]).map(n=>race.horses.find(h=>h.number===n)).filter(Boolean);
-                      return(
-                        <div key={pi} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,flexWrap:"wrap"}}>
-                          <span className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:C.accent,width:32,flexShrink:0}}>{pos.label}</span>
-                          {posHorses.length===0
-                            ? <span className="sy soft" style={{fontSize:10}}>— not selected</span>
-                            : posHorses.map(h=>(
-                                <span key={h.number} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,padding:"3px 10px",background:C.accentGlow,border:"1px solid rgba(26,86,160,.2)",borderRadius:20,color:C.accent,fontWeight:600}}>
-                                  {h.silkUrl
-                                    ? <img src={h.silkUrl} alt="" style={{width:16,height:16,objectFit:"contain",borderRadius:2}} onError={e=>e.target.style.display="none"}/>
-                                    : <div style={{width:14,height:14,borderRadius:"50%",background:silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{h.number}</div>
-                                  }
-                                  {h.name}
-                                </span>
-                              ))
-                          }
-                        </div>
-                      );
-                    })}
-                  </div>
-                )
               )}
             </div>
 
-            {/* Stake input */}
-            <div className="divider"/>
-            <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:6}}>
-              Stake
-            </p>
-            <input
-              className="inp sy"
-              type="number"
-              step="0.50"
-              min="0.10"
-              placeholder="Enter amount (e.g. 2.00)"
-              value={stakeStr}
-              onChange={e=>setStakeStr(e.target.value)}
-            />
-            <p className="sy" style={{fontSize:10,marginTop:5,color:raceBalance===0?C.green:C.soft}}>
-              {raceBalance===0
-                ? "✓ Full $24 spent on this race"
-                : <><span style={{color:C.soft}}>Remaining: </span><strong style={{color:raceBalance>0?C.accent:C.green}}>{fmt(raceBalance)}</strong><span style={{color:C.soft}}> — you must spend all $24</span></>
-              }
-            </p>
-
-            {/* Cost breakdown with flexi % */}
-            {stake>0&&combos>0&&(
-              <div style={{marginTop:10,padding:"12px 14px",background:"rgba(26,86,160,.05)",border:"1px solid rgba(26,86,160,.15)",borderRadius:8}}>
-                {combos>1&&(
-                  <>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span className="sy soft" style={{fontSize:10}}>Combinations</span>
-                      <span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>{combos}</span>
+            {/* Selection + stake card */}
+            <div className="card" style={{padding:"16px"}}>
+              {/* Selection summary */}
+              <div style={{marginBottom:14,minHeight:32}}>
+                {(betType==="win"||betType==="place"||betType==="eachway")?(
+                  (sel[0]||[]).length===0&&!winSel&&!placeSel
+                    ?<p className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Tap WIN or PLACE on a horse ↑</p>
+                    :<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                        {[...new Set([...(sel[0]||[]),winSel,placeSel].filter(Boolean))].map(n=>{
+                          const h=race.horses.find(x=>x.number===n);
+                          return(
+                            <div key={n} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"#f8fffe",border:`2px solid ${C.green}`,borderRadius:10}}>
+                              {h?.silkUrl?<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>
+                                :<div style={{width:22,height:22,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff"}}>{n}</div>}
+                              <div>
+                                <div className="sy" style={{fontSize:13,fontWeight:700}}>{h?.name}</div>
+                                <div className="sy" style={{fontSize:11,color:C.soft}}>${h?.winOdds?.toFixed(2)} W · ${h?.placeOdds?.toFixed(2)} P</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                ):(
+                  boxed?(
+                    <div>
+                      <p className="sy" style={{fontSize:11,color:C.soft,marginBottom:6}}>{(sel[0]||[]).length} of {numPositions}+ selected</p>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                        {(sel[0]||[]).length===0
+                          ?<span className="sy" style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Tap Select on each horse ↑</span>
+                          :(sel[0]||[]).map(n=>{const h=race.horses.find(x=>x.number===n);return <span key={n} className="sy" style={{fontSize:11,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{n} {h?.name}</span>;})}
+                      </div>
+                      {(sel[0]||[]).length>=numPositions&&<p className="sy" style={{fontSize:11,color:C.green,marginTop:6,fontWeight:700}}>✓ {combos} combination{combos!==1?"s":""}</p>}
                     </div>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                      <span className="sy soft" style={{fontSize:10}}>Per combination</span>
-                      <span className="sy" style={{fontSize:12,color:C.text}}>{fmt(parseFloat((stake/combos).toFixed(2)))}</span>
+                  ):(
+                    <div>
+                      {def.positions.map((pos,pi)=>{
+                        const posHorses=(sel[pi]||[]).map(n=>race.horses.find(h=>h.number===n)).filter(Boolean);
+                        return(
+                          <div key={pi} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,flexWrap:"wrap"}}>
+                            <span className="sy" style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:".06em",color:"#1a3a1a",width:30,flexShrink:0}}>{pos.label}</span>
+                            {posHorses.length===0
+                              ?<span className="sy" style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>not selected</span>
+                              :posHorses.map(h=>(
+                                <span key={h.number} style={{fontSize:11,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{h.number} {h.name}</span>
+                              ))}
+                          </div>
+                        );
+                      })}
                     </div>
-                  </>
-                )}
-                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>0&&(
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,padding:"5px 8px",background:C.accentGlow,borderRadius:5}}>
-                    <span className="sy" style={{fontSize:12,fontWeight:700,color:C.accent}}>Flexi %</span>
-                    <span className="sy" style={{fontSize:14,fontWeight:800,color:C.accent}}>{flexiPct}%</span>
-                  </div>
-                )}
-                <div style={{display:"flex",justifyContent:"space-between",borderTop:combos>1?`1px solid rgba(26,86,160,.12)`:"none",paddingTop:combos>1?7:0,marginTop:combos>1?2:0}}>
-                  <span className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".08em"}}>Total Stake</span>
-                  <span className="cg" style={{fontSize:20,fontWeight:700,color:C.text}}>{fmt(stake)}</span>
-                </div>
-                {betType==="eachway"&&stake>0&&(
-                  <div style={{padding:"8px 12px",background:"rgba(30,92,30,.06)",border:`1px solid ${C.greenBd}`,borderRadius:8,marginBottom:8}}>
-                    <div className="sy" style={{fontSize:13,fontWeight:700,color:C.accent}}>Each Way = {fmt(stake)} Win + {fmt(stake)} Place</div>
-                    <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>Total cost: <strong>{fmt(stake*2)}</strong> from your budget</div>
-                  </div>
-                )}
-                {totalCost>raceBalance&&<p className="sy" style={{fontSize:12,color:C.red,marginTop:4}}>⚠ Exceeds race budget ({fmt(raceBalance)} remaining)</p>}
-                {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&combos>1&&(
-                  <p className="sy" style={{fontSize:12,color:C.soft,marginTop:6,lineHeight:1.5}}>
-                    {combos} combination{combos!==1?"s":""} · {fmt(parseFloat((stake/combos).toFixed(2)))} each · <strong style={{color:C.accent}}>{flexiPct}% flexi</strong>
-                  </p>
+                  )
                 )}
               </div>
-            )}
 
-            {/* Submit */}
-            <button
-              className="btn btn-gold"
-              disabled={!isReady()}
-              onClick={handleAdd}
-              style={{width:"100%",marginTop:12,padding:13,fontSize:13}}
-            >
-              {!isReady()
-                ? (stake<=0?"Enter a stake amount"
-                  :combos===0?"Complete your selection"
-                  :totalCost>raceBalance?"Exceeds race budget"
-                  :"Complete your selection")
-                : betType==="eachway"
-                  ? `Add Each Way — ${fmt(totalCost)} total`
-                  : combos>1
-                  ? `Add ${combos} bets · ${flexiPct}% flexi · ${fmt(stake)} total →`
-                  : `Add to Betslip — ${fmt(totalCost)} →`}
-            </button>
+              {/* Stake */}
+              <div className="divider"/>
+              <p className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:C.muted,marginBottom:8}}>Stake</p>
+              <div style={{position:"relative",marginBottom:8}}>
+                <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:18,fontWeight:700,color:C.muted}}>$</span>
+                <input className="inp sy" type="number" step="0.50" min="0.10" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
+                  style={{paddingLeft:28,fontSize:18,fontWeight:700,padding:"12px 12px 12px 28px",width:"100%",borderRadius:8}}/>
+              </div>
+              {/* Quick amounts */}
+              <div style={{display:"flex",gap:6,marginBottom:12}}>
+                {[2,5,10,raceBalance].filter((v,i,a)=>a.indexOf(v)===i&&v>0).slice(0,4).map(v=>(
+                  <button key={v} className="sy" style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${C.border}`,background:stakeStr===String(v)?"#1a3a1a":"#f8f9fa",color:stakeStr===String(v)?"#fff":C.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setStakeStr(String(v))}>
+                    ${v}
+                  </button>
+                ))}
+              </div>
+
+              {/* Cost breakdown */}
+              {stake>0&&combos>0&&(
+                <div style={{padding:"10px 12px",background:"rgba(26,86,160,.04)",border:"1px solid rgba(26,86,160,.1)",borderRadius:8,marginBottom:10}}>
+                  {combos>1&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span className="sy" style={{fontSize:11,color:C.soft}}>Combinations</span><span className="sy" style={{fontSize:12,fontWeight:700}}>{combos}</span></div>}
+                  {(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span className="sy" style={{fontSize:11,color:C.soft}}>Flexi %</span><span className="sy" style={{fontSize:12,fontWeight:700,color:C.accent}}>{flexiPct}%</span></div>}
+                  {betType==="eachway"&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span className="sy" style={{fontSize:11,color:C.soft}}>Win + Place</span><span className="sy" style={{fontSize:12,fontWeight:700}}>{fmt(stake)} + {fmt(stake)}</span></div>}
+                  <div style={{display:"flex",justifyContent:"space-between",borderTop:`1px solid rgba(0,0,0,.06)`,paddingTop:6,marginTop:4}}>
+                    <span className="sy" style={{fontSize:11,color:C.soft,textTransform:"uppercase",letterSpacing:".06em"}}>Total</span>
+                    <span className="cg" style={{fontSize:18,fontWeight:800,color:totalCost>raceBalance?C.red:C.text}}>{fmt(totalCost)}</span>
+                  </div>
+                  {totalCost>raceBalance&&<p className="sy" style={{fontSize:11,color:C.red,marginTop:4}}>⚠ Exceeds your {fmt(raceBalance)} remaining</p>}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button className="btn btn-gold" disabled={!isReady()} onClick={handleAdd}
+                style={{width:"100%",padding:"14px",fontSize:14,fontWeight:700,borderRadius:10}}>
+                {!isReady()
+                  ?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget")
+                  :betType==="eachway"?`Add Each Way — ${fmt(totalCost)}`
+                  :combos>1?`Add ${combos} bets — ${fmt(totalCost)}`
+                  :`Add to Betslip — ${fmt(totalCost)}`}
+              </button>
+            </div>
 
             {/* Existing bets on this race */}
             {myBets.length>0&&(
