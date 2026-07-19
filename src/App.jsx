@@ -634,13 +634,35 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
   const queueBet = (raceId, type, horses, stake) => {
+    if (!liveAccount) return;
     const race = races.find(r=>r.id===raceId);
+    if (!race) return;
+    const available = getRaceBalance(liveAccount.id, raceId);
+    if (stake > available + 0.01) {
+      showToast(`Only ${fmt(available)} remaining for this race`, "err");
+      return;
+    }
     const om = getOddsMap(race.horses);
     const def = BET_TYPES.find(t=>t.id===type);
     const mult = def.multiplier(horses,om);
     const potential = parseFloat((stake*mult).toFixed(2));
-    setPendingBets(p=>[...p,{id:Date.now().toString(),raceId,type,horses,stake,potential,mult}]);
-    setShowBetslip(true);
+    const now = Date.now();
+    const bet = {
+      id: now.toString(), raceId, type, horses, stake, potential,
+      playerId: liveAccount.id, won: null, payout: null,
+      placedAt: new Date().toISOString(),
+    };
+    setBets(p=>[...p, bet]);
+    updateAccount(liveAccount.id, a=>({
+      totalStaked: parseFloat((a.totalStaked + stake).toFixed(2)),
+    }));
+    sb.insert("bets", {
+      id: bet.id, player_id: bet.playerId, race_id: bet.raceId,
+      type: bet.type, horses: JSON.stringify(bet.horses),
+      stake: bet.stake, potential: bet.potential,
+      won: null, payout: null, placed_at: bet.placedAt,
+    });
+    showToast(`Bet placed — ${fmt(stake)} on ${type}`);
   };
 
   // CONFIRM BETSLIP
@@ -1063,7 +1085,7 @@ export default function App() {
               </nav>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              {pendingBets.length>0&&(
+              {pendingBets.length>0&&false&&(
                 <button className="sy" style={{fontSize:13,padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:8,color:"#fff",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6}} onClick={()=>setShowBetslip(true)}>
                   🎫 <span style={{background:C.goldL,color:"#fff",borderRadius:"50%",width:20,height:20,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800}}>{pendingBets.length}</span>
                 </button>
@@ -2155,7 +2177,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   {/* Add to betslip */}
                   <button className="sy" disabled={!isReady()} onClick={()=>{handleAdd();setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}
                     style={{width:"100%",padding:"16px",borderRadius:14,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:16,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",transition:"all .15s"}}>
-                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Add to Betslip${stake>0?` - ${fmt(totalCost)}`:""}`}
+                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Place Bet${stake>0?` - ${fmt(totalCost)}`:""}`}
                   </button>
                 </div>
               </div>
@@ -2308,9 +2330,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   style={{width:"100%",padding:"14px",borderRadius:12,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:15,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",letterSpacing:".01em",boxShadow:isReady()?"0 4px 16px rgba(26,58,26,.3)":"none",transition:"all .15s"}}>
                   {!isReady()
                     ?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget")
-                    :betType==="eachway"?`Add Each Way - ${fmt(totalCost)}`
-                    :combos>1?`Add ${combos} bets - ${fmt(totalCost)}`
-                    :`Add to Betslip - ${fmt(totalCost)}`}
+                    :betType==="eachway"?`Place Each Way - ${fmt(totalCost)}`
+                    :combos>1?`Place ${combos} bets - ${fmt(totalCost)}`
+                    :`Place Bet - ${fmt(totalCost)}`}
                 </button>
               </div>
             </div>
