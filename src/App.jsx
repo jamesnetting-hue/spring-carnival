@@ -1889,11 +1889,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 background:(winActive||placeActive||highlighted)?"rgba(30,92,30,.05)":scr?"#f9f9f9":"#fff",
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
-                <div style={{display:"flex",alignItems:"center",gap:0}}>
+                <div style={{display:"flex",alignItems:"stretch",gap:0}}>
                   {/* Number + Silk - compact TAB style */}
-                  <div style={{flexShrink:0,display:"flex",alignItems:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
-                    {/* Runner number - flush fit */}
-                    <div style={{minWidth:isMobile?22:28,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a"}}>
+                  <div style={{flexShrink:0,display:"flex",alignItems:"stretch",alignSelf:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
+                    {/* Runner number - full height flush */}
+                    <div style={{minWidth:isMobile?22:28,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a",alignSelf:"stretch"}}>
                       <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk */}
