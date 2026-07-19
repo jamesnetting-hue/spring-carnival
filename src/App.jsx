@@ -3602,9 +3602,16 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               };
               const cols=Math.min(oddsData.length,4);
               const dialW=Math.floor((isMobile?window.innerWidth-64:560)/cols)-8;
-              const dialH=Math.round(dialW*0.75);
-              const dcx=dialW/2,dcy=dialH-4;
-              const outerR=Math.round(dialW*0.40),innerR=Math.round(dialW*0.26);
+              const outerR=Math.round(dialW*0.38);
+              const innerR=Math.round(dialW*0.24);
+              const trackW=outerR-innerR;
+              const midR=(outerR+innerR)/2;
+              // Arc centre sits at bottom of SVG so semicircle fills upper half
+              const dcx=dialW/2;
+              // SVG height = radius + text zone below centre
+              const textZone=Math.round(dialW*0.28);
+              const dialH=outerR+textZone;
+              const dcy=outerR; // centre Y = outerR so top of arc = 0
               return(
                 <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
                   <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🎯 Win Rate by Odds</div>
@@ -3613,45 +3620,51 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     {oddsData.map((r,i)=>{
                       const fillDeg=r.hitRate/100*180;
                       const needleAngle=(180+fillDeg)*Math.PI/180;
-                      const needleLen=outerR-6;
+                      const needleLen=midR-2;
                       const nx=dcx+needleLen*Math.cos(needleAngle);
                       const ny=dcy+needleLen*Math.sin(needleAngle);
-                      const grade=r.hitRate>=60?"Elite":r.hitRate>=40?"Good":r.hitRate>=20?"Fair":"Rare";
+                      const grade=r.hitRate>=60?'Elite':r.hitRate>=40?'Good':r.hitRate>=20?'Fair':'Rare';
+                      // Text goes in the textZone below dcy
+                      const pctY=dcy+Math.round(textZone*0.42);
+                      const gradeY=dcy+Math.round(textZone*0.78);
                       return(
-                        <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                          <svg width={dialW} height={dialH} style={{display:"block",overflow:"visible"}}>
+                        <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                          <svg width={dialW} height={dialH} style={{display:'block'}}>
                             <defs>
-                              <linearGradient id={"dg"+i} x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#f87171" stopOpacity="0.9"/>
-                                <stop offset="45%" stopColor="#fbbf24" stopOpacity="0.95"/>
-                                <stop offset="100%" stopColor={r.col} stopOpacity="1"/>
+                              <linearGradient id={'dg'+i} x1='0%' y1='0%' x2='100%' y2='0%'>
+                                <stop offset='0%' stopColor='#f87171' stopOpacity='0.9'/>
+                                <stop offset='45%' stopColor='#fbbf24' stopOpacity='0.95'/>
+                                <stop offset='100%' stopColor={r.col} stopOpacity='1'/>
                               </linearGradient>
-                              <filter id={"df"+i}>
-                                <feGaussianBlur stdDeviation="2.5" result="b"/>
-                                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                              <filter id={'df'+i}>
+                                <feGaussianBlur stdDeviation='2' result='b'/>
+                                <feMerge><feMergeNode in='b'/><feMergeNode in='SourceGraphic'/></feMerge>
                               </filter>
                             </defs>
                             {/* Track */}
-                            <path d={arc(dcx,dcy,(outerR+innerR)/2,180,360)} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={outerR-innerR-2}/>
+                            <path d={arc(dcx,dcy,midR,180,360)} fill='none' stroke='rgba(255,255,255,.1)' strokeWidth={trackW-2}/>
                             {/* Fill */}
-                            {fillDeg>0&&<path d={arc(dcx,dcy,(outerR+innerR)/2,180,180+fillDeg)} fill="none" stroke={"url(#dg"+i+")"} strokeWidth={outerR-innerR-2} strokeLinecap="round" filter={"url(#df"+i+")"}/>}
+                            {fillDeg>0&&<path d={arc(dcx,dcy,midR,180,180+fillDeg)} fill='none' stroke={'url(#dg'+i+')'} strokeWidth={trackW-2} strokeLinecap='round' filter={'url(#df'+i+')'}/>}
                             {/* Ticks */}
                             {[0,25,50,75,100].map(p=>{
                               const a=(180+p/100*180)*Math.PI/180;
-                              return <line key={p} x1={dcx+innerR*Math.cos(a)} y1={dcy+innerR*Math.sin(a)} x2={dcx+(innerR-5)*Math.cos(a)} y2={dcy+(innerR-5)*Math.sin(a)} stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>;
+                              const x1=dcx+outerR*Math.cos(a), y1=dcy+outerR*Math.sin(a);
+                              const x2=dcx+(outerR-6)*Math.cos(a), y2=dcy+(outerR-6)*Math.sin(a);
+                              return <line key={p} x1={x1} y1={y1} x2={x2} y2={y2} stroke='rgba(255,255,255,.2)' strokeWidth='1.5'/>;
                             })}
                             {/* Needle */}
-                            <line x1={dcx} y1={dcy} x2={nx} y2={ny} stroke={r.col} strokeWidth="2.5" strokeLinecap="round" filter={"url(#df"+i+")"}/>
-                            <circle cx={dcx} cy={dcy} r={5} fill={r.col} filter={"url(#df"+i+")"}/>
-                            {/* Text */}
-                            <text x={dcx} y={dcy-Math.round(outerR*0.55)} textAnchor="middle" fontSize={Math.round(dialW*0.11)} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
-                            <text x={dcx} y={dcy-Math.round(outerR*0.28)} textAnchor="middle" fontSize={Math.round(dialW*0.065)} fill="#fff" fontFamily="system-ui" fontWeight="600">{grade}</text>
+                            <line x1={dcx} y1={dcy} x2={nx} y2={ny} stroke={r.col} strokeWidth='2' strokeLinecap='round' filter={'url(#df'+i+')'}/>
+                            {/* Pivot dot */}
+                            <circle cx={dcx} cy={dcy} r={4} fill={r.col} stroke='#0f1f0f' strokeWidth='2' filter={'url(#df'+i+')'}/>
+                            {/* % and grade in the clear zone BELOW the arc centre */}
+                            <text x={dcx} y={pctY} textAnchor='middle' fontSize={Math.round(dialW*0.12)} fontWeight='900' fill={r.col} fontFamily='system-ui'>{r.hitRate}%</text>
+                            <text x={dcx} y={gradeY} textAnchor='middle' fontSize={Math.round(dialW*0.075)} fill='#fff' fontFamily='system-ui' fontWeight='600'>{grade}</text>
                           </svg>
-                          <div style={{textAlign:"center",marginTop:2}}>
-                            <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:r.col}}>{r.label}</div>
-                            <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.7)",marginBottom:2}}>{r.sublabel}</div>
-                            <div className="sy" style={{fontSize:10,color:"#fff"}}>{r.wins}W · {r.total-r.wins}L</div>
-                            <div className="sy" style={{fontSize:11,fontWeight:700,color:r.profit>=0?"#4ade80":"#f87171"}}>{r.profit>=0?"+":""}{fmt(r.profit)}</div>
+                          <div style={{textAlign:'center',marginTop:4}}>
+                            <div className='sy' style={{fontSize:isMobile?12:13,fontWeight:800,color:r.col}}>{r.label}</div>
+                            <div className='sy' style={{fontSize:10,color:'rgba(255,255,255,.75)',marginBottom:2}}>{r.sublabel}</div>
+                            <div className='sy' style={{fontSize:10,color:'#fff'}}>{r.wins}W · {r.total-r.wins}L</div>
+                            <div className='sy' style={{fontSize:11,fontWeight:700,color:r.profit>=0?'#4ade80':'#f87171'}}>{r.profit>=0?'+':''}{fmt(r.profit)}</div>
                           </div>
                         </div>
                       );
