@@ -3542,13 +3542,13 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               );
             })()}
 
-            {/* WIN RATE BY ODDS - Neon Bubble Scatter */}
+            {/* WIN RATE BY ODDS - Blended Arc Dials */}
             {settled.length>0&&(()=>{
               const oddsRanges=[
-                {label:"Fav",sublabel:"<$3",min:0,max:3,col:"#4ade80",icon:"⚡"},
-                {label:"Value",sublabel:"$3-$6",min:3,max:6,col:"#60a5fa",icon:"🎯"},
-                {label:"Roughie",sublabel:"$6-$15",min:6,max:15,col:"#fbbf24",icon:"🔥"},
-                {label:"Longshot",sublabel:"$15+",min:15,max:999,col:"#f472b6",icon:"💫"},
+                {label:"Fav",sublabel:"<$3",min:0,max:3,col:"#4ade80"},
+                {label:"Value",sublabel:"$3-$6",min:3,max:6,col:"#60a5fa"},
+                {label:"Roughie",sublabel:"$6-$15",min:6,max:15,col:"#fbbf24"},
+                {label:"Longshot",sublabel:"$15+",min:15,max:999,col:"#f472b6"},
               ];
               const oddsData=oddsRanges.map(r=>{
                 const tb=settled.filter(b=>{const odds=b.potential&&b.stake>0?b.potential/b.stake:0;return odds>=r.min&&odds<r.max;});
@@ -3557,63 +3557,92 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 return{...r,total:tb.length,wins:wins.length,profit,hitRate:tb.length?Math.round((wins.length/tb.length)*100):0};
               }).filter(r=>r.total>0);
               if(!oddsData.length) return null;
-              const svgW=isMobile?300:500;
-              const svgH=160;
-              const padL=38,padR=16,padT=20,padB=34;
-              const maxTotal=Math.max(...oddsData.map(r=>r.total),1);
+
+              // Arc helper - SVG arc path
+              const arc=(cx,cy,r,startDeg,endDeg)=>{
+                const s=startDeg*Math.PI/180, e=endDeg*Math.PI/180;
+                const x1=cx+r*Math.cos(s), y1=cy+r*Math.sin(s);
+                const x2=cx+r*Math.cos(e), y2=cy+r*Math.sin(e);
+                const large=endDeg-startDeg>180?1:0;
+                return `M${x1},${y1} A${r},${r},0,${large},1,${x2},${y2}`;
+              };
+
+              const dialW=isMobile?130:150;
+              const dialH=isMobile?100:115;
+              const dcx=dialW/2, dcy=dialH-10;
+              const outerR=isMobile?58:68, innerR=isMobile?40:47;
+              const startDeg=180, totalDeg=180;
+
               return(
                 <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🎯 Win Rate by Odds Range</div>
-                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:14}}>Bigger bubble = more bets at that price</div>
-                  <div style={{overflowX:"auto"}}>
-                    <svg width={svgW} height={svgH} style={{display:"block"}}>
-                      <defs>
-                        {oddsData.map((r,i)=>(
-                          <radialGradient key={i} id={"oddsGrad"+i} cx="40%" cy="40%">
-                            <stop offset="0%" stopColor={r.col} stopOpacity="0.7"/>
-                            <stop offset="100%" stopColor={r.col} stopOpacity="0.15"/>
-                          </radialGradient>
-                        ))}
-                        <filter id="scatterGlow">
-                          <feGaussianBlur stdDeviation="3" result="blur"/>
-                          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                      </defs>
-                      <line x1={padL} y1={padT} x2={padL} y2={svgH-padB} stroke="rgba(255,255,255,.1)" strokeWidth="1"/>
-                      <line x1={padL} y1={svgH-padB} x2={svgW-padR} y2={svgH-padB} stroke="rgba(255,255,255,.1)" strokeWidth="1"/>
-                      {[0,25,50,75,100].map(pct=>{
-                        const y=padT+(1-pct/100)*(svgH-padT-padB);
-                        return(<g key={pct}>
-                          <line x1={padL} y1={y} x2={svgW-padR} y2={y} stroke="rgba(255,255,255,.04)" strokeWidth="1" strokeDasharray="3,5"/>
-                          <text x={padL-4} y={y+3} textAnchor="end" fontSize="8" fill="rgba(255,255,255,.25)" fontFamily="system-ui">{pct}%</text>
-                        </g>);
-                      })}
-                      {oddsData.map((r,i)=>{
-                        const x=padL+((i+0.5)/(oddsData.length))*(svgW-padL-padR);
-                        const y=padT+(1-r.hitRate/100)*(svgH-padT-padB);
-                        const radius=Math.max(14,Math.round(10+(r.total/maxTotal)*22));
-                        return(
-                          <g key={i} filter="url(#scatterGlow)">
-                            <line x1={x} y1={y+radius} x2={x} y2={svgH-padB} stroke={r.col} strokeWidth="1" strokeOpacity="0.2" strokeDasharray="2,3"/>
-                            <circle cx={x} cy={y} r={radius+4} fill="none" stroke={r.col} strokeWidth="1" strokeOpacity="0.2"/>
-                            <circle cx={x} cy={y} r={radius} fill={"url(#oddsGrad"+i+")"} stroke={r.col} strokeWidth="1.5" strokeOpacity="0.7"/>
-                            <text x={x} y={y-2} textAnchor="middle" fontSize="11" fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
-                            <text x={x} y={y+9} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,.5)" fontFamily="system-ui">{r.wins}W/{r.total-r.wins}L</text>
-                            <text x={x} y={svgH-padB+10} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,.5)" fontFamily="system-ui">{r.icon}</text>
-                            <text x={x} y={svgH-padB+21} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,.4)" fontFamily="system-ui">{r.label}</text>
-                          </g>
-                        );
-                      })}
-                    </svg>
-                  </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6}}>
-                    {oddsData.map(r=>(
-                      <div key={r.label} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(255,255,255,.04)",padding:"3px 8px",borderRadius:20}}>
-                        <div style={{width:6,height:6,borderRadius:"50%",background:r.col,boxShadow:"0 0 4px "+r.col}}/>
-                        <span className="sy" style={{fontSize:9,color:"rgba(255,255,255,.4)"}}>{r.label} {r.sublabel}</span>
-                        <span className="sy" style={{fontSize:9,fontWeight:700,color:r.col}}>{r.profit>=0?"+":""}{fmt(r.profit)}</span>
-                      </div>
-                    ))}
+                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🎯 Win Rate by Odds</div>
+                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:16}}>Each dial shows your hit rate at that price range</div>
+
+                  <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(oddsData.length,4)},1fr)`,gap:8}}>
+                    {oddsData.map((r,i)=>{
+                      const fillDeg=r.hitRate/100*totalDeg;
+                      const needleAngle=(startDeg+fillDeg)*Math.PI/180;
+                      const needleLen=outerR-6;
+                      const nx=dcx+needleLen*Math.cos(needleAngle);
+                      const ny=dcy+needleLen*Math.sin(needleAngle);
+                      const grade=r.hitRate>=60?"Elite":r.hitRate>=40?"Good":r.hitRate>=20?"Fair":"Rare";
+                      return(
+                        <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                          <svg width={dialW} height={dialH} style={{display:"block",overflow:"visible"}}>
+                            <defs>
+                              <linearGradient id={"dialGrad"+i} x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#f87171" stopOpacity="0.8"/>
+                                <stop offset="50%" stopColor="#fbbf24" stopOpacity="0.9"/>
+                                <stop offset="100%" stopColor={r.col} stopOpacity="1"/>
+                              </linearGradient>
+                              <filter id={"dialGlow"+i}>
+                                <feGaussianBlur stdDeviation="2.5" result="b"/>
+                                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                              </filter>
+                            </defs>
+
+                            {/* Track (empty arc) */}
+                            <path d={arc(dcx,dcy,outerR,180,360)} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={outerR-innerR-2}/>
+
+                            {/* Filled arc */}
+                            {fillDeg>0&&(
+                              <path d={arc(dcx,dcy,(outerR+innerR)/2,180,180+fillDeg)}
+                                fill="none"
+                                stroke={"url(#dialGrad"+i+")"}
+                                strokeWidth={outerR-innerR-2}
+                                strokeLinecap="round"
+                                filter={"url(#dialGlow"+i+")"}/>
+                            )}
+
+                            {/* Tick marks */}
+                            {[0,25,50,75,100].map(pct=>{
+                              const a=(180+pct/100*180)*Math.PI/180;
+                              const x1=dcx+innerR*Math.cos(a), y1=dcy+innerR*Math.sin(a);
+                              const x2=dcx+(innerR-5)*Math.cos(a), y2=dcy+(innerR-5)*Math.sin(a);
+                              return <line key={pct} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,.15)" strokeWidth="1"/>;
+                            })}
+
+                            {/* Needle */}
+                            <line x1={dcx} y1={dcy} x2={nx} y2={ny}
+                              stroke={r.col} strokeWidth="2" strokeLinecap="round"
+                              filter={"url(#dialGlow"+i+")"}/>
+                            <circle cx={dcx} cy={dcy} r={4} fill={r.col} filter={"url(#dialGlow"+i+")"}/>
+
+                            {/* Centre text */}
+                            <text x={dcx} y={dcy-8} textAnchor="middle" fontSize={isMobile?15:17} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
+                            <text x={dcx} y={dcy+5} textAnchor="middle" fontSize={isMobile?7:8} fill="rgba(255,255,255,.35)" fontFamily="system-ui">{grade}</text>
+                          </svg>
+
+                          {/* Label below dial */}
+                          <div style={{textAlign:"center",marginTop:-4}}>
+                            <div className="sy" style={{fontSize:isMobile?11:12,fontWeight:700,color:r.col}}>{r.label}</div>
+                            <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.3)",marginBottom:2}}>{r.sublabel}</div>
+                            <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)"}}>{r.wins}W · {r.total-r.wins}L</div>
+                            <div className="sy" style={{fontSize:9,fontWeight:700,color:r.profit>=0?"#4ade80":"#f87171"}}>{r.profit>=0?"+":""}{fmt(r.profit)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -3622,26 +3651,25 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* RACE BY RACE - emoji column chart */}
             {raceStats.length>0&&(
               <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 16px rgba(0,0,0,.25)"}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>📊 Race by Race</div>
+                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🐎 Race by Race</div>
                 <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:14}}>Each race at a glance</div>
                 <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
                   {(()=>{
                     const maxAbs=Math.max(...raceStats.map(x=>Math.abs(x.profit)),1);
-                    const maxH=90;
-                    const colW=Math.max(38,Math.min(56,Math.floor((isMobile?290:480)/raceStats.length)));
+                    const maxH=110;
+                    const availW=isMobile?window.innerWidth-64:520;
+                    const colW=Math.max(40,Math.floor(availW/raceStats.length)-4);
                     return(
-                      <div style={{display:"flex",gap:4,alignItems:"flex-end",minWidth:raceStats.length*colW+20,paddingBottom:4}}>
+                      <div style={{display:"flex",gap:4,alignItems:"flex-end",width:"100%",paddingBottom:4}}>
                         {raceStats.map((r,i)=>{
-                          const h=Math.max(10,Math.round((Math.abs(r.profit)/maxAbs)*maxH));
+                          const h=Math.max(12,Math.round((Math.abs(r.profit)/maxAbs)*maxH));
                           const col=r.profit>=0?"#4ade80":"#f87171";
-                          const isGlory=r.profit===Math.max(...raceStats.map(x=>x.profit));
-                          const isWoeful=r.profit===Math.min(...raceStats.map(x=>x.profit));
-                          const emoji=isGlory?"🌟":isWoeful?"💀":r.profit>=0?"👍":"👎";
+                          const emoji=r.profit>=0?"👍":"👎";
                           return(
-                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,width:colW}} title={r.race.name+": "+(r.profit>=0?"+":"")+r.profit.toFixed(2)}>
-                              <span style={{fontSize:isMobile?12:14,lineHeight:1,filter:isGlory?"drop-shadow(0 0 6px #4ade80)":isWoeful?"drop-shadow(0 0 6px #f87171)":"none"}}>{emoji}</span>
+                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1}} title={r.race.name+": "+(r.profit>=0?"+":"")+r.profit.toFixed(2)}>
+                              <span style={{fontSize:isMobile?11:13,lineHeight:1}}>{emoji}</span>
                               <span className="sy" style={{fontSize:7,color:col,fontWeight:700}}>{r.profit>=0?"+":""}{Math.round(r.profit)}</span>
-                              <div style={{width:"80%",height:h,background:"linear-gradient(to top,"+col+","+col+"44)",borderRadius:"3px 3px 0 0",boxShadow:"0 0 8px "+col+"44",position:"relative",overflow:"hidden",flexShrink:0}}>
+                              <div style={{width:"85%",height:h,background:"linear-gradient(to top,"+col+","+col+"44)",borderRadius:"3px 3px 0 0",boxShadow:"0 0 8px "+col+"44",position:"relative",overflow:"hidden",flexShrink:0}}>
                                 <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:col,borderRadius:2,boxShadow:"0 0 6px "+col}}/>
                               </div>
                               <span className="sy" style={{fontSize:7,color:"rgba(255,255,255,.2)"}}>R{i+1}</span>
@@ -3652,8 +3680,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     );
                   })()}
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:10,marginTop:8}}>
-                  {[["👍","Profitable"],["👎","Loss"],["🌟","Best race"],["💀","Worst race"]].map(([e,l])=>(
+                <div style={{display:"flex",gap:12,marginTop:8}}>
+                  {[["👍","Profitable"],["👎","Loss"]].map(([e,l])=>(
                     <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
                       <span style={{fontSize:10}}>{e}</span>
                       <span className="sy" style={{fontSize:9,color:"rgba(255,255,255,.25)"}}>{l}</span>
@@ -3663,103 +3691,133 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             )}
 
-            {/* STAKE SIZE - SOLAR SYSTEM */}
+            {/* STAKE SIZE - GALAXY NETWORK */}
             {bucketData.length>0&&(()=>{
-              const maxTotal=Math.max(...bucketData.map(b=>b.total),1);
               const profits=bucketData.map(b=>parseFloat((b.payout-b.staked).toFixed(2)));
               const totalProfit=parseFloat(profits.reduce((s,p)=>s+p,0).toFixed(2));
-              const w=isMobile?300:480;
-              const h=280;
-              const cx=w/2, cy=h/2;
-              const sunR=Math.max(28,Math.round(Math.abs(totalProfit)/Math.max(...profits.map(Math.abs),1)*22+18));
-              const sunCol=totalProfit>=0?"#4ade80":"#f87171";
-              const orbits=[55,82,108,130,152];
+              const maxTotal=Math.max(...bucketData.map(b=>b.total),1);
+              const maxAbsProfit=Math.max(...profits.map(Math.abs),1);
+              const w=isMobile?window.innerWidth-64:560;
+              const h=320;
+              // Spiral positions - golden angle spacing
+              const goldenAngle=2.399;
+              const nodes=bucketData.map((b,i)=>{
+                const profit=profits[i];
+                const angle=i*goldenAngle;
+                const dist=60+i*52;
+                const cx=w/2+Math.cos(angle)*dist;
+                const cy=h/2+Math.sin(angle)*dist*0.6;
+                const r=Math.max(24,Math.round(18+(b.total/maxTotal)*30));
+                const profitSize=Math.max(6,Math.round(4+(Math.abs(profit)/maxAbsProfit)*18));
+                const col=profit>=0?"#4ade80":"#f87171";
+                const hitRate=b.total?Math.round((b.wins/b.total)*100):0;
+                return{...b,profit,col,cx,cy,r,profitSize,hitRate,angle};
+              });
               return(
-                <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",boxShadow:"0 4px 20px rgba(0,0,0,.3)",overflow:"hidden"}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🌌 Stake Universe</div>
-                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:10}}>Sun = total profit · Planets = stake ranges · Size = number of bets</div>
-                  <div style={{display:"flex",justifyContent:"center",overflowX:"auto"}}>
+                <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
+                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>💰 Stake Network</div>
+                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:10}}>Node size = bets · Satellites = wins · Colour = profit/loss</div>
+                  <div style={{overflowX:"auto"}}>
                     <svg width={w} height={h} style={{display:"block"}}>
                       <defs>
-                        <radialGradient id="sunGrad" cx="35%" cy="35%">
-                          <stop offset="0%" stopColor={sunCol} stopOpacity="0.9"/>
-                          <stop offset="100%" stopColor={sunCol} stopOpacity="0.3"/>
+                        <radialGradient id="netCentre" cx="50%" cy="50%">
+                          <stop offset="0%" stopColor={totalProfit>=0?"#4ade80":"#f87171"} stopOpacity="0.3"/>
+                          <stop offset="100%" stopColor={totalProfit>=0?"#4ade80":"#f87171"} stopOpacity="0"/>
                         </radialGradient>
-                        <filter id="sunGlow">
-                          <feGaussianBlur stdDeviation="6" result="blur"/>
-                          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        {nodes.map((n,i)=>(
+                          <radialGradient key={i} id={"ng"+i} cx="35%" cy="35%">
+                            <stop offset="0%" stopColor={n.col} stopOpacity="0.75"/>
+                            <stop offset="100%" stopColor={n.col} stopOpacity="0.15"/>
+                          </radialGradient>
+                        ))}
+                        <filter id="nglow">
+                          <feGaussianBlur stdDeviation="3" result="b"/>
+                          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                         </filter>
-                        <filter id="planetGlow">
-                          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-                          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        <filter id="cglow">
+                          <feGaussianBlur stdDeviation="8" result="b"/>
+                          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                         </filter>
-                        {bucketData.map((b,i)=>{
-                          const col=profits[i]>=0?"#4ade80":"#f87171";
-                          return(
-                            <radialGradient key={i} id={"planetGrad"+i} cx="35%" cy="35%">
-                              <stop offset="0%" stopColor={col} stopOpacity="0.8"/>
-                              <stop offset="100%" stopColor={col} stopOpacity="0.2"/>
-                            </radialGradient>
-                          );
-                        })}
                       </defs>
-                      {/* Stars */}
-                      {Array.from({length:40},(_,i)=>{
-                        const sx=(i*137.5)%w; const sy=(i*97.3)%h; const sr=i%5===0?1.2:0.6;
-                        return <circle key={i} cx={sx} cy={sy} r={sr} fill="rgba(255,255,255,.3)"/>;
+
+                      {/* Background starfield */}
+                      {Array.from({length:50},(_,i)=>{
+                        const sx=(i*173.3)%w; const sy=(i*91.7)%h;
+                        return <circle key={i} cx={sx} cy={sy} r={i%7===0?1.2:0.5} fill="rgba(255,255,255,.25)"/>;
                       })}
-                      {/* Orbits */}
-                      {bucketData.map((_,i)=>(
-                        <circle key={i} cx={cx} cy={cy} r={orbits[i]||orbits[orbits.length-1]+i*20}
-                          fill="none" stroke="rgba(255,255,255,.05)" strokeWidth="1" strokeDasharray="3,6"/>
+
+                      {/* Centre glow */}
+                      <circle cx={w/2} cy={h/2} r={70} fill="url(#netCentre)"/>
+
+                      {/* Connection lines from centre */}
+                      {nodes.map((n,i)=>(
+                        <line key={i}
+                          x1={w/2} y1={h/2} x2={n.cx} y2={n.cy}
+                          stroke={n.col} strokeWidth="1" strokeOpacity="0.15"
+                          strokeDasharray="4,6"/>
                       ))}
-                      {/* Sun glow */}
-                      <circle cx={cx} cy={cy} r={sunR+14} fill={sunCol} fillOpacity="0.06" filter="url(#sunGlow)"/>
-                      {/* Sun */}
-                      <circle cx={cx} cy={cy} r={sunR} fill="url(#sunGrad)" filter="url(#sunGlow)"/>
-                      <text x={cx} y={cy-4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff" fontFamily="system-ui">{totalProfit>=0?"+":""}{fmt(totalProfit)}</text>
-                      <text x={cx} y={cy+8} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,.5)" fontFamily="system-ui">Total</text>
-                      {/* Planets */}
-                      {bucketData.map((b,i)=>{
-                        const profit=profits[i];
-                        const col=profit>=0?"#4ade80":"#f87171";
-                        const orbitR=orbits[i]||orbits[orbits.length-1]+i*22;
-                        const angle=(i/bucketData.length)*Math.PI*2 - Math.PI/2 + i*0.4;
-                        const px=cx+Math.cos(angle)*orbitR;
-                        const py=cy+Math.sin(angle)*orbitR;
-                        const pR=Math.max(12,Math.round(8+(b.total/maxTotal)*18));
-                        const hitRate=b.total?Math.round((b.wins/b.total)*100):0;
-                        return(
-                          <g key={i} filter="url(#planetGlow)">
-                            {[0.25,0.5,0.75].map((t,ti)=>{
-                              const ta=angle-t*0.8;
-                              return <circle key={ti} cx={cx+Math.cos(ta)*orbitR} cy={cy+Math.sin(ta)*orbitR} r={1.5} fill={col} fillOpacity={0.15+ti*0.1}/>;
-                            })}
-                            <circle cx={px} cy={py} r={pR} fill={"url(#planetGrad"+i+")"} stroke={col} strokeWidth="1.2" strokeOpacity="0.7"/>
-                            <text x={px} y={py-1} textAnchor="middle" fontSize="7" fontWeight="800" fill="#fff" fontFamily="system-ui">{b.label}</text>
-                            <text x={px} y={py+8} textAnchor="middle" fontSize="6" fill="rgba(255,255,255,.6)" fontFamily="system-ui">{hitRate}%</text>
-                            {b.wins>0&&(()=>{
-                              const moonAngle=angle+Math.PI*0.6;
-                              const moonR=pR+9;
-                              return <circle cx={px+Math.cos(moonAngle)*moonR} cy={py+Math.sin(moonAngle)*moonR} r={3} fill={col} fillOpacity="0.7"/>;
-                            })()}
-                          </g>
-                        );
-                      })}
+
+                      {/* Cross-connections between adjacent nodes */}
+                      {nodes.map((a,i)=>nodes.slice(i+1,i+2).map((b,j)=>(
+                        <line key={i+"-"+j}
+                          x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}
+                          stroke="rgba(255,255,255,.06)" strokeWidth="1"/>
+                      )))}
+
+                      {/* Centre total node */}
+                      <g filter="url(#cglow)">
+                        <circle cx={w/2} cy={h/2} r={36}
+                          fill={totalProfit>=0?"rgba(74,222,128,.2)":"rgba(248,113,113,.2)"}
+                          stroke={totalProfit>=0?"#4ade80":"#f87171"} strokeWidth="2" strokeOpacity="0.6"/>
+                        <text x={w/2} y={h/2-5} textAnchor="middle" fontSize="10" fontWeight="900" fill={totalProfit>=0?"#4ade80":"#f87171"} fontFamily="system-ui">{totalProfit>=0?"+":""}{fmt(totalProfit)}</text>
+                        <text x={w/2} y={h/2+8} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,.4)" fontFamily="system-ui">Total</text>
+                      </g>
+
+                      {/* Nodes */}
+                      {nodes.map((n,i)=>(
+                        <g key={i} filter="url(#nglow)">
+                          {/* Outer ring */}
+                          <circle cx={n.cx} cy={n.cy} r={n.r+5}
+                            fill="none" stroke={n.col} strokeWidth="1" strokeOpacity="0.2" strokeDasharray="3,4"/>
+                          {/* Main bubble */}
+                          <circle cx={n.cx} cy={n.cy} r={n.r}
+                            fill={"url(#ng"+i+")"}
+                            stroke={n.col} strokeWidth="1.5" strokeOpacity="0.7"/>
+                          {/* Labels */}
+                          <text x={n.cx} y={n.cy-6} textAnchor="middle" fontSize="10" fontWeight="800" fill={n.col} fontFamily="system-ui">{n.label}</text>
+                          <text x={n.cx} y={n.cy+5} textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" fontFamily="system-ui">{n.profit>=0?"+":""}{fmt(n.profit)}</text>
+                          <text x={n.cx} y={n.cy+16} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,.4)" fontFamily="system-ui">{n.hitRate}% · {n.total}b</text>
+
+                          {/* Win satellite dots orbiting each node */}
+                          {Array.from({length:Math.min(n.total,8)},(_,di)=>{
+                            const sa=(di/Math.min(n.total,8))*Math.PI*2;
+                            const sr=n.r+14;
+                            const isWin=di<n.wins;
+                            return(
+                              <circle key={di}
+                                cx={n.cx+Math.cos(sa)*sr}
+                                cy={n.cy+Math.sin(sa)*sr}
+                                r={3.5}
+                                fill={isWin?n.col:"rgba(255,255,255,.1)"}
+                                stroke={isWin?n.col:"rgba(255,255,255,.05)"}
+                                strokeWidth="1"/>
+                            );
+                          })}
+                        </g>
+                      ))}
                     </svg>
                   </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
-                    {bucketData.map((b,i)=>{
-                      const col=profits[i]>=0?"#4ade80":"#f87171";
-                      return(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.04)",borderRadius:20,padding:"4px 10px"}}>
-                          <div style={{width:6,height:6,borderRadius:"50%",background:col,boxShadow:"0 0 4px "+col}}/>
-                          <span className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)"}}>{b.label}</span>
-                          <span className="sy" style={{fontSize:9,fontWeight:700,color:col}}>{profits[i]>=0?"+":""}{fmt(profits[i])}</span>
-                          <span className="sy" style={{fontSize:8,color:"rgba(255,255,255,.25)"}}>{b.total} bets</span>
-                        </div>
-                      );
-                    })}
+
+                  {/* Legend */}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+                    {nodes.map((n,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.04)",borderRadius:20,padding:"3px 10px"}}>
+                        <div style={{width:7,height:7,borderRadius:"50%",background:n.col,boxShadow:"0 0 4px "+n.col}}/>
+                        <span className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)"}}>{n.label}</span>
+                        <span className="sy" style={{fontSize:9,fontWeight:700,color:n.col}}>{n.profit>=0?"+":""}{fmt(n.profit)}</span>
+                        <span className="sy" style={{fontSize:8,color:"rgba(255,255,255,.25)"}}>{n.total} bet{n.total!==1?"s":""}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
