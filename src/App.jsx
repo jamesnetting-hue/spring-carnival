@@ -3235,13 +3235,12 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           <button className="sy" style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"#fff",cursor:"pointer",fontSize:11,fontWeight:600,padding:"6px 12px",borderRadius:8,fontFamily:"inherit"}} onClick={()=>{setShowPinChange(true);setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");setPinOk(false);}}>
             Change PIN
           </button>
-            {pinOk&&<span className="sy" style={{fontSize:12,color:C.green,marginLeft:10}}>✓ PIN updated!</span>}
-          </div>
           <div style={{textAlign:"right",flexShrink:0}}>
             <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.5)",textTransform:"uppercase",letterSpacing:".06em"}}>Season Profit</div>
             <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:profit>=0?"#4ade80":"#f87171"}}>{profit>=0?"+":""}{fmt(profit)}</div>
           </div>
         </div>
+        {pinOk&&<div className="sy" style={{fontSize:12,color:"#4ade80",marginTop:6,textAlign:"center"}}>✓ PIN updated successfully!</div>}
       </div>
 
       {/* Main stats - per race */}
