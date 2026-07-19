@@ -3525,20 +3525,74 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             )}
 
-            {/* BARRIER HEATMAP */}
+            {/* BARRIER GATE VISUAL */}
             {Object.keys(numFreq).length>0&&(
-              <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 16px rgba(0,0,0,.25)"}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:4}}>🎯 Favourite Barriers</div>
-                <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:14}}>Which horse numbers you back most</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map(n=>{
-                    const freq=numFreq[n]||0;const intensity=freq/maxFreq;
-                    const col=freq>0?"rgba(74,222,128,"+(0.1+intensity*0.9)+")":"rgba(255,255,255,.05)";
-                    const glow=intensity>0.6?"0 0 10px rgba(74,222,128,"+(intensity*.5)+")":"none";
-                    return(<div key={n} style={{width:36,height:36,borderRadius:8,background:col,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:glow}} title={"#"+n+": backed "+freq+"x"}><span style={{fontSize:12,fontWeight:700,color:freq>0?(intensity>0.5?"#0f1f0f":"#4ade80"):"rgba(255,255,255,.15)"}}>{n}</span></div>);
+              <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 16px rgba(0,0,0,.25)",overflow:"hidden",position:"relative"}}>
+                {/* Track grass texture overlay */}
+                <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(0deg,transparent,transparent 18px,rgba(74,222,128,.02) 18px,rgba(74,222,128,.02) 19px)",pointerEvents:"none"}}/>
+
+                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2,position:"relative"}}>🏇 Barrier Analysis</div>
+                <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:16,position:"relative"}}>Your most backed barriers — track width shows frequency</div>
+
+                {/* Speed map - horizontal lanes like Form Analyst */}
+                <div style={{position:"relative",background:"rgba(0,80,0,.3)",borderRadius:10,overflow:"hidden",border:"1px solid rgba(74,222,128,.15)"}}>
+                  {/* Finish line */}
+                  <div style={{position:"absolute",right:0,top:0,bottom:0,width:3,background:"rgba(255,255,255,.3)",zIndex:2}}/>
+                  <div style={{position:"absolute",right:3,top:0,bottom:0,width:2,background:"rgba(255,0,0,.5)",zIndex:2}}/>
+
+                  {/* Track lanes */}
+                  {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map((n,idx)=>{
+                    const freq=numFreq[n]||0;
+                    const intensity=freq/maxFreq;
+                    const barW=freq>0?Math.max(8,Math.round(intensity*85)):0;
+                    const isTop=n===parseInt(luckyNum?.[0]);
+                    const laneCol=idx%2===0?"rgba(0,60,0,.4)":"rgba(0,50,0,.3)";
+                    return(
+                      <div key={n} style={{display:"flex",alignItems:"center",height:28,background:laneCol,borderBottom:"1px solid rgba(74,222,128,.06)",position:"relative"}}>
+                        {/* Barrier gate */}
+                        <div style={{width:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.3)",height:"100%",borderRight:"2px solid rgba(255,255,255,.1)"}}>
+                          <span style={{fontSize:10,fontWeight:800,color:isTop?"#4ade80":"rgba(255,255,255,.5)"}}>{n}</span>
+                        </div>
+                        {/* Horse/bar */}
+                        {freq>0&&(
+                          <div style={{position:"relative",height:18,marginLeft:4,display:"flex",alignItems:"center"}}>
+                            <div style={{
+                              width:`${barW}%`,minWidth:20,height:"100%",
+                              background:isTop
+                                ?"linear-gradient(to right,#16a34a,#4ade80)"
+                                :`linear-gradient(to right,rgba(74,222,128,${0.2+intensity*.5}),rgba(74,222,128,${0.1+intensity*.3}))`,
+                              borderRadius:"0 4px 4px 0",
+                              boxShadow:isTop?"0 0 8px rgba(74,222,128,.5)":"none",
+                              transition:"width .6s ease",
+                              display:"flex",alignItems:"center",paddingRight:4,
+                            }}>
+                            </div>
+                            {/* Horse emoji at front */}
+                            <span style={{fontSize:13,marginLeft:-2,filter:isTop?"drop-shadow(0 0 4px #4ade80)":"none"}}>🐎</span>
+                            <span style={{fontSize:9,color:"rgba(255,255,255,.5)",marginLeft:4}}>{freq}×</span>
+                          </div>
+                        )}
+                        {freq===0&&<span style={{fontSize:9,color:"rgba(255,255,255,.1)",marginLeft:8}}>—</span>}
+                        {/* Finish post for top */}
+                        {isTop&&<div style={{position:"absolute",right:4,fontSize:9,color:"#4ade80",fontWeight:700}}>⭐</div>}
+                      </div>
+                    );
                   })}
+
+                  {/* Track labels */}
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"4px 8px 4px 36px",background:"rgba(0,0,0,.3)"}}>
+                    <span style={{fontSize:8,color:"rgba(255,255,255,.2)",fontWeight:600,letterSpacing:".06em"}}>BARRIER</span>
+                    <span style={{fontSize:8,color:"rgba(255,255,255,.2)",fontWeight:600,letterSpacing:".06em"}}>FREQUENCY →</span>
+                    <span style={{fontSize:8,color:"rgba(255,255,255,.2)",marginRight:8}}>🏁</span>
+                  </div>
                 </div>
-                {luckyNum&&<div className="sy" style={{fontSize:12,color:"#4ade80",fontWeight:700,marginTop:12}}>Most backed: #{luckyNum[0]} ({luckyNum[1]}x backed)</div>}
+
+                {luckyNum&&(
+                  <div style={{marginTop:12,display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:18}}>🏆</span>
+                    <span className="sy" style={{fontSize:12,color:"#4ade80",fontWeight:700}}>Favourite barrier: #{luckyNum[0]} — backed {luckyNum[1]}x</span>
+                  </div>
+                )}
               </div>
             )}
 
