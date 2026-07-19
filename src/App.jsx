@@ -810,7 +810,7 @@ export default function App() {
         const betLines = playerBets.map(b=>{
           const def = BET_TYPES.find(t=>t.id===b.type);
           const horseLine = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`; }).join(" → ");
-          return `${b.won?"✅":"❌"} ${def?.label}: ${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
+          return `${b.won?"WIN":"LOSS"} ${def?.label}: ${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
         }).join("\n");
 
         emailjs.send(
@@ -829,7 +829,7 @@ export default function App() {
             bet_lines:  betLines,
             total_won:  fmt(totalWon),
             total_lost: fmt(totalLost),
-            net_result: totalWon > 0 ? `🎉 You won ${fmt(totalWon)}!` : `Better luck next race!`,
+            net_result: totalWon > 0 ? `You won ${fmt(totalWon)}!` : `Better luck next race!`,
             leaderboard_url: window.location.href,
           },
           "YOUR_PUBLIC_KEY"        // - replace with your EmailJS Public Key
@@ -1034,7 +1034,7 @@ export default function App() {
         <div style={{position:"fixed",top:72,left:16,right:16,zIndex:9990,maxWidth:520,margin:"0 auto",background:resultsBanner.myWins>0?"rgba(21,128,61,.97)":"rgba(30,92,30,.95)",borderRadius:14,padding:"16px 20px",boxShadow:"0 8px 40px rgba(0,0,0,.25)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,animation:"notif .3s ease"}}>
           <div>
             <div className="sy" style={{fontSize:15,fontWeight:800,color:"#fff"}}>
-              {resultsBanner.myWins>0?`🎉 You won on ${resultsBanner.raceName}!`:`📋 ${resultsBanner.raceName} has been settled`}
+              {resultsBanner.myWins>0?` You won on ${resultsBanner.raceName}!`:` ${resultsBanner.raceName} has been settled`}
             </div>
             {resultsBanner.myWins>0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.85)",marginTop:2}}>+{fmt(resultsBanner.myPayout)} - check My Bets for details</div>}
             {resultsBanner.myWins===0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.75)",marginTop:2}}>Check My Bets to see the results</div>}
@@ -1206,7 +1206,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
   const handleForgotPin = () => {
     const acc = accounts.find(a=>a.email.toLowerCase()===fpEmail.toLowerCase().trim());
     if (!acc) return setFpMsg("No account found with that email address.");
-    setFpMsg(`Your PIN starts with ${acc.pin[0]}••• - if you still can't remember, ask the organiser to reset it for you in the Admin panel.`);
+    setFpMsg(`Your PIN starts with ${acc.pin[0]} - if you still can't remember, ask the organiser to reset it for you in the Admin panel.`);
   };
 
   if (forgotPin) return (
@@ -1531,7 +1531,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                                 const lost=isEW?b.bothLost:b.won===false;
                                 return(
                                   <div key={b.id} className="sy" style={{fontSize:isMobile?10:11,padding:isMobile?"3px 9px":"4px 11px",borderRadius:20,background:hasScr?"#fff3cd":won?C.greenBg:lost?C.redBg:"#f4f5f4",border:`1px solid ${hasScr?"#ffc107":won?C.greenBd:lost?C.redBd:C.border}`,color:hasScr?"#856404":won?C.green:lost?C.red:C.text,fontWeight:600}}>
-                                    {hasScr?"⚠️ ":won?"✓ ":""}<strong>{isEW?"EW":def2?.label}</strong> · #{b.horses[0]} {hn?.name} · {fmt(b.stake)}{won?` → +${fmt(isEW?b.pairPayout:b.payout)}`:lost?" · Lost":""}
+                                    {hasScr?"⚠️ ":won?"✓ ":""}<strong>{isEW?"EW":def2?.label}</strong> · #{b.horses[0]} {hn?.name} · {fmt(b.stake)}{won?`  +${fmt(isEW?b.pairPayout:b.payout)}`:lost?" · Lost":""}
                                   </div>
                                 );
                               });
@@ -1797,7 +1797,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           )}
           <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(21,128,61,.04)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.greenBd}`}}>
             <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
-              {raceBalance===0?"✅ Full $24 bet - you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet - you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
+              {raceBalance===0?"✅ Full $24 bet - you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet - you must bet your full $24":` ${fmt(raceBalance)} still to allocate`}
             </span>
           </div>
 
@@ -1894,7 +1894,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       {!isMobile&&posLabels.map(pl=>(<span key={pl} style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
                     </div>
                     <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>
-                      <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
+                      <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?`  ${h.weight}kg`:""}
                     </div>
                     {h.form&&h.form.length>0&&(
                       <div style={{display:"flex",gap:2,marginTop:isMobile?2:4}}>
@@ -2121,7 +2121,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         );
                       })}
                     </div>
-                    {combos>0&&<div style={{marginTop:8,padding:"8px 12px",background:"#f0fdf4",borderRadius:8,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,color:"#1a3a1a"}}>✓</span><span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>{combos} combination{combos!==1?"s":" "}{combos>1?`· ${flexiPct}% flexi`:""}</span></div>}
+                    {combos>0&&<div style={{marginTop:8,padding:"8px 12px",background:"#f0fdf4",borderRadius:8,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,color:"#1a3a1a"}}>✓</span><span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>{combos} combination{combos!==1?"s":" "}{combos>1?` ${flexiPct}% flexi`:""}</span></div>}
                   </div>
                 )}
 
@@ -2441,7 +2441,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       const medal = medals[i] || `#${i+1}`;
       return `${medal} ${a.name} - ${profit>=0?"+":""}${fmt(profit)}`;
     });
-    const text = `🏇 Spring Carnival Standings\n\n${lines.join("\n")}`;
+    const text = ` Spring Carnival Standings\n\n${lines.join("\n")}`;
     navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
   };
   return (
@@ -2481,22 +2481,22 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
           {
             emoji:"🐎",label:"Biggest Roughie",
             name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",
-            detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)} · ${races.find(r=>r.id===biggestRoughie.raceId)?.name||""}`:"No winners yet",
+            detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)}  ${races.find(r=>r.id===biggestRoughie.raceId)?.name||""}`:"No winners yet",
           },
           {
             emoji:"💸",label:"Biggest Trifecta",
             name:biggestTriPlayer?.name||"TBD",
-            detail:biggestTri?`${fmt(biggestTri.payout||0)} · #${biggestTri.horses?.join("-")} · ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet",
+            detail:biggestTri?`${fmt(biggestTri.payout||0)}  #${biggestTri.horses?.join("-")}  ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet",
           },
           {
             emoji:"🤑",label:"Biggest First Four",
             name:biggestFFPlayer?.name||"TBD",
-            detail:biggestFF?`${fmt(biggestFF.payout||0)} · #${biggestFF.horses?.join("-")} · ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet",
+            detail:biggestFF?`${fmt(biggestFF.payout||0)}  #${biggestFF.horses?.join("-")}  ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet",
           },
           {
             emoji:"🔥",label:"Hot Streak",
             name:luckiestPlayer?.name||"TBD",
-            detail:luckiestWin?`${fmt(luckiestWin.payout||0)} · ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label} · ${luckiestRace?.name}`:"No wins yet",
+            detail:luckiestWin?`${fmt(luckiestWin.payout||0)}  ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label}  ${luckiestRace?.name}`:"No wins yet",
           },
           {
             emoji:"❄️",label:"Cold Streak",
@@ -2558,7 +2558,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:700}}>{a.name}</div>
                       {movement!==null&&movement!==0&&(
                         <span className="sy" style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:3,background:movement>0?C.greenBg:C.redBg,color:movement>0?C.green:C.red,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
-                          {movement>0?`▲ ${movement}`:`▼ ${Math.abs(movement)}`}
+                          {movement>0?` ${movement}`:` ${Math.abs(movement)}`}
                         </span>
                       )}
                     </div>
@@ -2688,7 +2688,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
           for(let i=settled.length-1;i>=0;i--){
             if((settled[i].won&&type.includes("Win"))||(!settled[i].won&&type.includes("Loss")))count++; else break;
           }
-          return `${type} ×${count}`;
+          return `${type} ${count}`;
         };
 
         return(
@@ -2723,7 +2723,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       {draws>0&&<div className="sy" style={{fontSize:10,color:C.soft}}>{draws} draw{draws>1?"s":""}</div>}
                       <div className="sy" style={{fontSize:9,color:C.muted,marginTop:2}}>races won</div>
                       <div className="sy" style={{fontSize:11,fontWeight:700,marginTop:4,color:p1Total>p2Total?C.green:p2Total>p1Total?C.red:C.soft}}>
-                        {p1Total>p2Total?`↑ ${fmt(p1Total-p2Total)} ahead`:p2Total>p1Total?`↓ ${fmt(p2Total-p1Total)} behind`:"Even"}
+                        {p1Total>p2Total?` ${fmt(p1Total-p2Total)} ahead`:p2Total>p1Total?` ${fmt(p2Total-p1Total)} behind`:"Even"}
                       </div>
                     </div>
                     <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(184,134,11,.05)",border:`2px solid ${C.gold}`}}>
@@ -2774,7 +2774,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                               <span className="sy" style={{fontSize:15,fontWeight:700,color:p1P>=0?C.green:C.red}}>{p1P>=0?"+":""}{fmt(p1P)}</span>
                               <span className="sy" style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:winner==="p1"?C.greenBg:winner==="p2"?C.redBg:"#f0f0f0",color:winner==="p1"?C.green:winner==="p2"?C.red:C.soft}}>
-                                {winner==="p1"?`${player1.name} ✓`:winner==="p2"?`${player2.name} ✓`:"Draw"}
+                                {winner==="p1"?`${player1.name} `:winner==="p2"?`${player2.name} `:"Draw"}
                               </span>
                               <span className="sy" style={{fontSize:15,fontWeight:700,color:p2P>=0?C.green:C.red}}>{p2P>=0?"+":""}{fmt(p2P)}</span>
                             </div>
@@ -3119,7 +3119,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
                     <div className="cg" style={{fontSize:16,fontWeight:700}}>{race?.name}</div>
                     <div className="sy soft" style={{fontSize:12,marginTop:2}}>{td?.label} · #{bet.horses.join(" → #")} · {new Date(bet.placedAt).toLocaleDateString("en-AU",{day:"numeric",month:"short"})}</div>
                     <div className="sy" style={{fontSize:12,marginTop:3,fontWeight:600,color:bet.won===true?C.green:bet.won===false?C.red:C.accent}}>
-                      {bet.won===null&&bet.potential?`Potential: ${fmt(bet.potential)}`:bet.won===true?`Won ${fmt(bet.payout)}! 🎉`:bet.won===false?"Lost":"Pending"}
+                      {bet.won===null&&bet.potential?`Potential: ${fmt(bet.potential)}`:bet.won===true?`Won ${fmt(bet.payout)}! `:bet.won===false?"Lost":"Pending"}
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0,marginLeft:10}}>
