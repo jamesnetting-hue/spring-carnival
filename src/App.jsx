@@ -1677,19 +1677,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   };
 
   const getBoxedCombos=()=>{
-    const allSel=[...new Set(Object.values(effectiveSel).flat())];
-    if(allSel.length<numPositions) return [];
-    // Quinella boxed = unordered pairs (combinations, not permutations)
-    if(betType==="quinella"){
-      const pairs=[];
-      for(let i=0;i<allSel.length;i++)
-        for(let j=i+1;j<allSel.length;j++)
-          pairs.push([allSel[i],allSel[j]]);
-      return pairs;
-    }
-    // Exacta/Trifecta/First Four boxed = ordered permutations
-    function perms(arr,r){if(r===0)return[[]]; return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));}
-    return perms(allSel,numPositions);
+    try {
+      const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
+      if(allSel.length<numPositions) return [];
+      if(betType==="quinella"){
+        const pairs=[];
+        for(let i=0;i<allSel.length;i++)
+          for(let j=i+1;j<allSel.length;j++)
+            pairs.push([allSel[i],allSel[j]]);
+        return pairs;
+      }
+      // Cap at 10 horses max for boxed to avoid freeze
+      const capped=allSel.slice(0,10);
+      function perms(arr,r){if(r===0)return[[]]; return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));}
+      return perms(capped,numPositions);
+    } catch(e){ return []; }
   };
 
   const allCombos = boxed&&canShowBoxed ? getBoxedCombos() : getUnboxedCombos();
@@ -2200,10 +2202,12 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       const h=race.horses.find(x=>x.number===n);
                       return h?(
                         <div style={{display:"flex",alignItems:"center",gap:10}}>
-                          <div style={{width:38,height:38,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,color:"#fff",flexShrink:0}}>{h.number}</div>
+                          <div style={{padding:"4px 12px",background:"#1a3a1a",borderRadius:20,flexShrink:0}}>
+                            <span className="sy" style={{fontSize:12,fontWeight:700,color:"#fff"}}>✓ Selected</span>
+                          </div>
                           {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:32,height:32,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                           <div style={{flex:1}}>
-                            <div className="sy" style={{fontSize:14,fontWeight:700,color:"#111"}}>{h.name}</div>
+                            <div className="sy" style={{fontSize:14,fontWeight:700,color:"#111"}}>{h.name} <span style={{color:"#9ca3af",fontWeight:400,fontSize:12}}>({h.barrier||h.number})</span></div>
                             <div className="sy" style={{fontSize:11,color:C.soft,marginTop:1}}>
                               Win <strong style={{color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</strong> · Place <strong style={{color:"#1d4ed8"}}>${h.placeOdds.toFixed(2)}</strong>
                             </div>
@@ -2432,10 +2436,11 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   };
   return (
     <div className="fu">
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4,flexWrap:"wrap",gap:10}}>
-        <h2 className="cg" style={{fontSize:isMobile?22:28,fontWeight:700}}>🏆 Leaderboard</h2>
+      {/* Page header */}
+      <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"16px":"20px 24px",marginBottom:20,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
+        <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:800,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
+        <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.6)",margin:0}}>Ranked by net profit across all Group 1 races</p>
       </div>
-      <p className="sy" style={{fontSize:13,color:C.soft,marginBottom:18}}>Ranked by net profit across all races.</p>
 
       {/* Season Awards — above leaderboard */}
       {accounts.length>0&&(()=>{
@@ -3207,22 +3212,23 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   return (
     <div className="fu">
       {/* Header */}
-      <div className="card" style={{marginBottom:16,borderLeft:`4px solid ${C.accent}`}}>
+      <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"14px 16px":"18px 24px",marginBottom:20,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-          <div style={{width:48,height:48,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},#2d7a2d)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff",flexShrink:0}}>
+          <div style={{width:46,height:46,borderRadius:"50%",background:"rgba(255,255,255,.15)",border:"2px solid rgba(255,255,255,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:800,color:"#fff",flexShrink:0}}>
             {account.name[0].toUpperCase()}
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <h2 className="cg" style={{fontSize:isMobile?20:24,fontWeight:700}}>{account.name}</h2>
-            <p className="sy" style={{fontSize:12,color:C.soft}}>{account.email}</p>
-            <button className="sy" style={{background:"none",border:"none",color:C.accent,cursor:"pointer",fontSize:12,fontWeight:700,textDecoration:"underline",padding:0,marginTop:2}} onClick={()=>{setShowPinChange(true);setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");setPinOk(false);}}>
-              Change PIN
-            </button>
+            <h2 className="cg" style={{fontSize:isMobile?18:22,fontWeight:800,color:"#fff",marginBottom:1}}>{account.name}</h2>
+            <p className="sy" style={{fontSize:11,color:"rgba(255,255,255,.6)",margin:0}}>{account.email}</p>
+          </div>
+          <button className="sy" style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"#fff",cursor:"pointer",fontSize:11,fontWeight:600,padding:"6px 12px",borderRadius:8,fontFamily:"inherit"}} onClick={()=>{setShowPinChange(true);setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");setPinOk(false);}}>
+            Change PIN
+          </button>
             {pinOk&&<span className="sy" style={{fontSize:12,color:C.green,marginLeft:10}}>✓ PIN updated!</span>}
           </div>
           <div style={{textAlign:"right",flexShrink:0}}>
-            <div className="sy" style={{fontSize:11,color:C.soft,textTransform:"uppercase",letterSpacing:".06em"}}>Season Profit</div>
-            <div className="cg" style={{fontSize:isMobile?24:30,fontWeight:800,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+            <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.5)",textTransform:"uppercase",letterSpacing:".06em"}}>Season Profit</div>
+            <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:profit>=0?"#4ade80":"#f87171"}}>{profit>=0?"+":""}{fmt(profit)}</div>
           </div>
         </div>
       </div>
@@ -3231,27 +3237,27 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:16}}>
         {[
           ["Races Entered", totalSettledRaces||0, null],
-          ["Profitable Races", racesWon, C.green],
-          ["Losing Races", racesLost, C.red],
+          ["Profitable Races", racesWon, "#16a34a"],
+          ["Losing Races", racesLost, "#dc2626"],
           ["Pending", pending.length, null],
         ].map(([l,v,col])=>(
-          <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
-            <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
-            <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:700,color:col||C.text}}>{v}</div>
+          <div key={l} style={{background:"#fff",borderRadius:12,padding:"14px 12px",textAlign:"center",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+            <div className="sy" style={{fontSize:10,color:"#9ca3af",marginBottom:4,textTransform:"uppercase",letterSpacing:".08em",fontWeight:600}}>{l}</div>
+            <div className="cg" style={{fontSize:isMobile?22:26,fontWeight:800,color:col||"#111"}}>{v}</div>
           </div>
         ))}
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:20}}>
         {[
-          ["Race Win Rate", `${raceWinRate}%`, raceWinRate>=50?C.green:raceWinRate>=30?C.gold:C.red],
-          ["ROI", `${roi}%`, roi>=0?C.green:C.red],
+          ["Race Win Rate", `${raceWinRate}%`, raceWinRate>=50?"#16a34a":raceWinRate>=30?"#d97706":"#dc2626"],
+          ["ROI", `${roi}%`, roi>=0?"#16a34a":"#dc2626"],
           ["Total Staked", fmt(settledStaked), null],
-          ["Total Returned", fmt(account.totalWon), C.green],
+          ["Total Returned", fmt(account.totalWon), "#16a34a"],
         ].map(([l,v,col])=>(
-          <div key={l} className="card" style={{textAlign:"center",padding:"14px 10px"}}>
-            <div className="sy" style={{fontSize:11,color:C.soft,marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
-            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:700,color:col||C.text}}>{v}</div>
+          <div key={l} style={{background:"#fff",borderRadius:12,padding:"14px 12px",textAlign:"center",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+            <div className="sy" style={{fontSize:10,color:"#9ca3af",marginBottom:4,textTransform:"uppercase",letterSpacing:".08em",fontWeight:600}}>{l}</div>
+            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:800,color:col||"#111"}}>{v}</div>
           </div>
         ))}
       </div>
