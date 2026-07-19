@@ -62,7 +62,7 @@ function Confetti() {
   );
 }
 
-// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+// --- SUPABASE -----------------------------------------------------------------
 const SUPA_URL = "https://yhohlsqiedzpxumqhppb.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlob2hsc3FpZWR6cHh1bXFocHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNTA3OTMsImV4cCI6MjA5MjcyNjc5M30.Yvf-ooW0Ti0TCcmZg-VtPzrsbQVlpc_YeBzf07_qfv0";
 
@@ -120,17 +120,17 @@ const sb = {
   },
 };
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+// --- CONSTANTS ----------------------------------------------------------------
 const STARTING_BALANCE = 24.00;
 const ADMIN_PIN = "7379";
 
 // Each individual Group 1 race gets its own $24 budget per player.
 
-// ─── RACE DATA ────────────────────────────────────────────────────────────────
+// --- RACE DATA ----------------------------------------------------------------
 // Races are added via the Admin panel
 const INITIAL_RACES = [];
 
-// ─── BET TYPES: Win, Place, Trifecta, First Four only ────────────────────────
+// --- BET TYPES: Win, Place, Trifecta, First Four only ------------------------
 const BET_TYPES = [
   {
     id:"win", label:"Win", desc:"Pick the winner",
@@ -192,7 +192,7 @@ const BET_TYPES = [
   },
 ];
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
+// --- HELPERS ------------------------------------------------------------------
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
 const formColor = f => {
@@ -328,7 +328,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:2000;backdrop-filter:blur(4px);padding:0}
 .modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;width:100%;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
 
-/* ── RESPONSIVE ── */
+/* -- RESPONSIVE -- */
 @media(max-width:640px){
   .desktop-nav{display:none!important}
   .mobile-nav{display:flex!important}
@@ -356,7 +356,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 }
 `;
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
+// --- APP ----------------------------------------------------------------------
 export default function App() {
   const [accounts, setAccounts] = useState([]);
   const [session, setSession] = useState(null);
@@ -760,7 +760,7 @@ export default function App() {
       const def = BET_TYPES.find(t=>t.id===b.type);
       let won;
       if(b.horses.length>def.positions.length) {
-        // Boxed bet — check if the result positions are all covered by selected horses
+        // Boxed bet - check if the result positions are all covered by selected horses
         const resultPositions=[result.first,result.second,result.third,result.fourth].slice(0,def.positions.length);
         won = resultPositions.every(pos=>b.horses.includes(pos));
       } else {
@@ -814,8 +814,8 @@ export default function App() {
         }).join("\n");
 
         emailjs.send(
-          "YOUR_SERVICE_ID",       // ← replace with your EmailJS Service ID
-          "YOUR_TEMPLATE_ID",      // ← replace with your EmailJS Template ID
+          "YOUR_SERVICE_ID",       // - replace with your EmailJS Service ID
+          "YOUR_TEMPLATE_ID",      // - replace with your EmailJS Template ID
           {
             to_name:    player.name,
             to_email:   player.email,
@@ -832,7 +832,7 @@ export default function App() {
             net_result: totalWon > 0 ? `🎉 You won ${fmt(totalWon)}!` : `Better luck next race!`,
             leaderboard_url: window.location.href,
           },
-          "YOUR_PUBLIC_KEY"        // ← replace with your EmailJS Public Key
+          "YOUR_PUBLIC_KEY"        // - replace with your EmailJS Public Key
         ).catch(()=>{/* silent fail - email is best-effort */});
       });
     }
@@ -1051,7 +1051,7 @@ export default function App() {
 
       {screen!=="auth"&&(
         <>
-          {/* ── HEADER ── */}
+          {/* -- HEADER -- */}
           <header style={{background:C.header,padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
@@ -1078,7 +1078,7 @@ export default function App() {
             </div>
           </header>
 
-          {/* ── MOBILE BOTTOM NAV ── */}
+          {/* -- MOBILE BOTTOM NAV -- */}
           <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 12px), 12px)"}}>
             {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
@@ -1122,7 +1122,7 @@ export default function App() {
   );
 }
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+// --- AUTH ---------------------------------------------------------------------
 function PinPad({ value, onChange, maxLen=4 }) {
   const digits = value.split("");
   const press = d => { if (value.length < maxLen) onChange(value + d); };
@@ -1348,7 +1348,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
 }
 
 
-// ─── LOBBY ────────────────────────────────────────────────────────────────────
+// --- LOBBY --------------------------------------------------------------------
 function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,seasonMessage,accounts}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -1624,7 +1624,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
   );
 }
 
-// ─── RACE SCREEN ──────────────────────────────────────────────────────────────
+// --- RACE SCREEN --------------------------------------------------------------
 function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCancelBet}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -1650,7 +1650,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
   const changeType=id=>{setBetType(id);setSel({});setWinSel(null);setPlaceSel(null);};
 
-  // Sync winSel/placeSel → sel so combo counting works for win/place/eachway
+  // Sync winSel/placeSel - sel so combo counting works for win/place/eachway
   const effectiveSelNum = winSel||placeSel;
   const effectiveSel = (betType==="win"||betType==="place"||betType==="eachway")&&effectiveSelNum
     ? {0:[effectiveSelNum]}
@@ -1686,7 +1686,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const getBoxedCombos=()=>{
     const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
     if(allSel.length<numPositions) return [];
-    // Return a placeholder array with the correct LENGTH only — never generate actual permutations
+    // Return a placeholder array with the correct LENGTH only - never generate actual permutations
     // This avoids browser freeze with large fields
     if(betType==="quinella"){
       // C(n,2) = n*(n-1)/2
@@ -1727,7 +1727,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         onQueue(race.id,"place",h,stake);
       });
     } else if(boxed&&canShowBoxed) {
-      // Boxed: store the selected horses as one bet — settlement checks any permutation
+      // Boxed: store the selected horses as one bet - settlement checks any permutation
       const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
       onQueue(race.id,betType,allSel,stake);
     } else {
@@ -2355,7 +2355,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   );
 }
 
-// ─── BETSLIP MODAL
+// --- BETSLIP MODAL
 function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfirm,onClose}) {
   const total=pendingBets.reduce((s,b)=>s+b.stake,0);
 
@@ -2427,7 +2427,7 @@ function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfi
   );
 }
 
-// ─── LEADERBOARD ──────────────────────────────────────────────────────────────
+// --- LEADERBOARD --------------------------------------------------------------
 function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -2793,7 +2793,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   );
 }
 
-// ─── SEASON SUMMARY ───────────────────────────────────────────────────────────
+// --- SEASON SUMMARY -----------------------------------------------------------
 function SeasonScreen({accounts, bets, races}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -2983,7 +2983,7 @@ function SeasonScreen({accounts, bets, races}) {
   );
 }
 
-// ─── PROFILE ──────────────────────────────────────────────────────────────────
+// --- PROFILE ------------------------------------------------------------------
 function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBet}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -3659,7 +3659,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   );
 }
 
-// ─── ADMIN ────────────────────────────────────────────────────────────────────
+// --- ADMIN --------------------------------------------------------------------
 function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
@@ -4166,7 +4166,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           const posColor = posIdx===0?"#d4a017":posIdx===1?"#9ca3af":posIdx===2?"#cd7f32":C.accent;
                           return (
                             <div key={h.number} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                              {/* Horse card - tap cycles through 1st→2nd→3rd→4th→off */}
+                              {/* Horse card - tap cycles through 1st-2nd-3rd-4th-off */}
                               <button className="sy" style={{
                                 width:isMobile?72:80,padding:"10px 6px",borderRadius:10,
                                 border:`2.5px solid ${posLabel?posColor:C.border}`,
