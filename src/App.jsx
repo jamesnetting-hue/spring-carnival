@@ -2433,6 +2433,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const isMobile = w < 700;
   const [h2h, setH2h] = useState(null);
   const [compareId, setCompareId] = useState(null);
+  const [copied, setCopied] = useState(false);
   const medals=["🥇","🥈","🥉"]; const medalC=["#ffd700","#c0c0c0","#cd7f32"];
 
   const copyStandings = () => {
