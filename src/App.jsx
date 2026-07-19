@@ -3542,7 +3542,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               );
             })()}
 
-            {/* WIN RATE BY ODDS - Blended Arc Dials */}
+            {/* WIN RATE BY ODDS - Heat Wave */}
             {settled.length>0&&(()=>{
               const oddsRanges=[
                 {label:"Fav",sublabel:"<$3",min:0,max:3,col:"#4ade80"},
@@ -3557,88 +3557,49 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 return{...r,total:tb.length,wins:wins.length,profit,hitRate:tb.length?Math.round((wins.length/tb.length)*100):0};
               }).filter(r=>r.total>0);
               if(!oddsData.length) return null;
-
-              // Arc helper - SVG arc path
-              const arc=(cx,cy,r,startDeg,endDeg)=>{
-                const s=startDeg*Math.PI/180, e=endDeg*Math.PI/180;
-                const x1=cx+r*Math.cos(s), y1=cy+r*Math.sin(s);
-                const x2=cx+r*Math.cos(e), y2=cy+r*Math.sin(e);
-                const large=endDeg-startDeg>180?1:0;
-                return `M${x1},${y1} A${r},${r},0,${large},1,${x2},${y2}`;
-              };
-
-              const dialW=isMobile?130:150;
-              const dialH=isMobile?100:115;
-              const dcx=dialW/2, dcy=dialH-10;
-              const outerR=isMobile?58:68, innerR=isMobile?40:47;
-              const startDeg=180, totalDeg=180;
-
               return(
                 <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🎯 Win Rate by Odds</div>
-                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:16}}>Each dial shows your hit rate at that price range</div>
+                  <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>📡 Win Rate by Odds Range</div>
+                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.65)",marginBottom:18}}>How often you win at each price range</div>
 
-                  <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(oddsData.length,4)},1fr)`,gap:8}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
                     {oddsData.map((r,i)=>{
-                      const fillDeg=r.hitRate/100*totalDeg;
-                      const needleAngle=(startDeg+fillDeg)*Math.PI/180;
-                      const needleLen=outerR-6;
-                      const nx=dcx+needleLen*Math.cos(needleAngle);
-                      const ny=dcy+needleLen*Math.sin(needleAngle);
-                      const grade=r.hitRate>=60?"Elite":r.hitRate>=40?"Good":r.hitRate>=20?"Fair":"Rare";
+                      const pct=r.hitRate;
+                      const grade=pct>=60?"Elite":pct>=40?"Good":pct>=20?"Fair":"Rare";
                       return(
-                        <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                          <svg width={dialW} height={dialH} style={{display:"block",overflow:"visible"}}>
-                            <defs>
-                              <linearGradient id={"dialGrad"+i} x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#f87171" stopOpacity="0.8"/>
-                                <stop offset="50%" stopColor="#fbbf24" stopOpacity="0.9"/>
-                                <stop offset="100%" stopColor={r.col} stopOpacity="1"/>
-                              </linearGradient>
-                              <filter id={"dialGlow"+i}>
-                                <feGaussianBlur stdDeviation="2.5" result="b"/>
-                                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                              </filter>
-                            </defs>
-
-                            {/* Track (empty arc) */}
-                            <path d={arc(dcx,dcy,outerR,180,360)} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={outerR-innerR-2}/>
-
-                            {/* Filled arc */}
-                            {fillDeg>0&&(
-                              <path d={arc(dcx,dcy,(outerR+innerR)/2,180,180+fillDeg)}
-                                fill="none"
-                                stroke={"url(#dialGrad"+i+")"}
-                                strokeWidth={outerR-innerR-2}
-                                strokeLinecap="round"
-                                filter={"url(#dialGlow"+i+")"}/>
-                            )}
-
-                            {/* Tick marks */}
-                            {[0,25,50,75,100].map(pct=>{
-                              const a=(180+pct/100*180)*Math.PI/180;
-                              const x1=dcx+innerR*Math.cos(a), y1=dcy+innerR*Math.sin(a);
-                              const x2=dcx+(innerR-5)*Math.cos(a), y2=dcy+(innerR-5)*Math.sin(a);
-                              return <line key={pct} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,.15)" strokeWidth="1"/>;
-                            })}
-
-                            {/* Needle */}
-                            <line x1={dcx} y1={dcy} x2={nx} y2={ny}
-                              stroke={r.col} strokeWidth="2" strokeLinecap="round"
-                              filter={"url(#dialGlow"+i+")"}/>
-                            <circle cx={dcx} cy={dcy} r={4} fill={r.col} filter={"url(#dialGlow"+i+")"}/>
-
-                            {/* Centre text */}
-                            <text x={dcx} y={dcy-8} textAnchor="middle" fontSize={isMobile?15:17} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
-                            <text x={dcx} y={dcy+5} textAnchor="middle" fontSize={isMobile?7:8} fill="rgba(255,255,255,.35)" fontFamily="system-ui">{grade}</text>
-                          </svg>
-
-                          {/* Label below dial */}
-                          <div style={{textAlign:"center",marginTop:-4}}>
-                            <div className="sy" style={{fontSize:isMobile?11:12,fontWeight:700,color:r.col}}>{r.label}</div>
-                            <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.3)",marginBottom:2}}>{r.sublabel}</div>
-                            <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)"}}>{r.wins}W · {r.total-r.wins}L</div>
-                            <div className="sy" style={{fontSize:9,fontWeight:700,color:r.profit>=0?"#4ade80":"#f87171"}}>{r.profit>=0?"+":""}{fmt(r.profit)}</div>
+                        <div key={i}>
+                          {/* Header row */}
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:10,height:10,borderRadius:"50%",background:r.col,boxShadow:`0 0 8px ${r.col}`,flexShrink:0}}/>
+                              <span className="sy" style={{fontSize:13,fontWeight:700,color:"#fff"}}>{r.label}</span>
+                              <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.55)"}}>{r.sublabel}</span>
+                              <span className="sy" style={{fontSize:10,fontWeight:700,color:r.col,background:`${r.col}18`,padding:"1px 8px",borderRadius:20}}>{grade}</span>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:12}}>
+                              <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.6)"}}>{r.wins}W · {r.total-r.wins}L</span>
+                              <span className="sy" style={{fontSize:13,fontWeight:800,color:r.profit>=0?"#4ade80":"#f87171"}}>{r.profit>=0?"+":""}{fmt(r.profit)}</span>
+                              <span className="sy" style={{fontSize:16,fontWeight:900,color:r.col,minWidth:46,textAlign:"right"}}>{pct}%</span>
+                            </div>
+                          </div>
+                          {/* Bar */}
+                          <div style={{height:10,background:"rgba(255,255,255,.06)",borderRadius:5,overflow:"hidden",position:"relative"}}>
+                            <div style={{
+                              position:"absolute",top:0,left:0,height:"100%",
+                              width:`${pct}%`,
+                              background:`linear-gradient(to right, ${r.col}66, ${r.col})`,
+                              borderRadius:5,
+                              boxShadow:`0 0 12px ${r.col}88`,
+                              transition:"width .8s ease",
+                            }}/>
+                            {/* Shimmer tip */}
+                            {pct>0&&<div style={{position:"absolute",top:0,left:`calc(${pct}% - 2px)`,width:4,height:"100%",background:r.col,borderRadius:2,boxShadow:`0 0 8px ${r.col}`}}/>}
+                          </div>
+                          {/* Win dots */}
+                          <div style={{display:"flex",gap:3,marginTop:5}}>
+                            {Array.from({length:r.total}).map((_,di)=>(
+                              <div key={di} style={{width:8,height:8,borderRadius:2,background:di<r.wins?r.col:"rgba(255,255,255,.1)",boxShadow:di<r.wins?`0 0 4px ${r.col}55`:"none",flexShrink:0}}/>
+                            ))}
                           </div>
                         </div>
                       );
