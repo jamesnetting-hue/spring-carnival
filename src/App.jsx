@@ -11,7 +11,7 @@ function useWindowWidth() {
   return w;
 }
 
-// Countdown hook — returns {h, m, s, urgent, expired}
+// Countdown hook - returns {h, m, s, urgent, expired}
 function useCountdown(targetDateStr, targetTimeStr) {
   const getRemaining = () => {
     if (!targetDateStr || !targetTimeStr) return null;
@@ -145,14 +145,14 @@ const BET_TYPES = [
     multiplier:(horses,om) => om[horses[0]]?.placeOdds || 0,
   },
   {
-    id:"eachway", label:"Each Way", desc:"Win + Place — costs 2× your stake",
+    id:"eachway", label:"Each Way", desc:"Win + Place - costs 2× your stake",
     positions:[{label:"Horse",key:"horse"}],
     check:(horses,res) => horses[0]===res.first || [res.first,res.second,res.third].includes(horses[0]),
     multiplier:(horses,om) => (om[horses[0]]?.winOdds||0) + (om[horses[0]]?.placeOdds||0),
     eachway: true,
   },
   {
-    id:"quinella", label:"Quinella", desc:"Pick 2 horses to finish 1st & 2nd — any order",
+    id:"quinella", label:"Quinella", desc:"Pick 2 horses to finish 1st & 2nd - any order",
     positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
     check:(horses,res) => {
       const top2=[res.first,res.second];
@@ -235,13 +235,13 @@ const C = {
   border:"#d4dbd4",
   borderMid:"#b8c4b8",
 
-  // Primary accent — racing green
+  // Primary accent - racing green
   accent:"#1e5c1e",
   accentL:"#2d7a2d",
   accentGlow:"rgba(30,92,30,0.08)",
   accentSoft:"rgba(30,92,30,0.05)",
 
-  // Gold — for winners, highlights
+  // Gold - for winners, highlights
   gold:"#b8860b",
   goldL:"#d4a017",
   goldBg:"rgba(184,134,11,0.08)",
@@ -253,9 +253,9 @@ const C = {
   blue:"#1d4ed8",   blueBg:"rgba(29,78,216,0.07)",   blueBd:"rgba(29,78,216,0.25)",
 
   // Text
-  text:"#111111",    // near-black — maximum readability
-  soft:"#333333",    // dark grey — still clearly readable
-  muted:"#666666",   // medium grey — for placeholders only
+  text:"#111111",    // near-black - maximum readability
+  soft:"#333333",    // dark grey - still clearly readable
+  muted:"#666666",   // medium grey - for placeholders only
 };
 
 const silkCol = n => ["#dc2626","#1d4ed8","#15803d","#92400e","#7c3aed","#0e7490","#be185d","#d97706","#065f46","#1e3a8a","#9f1239","#0f766e","#b45309","#374151"][(n-1)%14];
@@ -272,7 +272,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 .card{background:${C.card};border:1px solid ${C.border};border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .surface{background:${C.surface};border:1px solid ${C.border};border-radius:10px;padding:16px}
 
-/* Inputs — large and clear */
+/* Inputs - large and clear */
 .inp{background:#fff;border:2px solid ${C.border};color:${C.text};padding:13px 16px;border-radius:10px;font-size:16px;width:100%;outline:none;transition:border-color .18s,box-shadow .18s;line-height:1.4}
 .inp:focus{border-color:${C.accent};box-shadow:0 0 0 3px rgba(30,92,30,0.12)}
 .inp::placeholder{color:${C.muted}}
@@ -374,7 +374,7 @@ export default function App() {
       const saved = localStorage.getItem("sc_season_msg");
       if (saved) return JSON.parse(saved);
     } catch {}
-    return { enabled: false, text: "No races have been added yet. Check back soon — the season is coming! 🏇" };
+    return { enabled: false, text: "No races have been added yet. Check back soon - the season is coming! 🏇" };
   });
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -400,7 +400,7 @@ export default function App() {
           sb.select("settings", "key=eq.season_message"),
         ]);
 
-        // Load season message — Supabase overrides localStorage
+        // Load season message - Supabase overrides localStorage
         if (Array.isArray(dbSettings) && dbSettings.length > 0 && dbSettings[0].value) {
           const msg = dbSettings[0].value;
           setSeasonMessage(msg);
@@ -425,7 +425,7 @@ export default function App() {
           placedAt: b.placed_at,
         })));
 
-        // Load races from Supabase — these include all admin-added races
+        // Load races from Supabase - these include all admin-added races
         if (Array.isArray(dbRaces) && dbRaces.length > 0) {
           // Races are stored in Supabase with full data in the result field
           // Merge with any local structure
@@ -498,7 +498,7 @@ export default function App() {
         })));
       }
       showToast("✓ Up to date");
-    } catch(e) { showToast("Refresh failed — check connection", "err"); }
+    } catch(e) { showToast("Refresh failed - check connection", "err"); }
   };
 
   const showToast = (msg, type="ok") => {
@@ -591,7 +591,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Poll Supabase every 30s — keeps all clients in sync and catches failed saves
+  // Poll Supabase every 30s - keeps all clients in sync and catches failed saves
   useEffect(() => {
     const refresh = async () => {
       try {
@@ -688,7 +688,7 @@ export default function App() {
 
   const removePending = id => setPendingBets(p=>p.filter(b=>b.id!==id));
 
-  // SETTLE RACE — uses actual TAB dividends entered by admin
+  // SETTLE RACE - uses actual TAB dividends entered by admin
   // dividends = { win: 4.60, place1: 1.90, place2: 2.10, place3: 3.20, exacta: 18.50, trifecta: 142.30, firstfour: 380.00 }
   const settleRace = (raceId, result, dividends) => {
     const race = races.find(r=>r.id===raceId);
@@ -748,7 +748,7 @@ export default function App() {
       if (type === "exacta")    return parseFloat((stake * (d.exacta    || 0)).toFixed(2));
       if (type === "trifecta")  return parseFloat((stake * (d.trifecta  || 0)).toFixed(2));
       if (type === "firstfour") return parseFloat((stake * (d.firstfour || 0)).toFixed(2));
-      // quinella — use exacta div / 2 as fallback if no quinella div entered
+      // quinella - use exacta div / 2 as fallback if no quinella div entered
       if (type === "quinella")  return parseFloat((stake * (d.quinella  || (d.exacta ? d.exacta/2 : 0))).toFixed(2));
       return 0;
     };
@@ -758,7 +758,14 @@ export default function App() {
     const settled = allBetsForRace.map(b=>{
       if (b.raceId!==raceId||b.won!==null) return b;
       const def = BET_TYPES.find(t=>t.id===b.type);
-      const won = def.check(b.horses, result);
+      let won;
+      if(b.horses.length>def.positions.length) {
+        // Boxed bet — check if the result positions are all covered by selected horses
+        const resultPositions=[result.first,result.second,result.third,result.fourth].slice(0,def.positions.length);
+        won = resultPositions.every(pos=>b.horses.includes(pos));
+      } else {
+        won = def.check(b.horses, result);
+      }
       const payout = won ? calcDividendPayout(b) : 0;
       if (won){wins++;paid=parseFloat((paid+payout).toFixed(2));}
       return {...b,won,payout};
@@ -803,7 +810,7 @@ export default function App() {
         const betLines = playerBets.map(b=>{
           const def = BET_TYPES.find(t=>t.id===b.type);
           const horseLine = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`; }).join(" → ");
-          return `${b.won?"✅":"❌"} ${def?.label}: ${horseLine} — Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
+          return `${b.won?"✅":"❌"} ${def?.label}: ${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
         }).join("\n");
 
         emailjs.send(
@@ -826,11 +833,11 @@ export default function App() {
             leaderboard_url: window.location.href,
           },
           "YOUR_PUBLIC_KEY"        // ← replace with your EmailJS Public Key
-        ).catch(()=>{/* silent fail — email is best-effort */});
+        ).catch(()=>{/* silent fail - email is best-effort */});
       });
     }
 
-    showToast(`Race settled — ${wins} winner${wins!==1?"s":""}, ${fmt(paid)} paid out`);
+    showToast(`Race settled - ${wins} winner${wins!==1?"s":""}, ${fmt(paid)} paid out`);
 
     // Show results banner for the logged-in player
     const myWins = settled.filter(b => b.playerId === session && b.won === true);
@@ -904,7 +911,7 @@ export default function App() {
     if (race.status === "finished" || race.status === "archived") {
       setRaces(p => p.map(r => r.id !== raceId ? r : {...r, status:"archived"}));
       await sb.update("races", raceId, { status: "archived" });
-      showToast("Race archived — removed from calendar, history kept");
+      showToast("Race archived - removed from calendar, history kept");
     } else {
       setRaces(p => p.filter(r => r.id !== raceId));
       await sb.update("races", raceId, { status: "deleted" });
@@ -924,7 +931,7 @@ export default function App() {
     try {
       await fetch(`${SUPA_URL}/rest/v1/bets?id=eq.${betId}`, { method:"DELETE", headers: sb.h });
     } catch(e) {}
-    showToast("Bet cancelled — your budget has been refunded");
+    showToast("Bet cancelled - your budget has been refunded");
   };
 
   const [scratchAlert, setScratchAlert] = useState(null); // {horseName, raceName, affectedBets}
@@ -954,7 +961,7 @@ export default function App() {
     return profitB - profitA;
   });
 
-  // Track position movements — save current positions to localStorage and compare
+  // Track position movements - save current positions to localStorage and compare
   const [prevPositions, setPrevPositions] = useState(() => {
     try { return JSON.parse(localStorage.getItem("sc_prev_positions") || "{}"); } catch { return {}; }
   });
@@ -1029,7 +1036,7 @@ export default function App() {
             <div className="sy" style={{fontSize:15,fontWeight:800,color:"#fff"}}>
               {resultsBanner.myWins>0?`🎉 You won on ${resultsBanner.raceName}!`:`📋 ${resultsBanner.raceName} has been settled`}
             </div>
-            {resultsBanner.myWins>0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.85)",marginTop:2}}>+{fmt(resultsBanner.myPayout)} — check My Bets for details</div>}
+            {resultsBanner.myWins>0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.85)",marginTop:2}}>+{fmt(resultsBanner.myPayout)} - check My Bets for details</div>}
             {resultsBanner.myWins===0&&<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.75)",marginTop:2}}>Check My Bets to see the results</div>}
           </div>
           <button onClick={()=>setResultsBanner(null)} style={{background:"none",border:"none",color:"rgba(255,255,255,.7)",fontSize:22,cursor:"pointer",flexShrink:0,lineHeight:1}}>×</button>
@@ -1090,7 +1097,7 @@ export default function App() {
       {/* Offline banner */}
       {isOffline&&(
         <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:"#dc2626",color:"#fff",textAlign:"center",padding:"10px 16px",fontSize:13,fontWeight:700}}>
-          ⚠️ You're offline — bets cannot be placed until you reconnect
+          ⚠️ You're offline - bets cannot be placed until you reconnect
         </div>
       )}
 
@@ -1199,7 +1206,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
   const handleForgotPin = () => {
     const acc = accounts.find(a=>a.email.toLowerCase()===fpEmail.toLowerCase().trim());
     if (!acc) return setFpMsg("No account found with that email address.");
-    setFpMsg(`Your PIN starts with ${acc.pin[0]}••• — if you still can't remember, ask the organiser to reset it for you in the Admin panel.`);
+    setFpMsg(`Your PIN starts with ${acc.pin[0]}••• - if you still can't remember, ask the organiser to reset it for you in the Admin panel.`);
   };
 
   if (forgotPin) return (
@@ -1258,7 +1265,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
                     const found = accounts.find(a=>a.name.toLowerCase()===name.toLowerCase().trim());
                     if(!found) return setErr("No account found with that name.");
                     setErr(""); setStep("pin"); setPin("");
-                  }}>Next — Enter PIN →</button>
+                  }}>Next - Enter PIN →</button>
                   <div style={{display:"flex",justifyContent:"space-between",marginTop:14}}>
                     <button className="sy" style={{background:"none",border:"none",color:C.soft,cursor:"pointer",fontSize:11,textDecoration:"underline"}} onClick={()=>setForgotPin(true)}>Forgot PIN?</button>
                     <button className="sy" style={{background:"none",border:"none",color:C.accent,fontWeight:700,cursor:"pointer",fontSize:11,textDecoration:"underline"}} onClick={()=>resetAll("register")}>New? Create account →</button>
@@ -1299,9 +1306,9 @@ function AuthScreen({onRegister, onLogin, accounts}) {
                     <input className="inp sy" type="email" placeholder="Email address" value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&handleDetailsNext()}/>
                   </div>
                   {err&&<p className="sy" style={{color:C.red,fontSize:12,marginBottom:10}}>{err}</p>}
-                  <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:13}} onClick={handleDetailsNext}>Next — Choose PIN →</button>
+                  <button className="btn btn-gold" style={{width:"100%",padding:13,fontSize:13}} onClick={handleDetailsNext}>Next - Choose PIN →</button>
                   <div style={{marginTop:14,padding:"10px 14px",background:"rgba(26,86,160,.06)",border:"1px solid rgba(26,86,160,.15)",borderRadius:8}}>
-                    <p className="sy" style={{fontSize:12,color:C.soft}}>🎯 You <strong style={{color:C.accent}}>must spend $24.00</strong> on each individual Group 1 race — every race has its own $24 budget.</p>
+                    <p className="sy" style={{fontSize:12,color:C.soft}}>🎯 You <strong style={{color:C.accent}}>must spend $24.00</strong> on each individual Group 1 race - every race has its own $24 budget.</p>
                   </div>
                 </>
               )}
@@ -1309,7 +1316,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
                 <>
                   <div style={{textAlign:"center",marginBottom:12}}>
                     <p className="sy" style={{fontSize:14,fontWeight:700,marginBottom:4}}>Choose your 4-digit PIN</p>
-                    <p className="sy soft" style={{fontSize:12}}>Choose something memorable — a birthday, lucky number, jersey number etc.</p>
+                    <p className="sy soft" style={{fontSize:12}}>Choose something memorable - a birthday, lucky number, jersey number etc.</p>
                   </div>
                   {err&&(
                     <div style={{padding:"10px 14px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:8,marginBottom:12,textAlign:"center"}}>
@@ -1317,7 +1324,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
                     </div>
                   )}
                   <PinPad value={pin} onChange={v=>{setPin(v);setErr("");}}/>
-                  <button className="btn btn-gold" style={{width:"100%",marginTop:14,padding:13,fontSize:13}} disabled={pin.length<4} onClick={handlePinNext}>Next — Confirm PIN →</button>
+                  <button className="btn btn-gold" style={{width:"100%",marginTop:14,padding:13,fontSize:13}} disabled={pin.length<4} onClick={handlePinNext}>Next - Confirm PIN →</button>
                   <button className="btn btn-ghost" style={{width:"100%",marginTop:8,padding:10,fontSize:12}} onClick={()=>{setStep("details");setPin("");setErr("");}}>← Back</button>
                 </>
               )}
@@ -1371,7 +1378,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           <div style={{padding:isMobile?"28px 20px":"44px 36px",borderRadius:16,background:"linear-gradient(135deg, #1a3a1a 0%, #2d5a2d 100%)",marginBottom:24,textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:12}}>🏇</div>
             <h3 className="cg" style={{fontSize:isMobile?18:24,fontWeight:700,marginBottom:8,color:"#fff"}}>
-              {seasonMessage?.text||"No races yet — the season is coming!"}
+              {seasonMessage?.text||"No races yet - the season is coming!"}
             </h3>
           </div>
         )}
@@ -1415,7 +1422,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   {hasScratched&&(
                     <div style={{padding:"8px 16px",background:"#fff3cd",borderBottom:"1px solid #ffc107",display:"flex",gap:8,alignItems:"center"}}>
                       <span>⚠️</span>
-                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#856404"}}>A selection has been scratched — tap to update</span>
+                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#856404"}}>A selection has been scratched - tap to update</span>
                     </div>
                   )}
 
@@ -1471,7 +1478,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {race.status==="upcoming"&&account&&raceBal>0&&rb.length>0&&race.raceTime&&race.date&&(()=>{
                           const mins=(new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000;
                           if(mins>10||mins<0) return null;
-                          return <div style={{marginTop:4,padding:"3px 8px",borderRadius:6,background:"#fff3cd",border:"1px solid #ffc107",display:"inline-flex",alignItems:"center",gap:4}}><span style={{fontSize:10}}>⚠️</span><span className="sy" style={{fontSize:10,color:"#856404",fontWeight:700}}>{fmt(raceBal)} unspent — {Math.round(mins)}m left!</span></div>;
+                          return <div style={{marginTop:4,padding:"3px 8px",borderRadius:6,background:"#fff3cd",border:"1px solid #ffc107",display:"inline-flex",alignItems:"center",gap:4}}><span style={{fontSize:10}}>⚠️</span><span className="sy" style={{fontSize:10,color:"#856404",fontWeight:700}}>{fmt(raceBal)} unspent - {Math.round(mins)}m left!</span></div>;
                         })()}
 
                         {/* Results */}
@@ -1598,8 +1605,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"14px 16px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
             <h3 className="cg" style={{fontSize:13,fontWeight:700,marginBottom:10,color:"#111"}}>How it works</h3>
             {[
-              ["💰","$24 per race","Each race has its own $24 budget — you must spend it all"],
-              ["🎯","Pick your bet","Win, Place, Exotics — choose wisely"],
+              ["💰","$24 per race","Each race has its own $24 budget - you must spend it all"],
+              ["🎯","Pick your bet","Win, Place, Exotics - choose wisely"],
               ["🏆","Most profit wins","Leaderboard ranked by net profit across all races"],
             ].map(([icon,title,desc])=>(
               <div key={title} style={{display:"flex",gap:10,marginBottom:10}}>
@@ -1629,7 +1636,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [placeSel,setPlaceSel]=useState(null);
   const [showBetPanel,setShowBetPanel]=useState(false);
 
-  // Bet lock countdown — always called at top level (not inside callback)
+  // Bet lock countdown - always called at top level (not inside callback)
   const countdown = useCountdown(race.date, race.raceTime);
 
   const def=BET_TYPES.find(t=>t.id===betType);
@@ -1677,21 +1684,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   };
 
   const getBoxedCombos=()=>{
-    try {
-      const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
-      if(allSel.length<numPositions) return [];
-      if(betType==="quinella"){
-        const pairs=[];
-        for(let i=0;i<allSel.length;i++)
-          for(let j=i+1;j<allSel.length;j++)
-            pairs.push([allSel[i],allSel[j]]);
-        return pairs;
-      }
-      // Cap at 10 horses max for boxed to avoid freeze
-      const capped=allSel.slice(0,10);
-      function perms(arr,r){if(r===0)return[[]]; return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));}
-      return perms(capped,numPositions);
-    } catch(e){ return []; }
+    const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
+    if(allSel.length<numPositions) return [];
+    // Return a placeholder array with the correct LENGTH only — never generate actual permutations
+    // This avoids browser freeze with large fields
+    if(betType==="quinella"){
+      // C(n,2) = n*(n-1)/2
+      const n=allSel.length;
+      const count=Math.round(n*(n-1)/2);
+      return Array(count).fill([]);
+    }
+    // Exacta/Trifecta/First Four boxed = P(n,r) = n!/(n-r)!
+    const n=allSel.length;
+    let count=1;
+    for(let i=0;i<numPositions;i++) count*=(n-i);
+    return Array(Math.min(count,9999)).fill([]);
   };
 
   const allCombos = boxed&&canShowBoxed ? getBoxedCombos() : getUnboxedCombos();
@@ -1715,11 +1722,14 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const handleAdd=()=>{
     if(!isReady()) return;
     if(betType==="eachway") {
-      // Each Way = two separate bets: one Win + one Place, each at full stake
       allCombos.forEach(h=>{
         onQueue(race.id,"win",h,stake);
         onQueue(race.id,"place",h,stake);
       });
+    } else if(boxed&&canShowBoxed) {
+      // Boxed: store the selected horses as one bet — settlement checks any permutation
+      const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
+      onQueue(race.id,betType,allSel,stake);
     } else {
       allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
     }
@@ -1753,7 +1763,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{marginBottom:8,padding:"10px 14px",borderRadius:10,background:urgent?"#dc2626":"#b45309",display:"flex",alignItems:"center",justifyContent:"space-between",animation:urgent?"pulse 1s infinite":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:18}}>⏰</span>
-                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff"}}>Closes in {label} {urgent?"— Last chance!":""}</div>
+                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff"}}>Closes in {label} {urgent?"- Last chance!":""}</div>
               </div>
               {!isMobile&&<div className="cg" style={{fontSize:22,fontWeight:900,color:"#fff"}}>{label}</div>}
             </div>
@@ -1782,16 +1792,16 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           {race.oddsAsOf&&race.status==="upcoming"&&(
             <div style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(184,134,11,.06)",border:"1px solid rgba(184,134,11,.2)",display:"flex",alignItems:"center",gap:5}}>
               <span style={{fontSize:12}}>ℹ️</span>
-              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds — actual dividends are confirmed once the race is settled</span>
+              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds - actual dividends are confirmed once the race is settled</span>
             </div>
           )}
           <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(21,128,61,.04)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.greenBd}`}}>
             <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
-              {raceBalance===0?"✅ Full $24 bet — you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet — you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
+              {raceBalance===0?"✅ Full $24 bet - you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet - you must bet your full $24":`⚡ ${fmt(raceBalance)} still to allocate`}
             </span>
           </div>
 
-          {/* Your bets — right in the header so always visible */}
+          {/* Your bets - right in the header so always visible */}
           {myBets.length>0&&(
             <div style={{marginTop:10,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
               <p className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Your Bets on This Race</p>
@@ -1858,7 +1868,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Number + Silk — dark green TAB style */}
+                  {/* Number + Silk - dark green TAB style */}
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
                     {/* Dark green number */}
                     <div style={{width:isMobile?36:44,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#6b7280":"#1a3a1a"}}>
@@ -1904,10 +1914,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     )}
                   </div>
 
-                  {/* Right side — TAB style buttons */}
+                  {/* Right side - TAB style buttons */}
                   {!scr ? (
                     isMobile ? (
-                      /* Mobile: TAB-style — Win/Place buttons OR position buttons depending on bet type */
+                      /* Mobile: TAB-style - Win/Place buttons OR position buttons depending on bet type */
                       betType==="win"||betType==="place"||betType==="eachway" ? (
                         <div style={{display:"flex",gap:4,padding:"8px 8px",flexShrink:0}}>
                           {/* WIN button */}
@@ -1932,7 +1942,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           </button>
                         </div>
                       ) : canShowBoxed&&!boxed ? (
-                        /* Exotic position buttons — right side, one line always */
+                        /* Exotic position buttons - right side, one line always */
                         <div style={{display:"flex",flexDirection:"column",gap:4,padding:"8px 8px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
                           <div style={{display:"flex",gap:3}}>
                             {def.positions.map((pos,pi)=>{
@@ -1959,7 +1969,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           {posLabels.length>0&&<div className="sy" style={{fontSize:9,color:"#1a3a1a",fontWeight:700,textAlign:"right"}}>{posLabels.join("·")}</div>}
                         </div>
                       ) : canShowBoxed&&boxed ? (
-                        /* Boxed — single select button */
+                        /* Boxed - single select button */
                         <div style={{padding:"8px 10px",flexShrink:0,display:"flex",alignItems:"center"}}>
                           <button className="sy" style={{padding:"10px 16px",borderRadius:10,border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1a3a1a":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?"#1a3a1a":"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}
                             onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
@@ -1968,7 +1978,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         </div>
                       ) : null
                     ) : (
-                      /* Desktop right side — position buttons for exotics, WIN/PLACE for win/place/ew */
+                      /* Desktop right side - position buttons for exotics, WIN/PLACE for win/place/ew */
                       canShowBoxed&&!boxed ? (
                         <div style={{display:"flex",flexDirection:"column",gap:4,padding:"10px 10px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
                           <div style={{display:"flex",gap:4}}>
@@ -2016,7 +2026,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           })}
         </div>
 
-        {/* Mobile bet panel — simple clean design */}
+        {/* Mobile bet panel - simple clean design */}
         {isMobile&&showBetPanel&&(
           <>
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:899}} onClick={()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}/>
@@ -2025,7 +2035,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               {/* Handle */}
               <div style={{width:36,height:4,borderRadius:2,background:"#e5e7eb",margin:"14px auto 0"}}/>
 
-              {/* Header — bet type + close */}
+              {/* Header - bet type + close */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 0"}}>
                 <div style={{display:"flex",gap:6}}>
                   {["win","place","eachway","quinella","exacta","trifecta","firstfour"].map(id=>{
@@ -2055,7 +2065,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   ):null;
                 })()}
 
-                {/* Horse picker — only for win/place/ew when no horse selected */}
+                {/* Horse picker - only for win/place/ew when no horse selected */}
                 {(betType==="win"||betType==="place"||betType==="eachway")&&!winSel&&!placeSel&&(
                   <div style={{marginBottom:16}}>
                     <p className="sy" style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Pick a horse</p>
@@ -2145,7 +2155,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   {/* Add to betslip */}
                   <button className="sy" disabled={!isReady()} onClick={()=>{handleAdd();setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}
                     style={{width:"100%",padding:"16px",borderRadius:14,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:16,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",transition:"all .15s"}}>
-                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Add to Betslip${stake>0?` — ${fmt(totalCost)}`:""}`}
+                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Add to Betslip${stake>0?` - ${fmt(totalCost)}`:""}`}
                   </button>
                 </div>
               </div>
@@ -2162,7 +2172,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
               <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
                 <p className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:"rgba(255,255,255,.6)",marginBottom:2}}>Bet Type</p>
-                <p className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>{def?.label} — {def?.desc}</p>
+                <p className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>{def?.label} - {def?.desc}</p>
               </div>
               <div style={{padding:"12px"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
@@ -2183,7 +2193,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <button className="sy" style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!boxed?"#1a3a1a":C.border}`,background:!boxed?"#1a3a1a":"#fafafa",color:!boxed?"#fff":"#374151",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
                       <button className="sy" style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${boxed?"#1a3a1a":C.border}`,background:boxed?"#1a3a1a":"#fafafa",color:boxed?"#fff":"#374151",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
                     </div>
-                    <p className="sy" style={{fontSize:10,color:C.soft,marginTop:6,lineHeight:1.5}}>{boxed?`Select ${numPositions}+ horses — any order`:`Use position buttons on each horse`}</p>
+                    <p className="sy" style={{fontSize:10,color:C.soft,marginTop:6,lineHeight:1.5}}>{boxed?`Select ${numPositions}+ horses - any order`:`Use position buttons on each horse`}</p>
                   </div>
                 )}
               </div>
@@ -2234,7 +2244,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           <div key={pi} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
                             <span className="sy" style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:".06em",color:"#1a3a1a",width:28,flexShrink:0}}>{pos.label}</span>
                             {posHorses.length===0
-                              ?<span className="sy" style={{fontSize:11,color:"#9ca3af",fontStyle:"italic"}}>—</span>
+                              ?<span className="sy" style={{fontSize:11,color:"#9ca3af",fontStyle:"italic"}}>-</span>
                               :posHorses.map(h=>(
                                 <span key={h.number} style={{fontSize:11,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{h.number} {h.name}</span>
                               ))}
@@ -2298,9 +2308,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   style={{width:"100%",padding:"14px",borderRadius:12,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:15,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",letterSpacing:".01em",boxShadow:isReady()?"0 4px 16px rgba(26,58,26,.3)":"none",transition:"all .15s"}}>
                   {!isReady()
                     ?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget")
-                    :betType==="eachway"?`Add Each Way — ${fmt(totalCost)}`
-                    :combos>1?`Add ${combos} bets — ${fmt(totalCost)}`
-                    :`Add to Betslip — ${fmt(totalCost)}`}
+                    :betType==="eachway"?`Add Each Way - ${fmt(totalCost)}`
+                    :combos>1?`Add ${combos} bets - ${fmt(totalCost)}`
+                    :`Add to Betslip - ${fmt(totalCost)}`}
                 </button>
               </div>
             </div>
@@ -2429,7 +2439,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
     const lines = accounts.map((a,i) => {
       const profit = parseFloat((a.totalWon - a.totalStaked).toFixed(2));
       const medal = medals[i] || `#${i+1}`;
-      return `${medal} ${a.name} — ${profit>=0?"+":""}${fmt(profit)}`;
+      return `${medal} ${a.name} - ${profit>=0?"+":""}${fmt(profit)}`;
     });
     const text = `🏇 Spring Carnival Standings\n\n${lines.join("\n")}`;
     navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
@@ -2442,7 +2452,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.6)",margin:0}}>Ranked by net profit across all Group 1 races</p>
       </div>
 
-      {/* Season Awards — above leaderboard */}
+      {/* Season Awards - above leaderboard */}
       {accounts.length>0&&(()=>{
         const wins = bets.filter(b=>b.won===true);
         const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
@@ -2466,7 +2476,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
           {
             emoji:"🏆",label:"Most Profitable",
             name:mostProfitable?.name||"TBD",
-            detail:mostProfitable?`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`:"—",
+            detail:mostProfitable?`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`:"-",
           },
           {
             emoji:"🐎",label:"Biggest Roughie",
@@ -2658,10 +2668,10 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
 
         // Fav bet type
         const favType=(acc)=>{
-          const b=getBets(acc); if(!b.length) return "—";
+          const b=getBets(acc); if(!b.length) return "-";
           const counts={}; b.forEach(x=>{counts[x.type]=(counts[x.type]||0)+1;});
           const top=Object.entries(counts).sort(([,a],[,b])=>b-a)[0];
-          return BET_TYPES.find(t=>t.id===top?.[0])?.label||"—";
+          return BET_TYPES.find(t=>t.id===top?.[0])?.label||"-";
         };
 
         // Avg stake
@@ -2729,9 +2739,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       ["Best Win", fmt(p1BestBet?.payout||0), fmt(p2BestBet?.payout||0)],
                       ["Fav Bet Type", favType(player1), favType(player2)],
                       ["Avg Stake", fmt(avgStake(player1)), fmt(avgStake(player2))],
-                      ["Current Streak", getStreak(player1)||"—", getStreak(player2)||"—"],
+                      ["Current Streak", getStreak(player1)||"-", getStreak(player2)||"-"],
                       ["Bets Placed", getBets(player1).length, getBets(player2).length],
-                      ["Win Rate", getBets(player1).filter(b=>b.won!==null).length?Math.round(getWins(player1).length/getBets(player1).filter(b=>b.won!==null).length*100)+"%":"—", getBets(player2).filter(b=>b.won!==null).length?Math.round(getWins(player2).length/getBets(player2).filter(b=>b.won!==null).length*100)+"%":"—"],
+                      ["Win Rate", getBets(player1).filter(b=>b.won!==null).length?Math.round(getWins(player1).length/getBets(player1).filter(b=>b.won!==null).length*100)+"%":"-", getBets(player2).filter(b=>b.won!==null).length?Math.round(getWins(player2).length/getBets(player2).filter(b=>b.won!==null).length*100)+"%":"-"],
                     ].map(([label,v1,v2])=>(
                       <div key={label} style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
                         <span className="sy" style={{fontSize:12,fontWeight:700,color:C.green,textAlign:"right"}}>{v1}</span>
@@ -2833,7 +2843,7 @@ function SeasonScreen({accounts, bets, races}) {
             ["Races Run", finishedRaces.length, C.accent],
             ["Total Bets", totalBets, C.blue],
             ["Total Paid Out", fmt(totalPaidOut), C.green],
-            ["Biggest Single Win", biggestWin ? `${fmt(biggestWin.payout||0)}` : "—", C.gold],
+            ["Biggest Single Win", biggestWin ? `${fmt(biggestWin.payout||0)}` : "-", C.gold],
           ].map(([l,v,col])=>(
             <div key={l} className="card" style={{textAlign:"center",borderTop:`4px solid ${col}`}}>
               <div className="sy soft" style={{fontSize:11,marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>{l}</div>
@@ -2957,7 +2967,7 @@ function SeasonScreen({accounts, bets, races}) {
                         const td=BET_TYPES.find(t=>t.id===b.type);
                         return(
                           <span key={b.id} className="sy" style={{fontSize:12,padding:"4px 10px",background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:20,color:C.green}}>
-                            🎉 {pl?.name} — {td?.label} +{fmt(b.payout||0)}
+                            🎉 {pl?.name} - {td?.label} +{fmt(b.payout||0)}
                           </span>
                         );
                       })}
@@ -3066,7 +3076,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
       {/* Per-race budgets */}
       <div style={{marginBottom:16}}>
         <h4 className="cg" style={{fontSize:isMobile?16:18,fontWeight:700,marginBottom:4}}>Race Budgets</h4>
-        <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Every Group 1 race has its own $24 — you must spend the full amount on each race.</p>
+        <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Every Group 1 race has its own $24 - you must spend the full amount on each race.</p>
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:8}}>
           {races.map(race=>{
             const bal=getRaceBalance(account.id,race.id);
@@ -3144,7 +3154,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
   if (!account) return null;
 
-  // Build race-level data — the fundamental unit
+  // Build race-level data - the fundamental unit
   const allRaces = [...new Set(bets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)).filter(Boolean);
   const finishedRaces = allRaces.filter(r=>r.status==="finished"||r.status==="archived");
   const upcomingRaces = allRaces.filter(r=>r.status==="upcoming"||r.status==="closed");
@@ -3178,7 +3188,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const bestWin = bets.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
   const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
 
-  // Current streak — by race
+  // Current streak - by race
   const streak = (() => {
     const s=[...raceStats].reverse();
     if(!s.length) return null;
@@ -3188,7 +3198,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
     return { type, count };
   })();
 
-  // Profit by bet type — based on race-level context
+  // Profit by bet type - based on race-level context
   const won = bets.filter(b=>b.won===true);
   const lost = bets.filter(b=>b.won===false);
   const settled = bets.filter(b=>b.won!==null);
@@ -3233,7 +3243,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         </div>
       </div>
 
-      {/* Main stats — per race */}
+      {/* Main stats - per race */}
       <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:10,marginBottom:16}}>
         {[
           ["Races Entered", totalSettledRaces||0, null],
@@ -3262,7 +3272,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         ))}
       </div>
 
-      {/* Highlights — race-based */}
+      {/* Highlights - race-based */}
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10,marginBottom:20}}>
         {bestWin&&(
           <div className="card" style={{background:"rgba(21,128,61,.05)",border:`1px solid ${C.greenBd}`}}>
@@ -3410,7 +3420,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             </div>
 
-            {/* Bet Type Hit Rate — mini rings */}
+            {/* Bet Type Hit Rate - mini rings */}
             {typeData.length>0&&(
               <div className="card" style={{marginBottom:12,padding:"20px 16px"}}>
                 <div className="sy" style={{fontSize:14,fontWeight:700,marginBottom:16}}>🎯 Bet Type Hit Rate</div>
@@ -3562,7 +3572,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                         );
                       })}
                     </div>
-                  ):<p className="sy" style={{fontSize:13,color:C.red,fontWeight:600}}>⚠ No bets placed yet — must spend {fmt(bal)}</p>}
+                  ):<p className="sy" style={{fontSize:13,color:C.red,fontWeight:600}}>⚠ No bets placed yet - must spend {fmt(bal)}</p>}
                 </div>
               );
             })}
@@ -3735,7 +3745,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         if (parts[6]) weight = parts[6].trim();
         if (parts[7]) silkUrl = parts[7].trim();
       } else {
-        // Try to extract from free text — look for numbers at end for odds
+        // Try to extract from free text - look for numbers at end for odds
         const numMatch = raw.match(/^(\d+)[\.\):\s]+/);
         num = numMatch ? parseInt(numMatch[1]) : existingCount + horses.length + 1;
         const rest = numMatch ? raw.slice(numMatch[0].length) : raw;
@@ -3982,7 +3992,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             return(
               <div key={race.id} className="card" style={{marginBottom:10,background:allDone?"rgba(21,128,61,.04)":"rgba(184,134,11,.04)",border:`1px solid ${allDone?C.greenBd:"rgba(184,134,11,.3)"}`}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <span className="sy" style={{fontSize:13,fontWeight:700}}>{allDone?"✅":"📋"} {race.name} — Race Day Checklist</span>
+                  <span className="sy" style={{fontSize:13,fontWeight:700}}>{allDone?"✅":"📋"} {race.name} - Race Day Checklist</span>
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {steps.map(step=>(
@@ -4130,7 +4140,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                       </div>
 
                       {/* Click-to-select finishers */}
-                      <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:8}}>Select Finishing Order — click a horse then tap a position</p>
+                      <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:8}}>Select Finishing Order - click a horse then tap a position</p>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginBottom:12}}>
                         {["1st 🥇","2nd 🥈","3rd 🥉","4th"].map((label,pos)=>{
                           const finishers = getInp(race.id).finishers || [null,null,null,null];
@@ -4142,7 +4152,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                               <div style={{minHeight:52,padding:"6px 8px",border:`2px solid ${sel?C.accent:C.border}`,borderRadius:8,background:sel?"#eef3ff":"#fafbfc",cursor:"default",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                                 {horse
                                   ? <><div style={{fontWeight:700,fontSize:12,color:C.accent}}>#{horse.number}</div><div className="sy" style={{fontSize:11,color:C.text}}>{horse.name}</div></>
-                                  : <span className="sy soft" style={{fontSize:11}}>—</span>}
+                                  : <span className="sy soft" style={{fontSize:11}}>-</span>}
                               </div>
                             </div>
                           );
@@ -4156,7 +4166,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           const posColor = posIdx===0?"#d4a017":posIdx===1?"#9ca3af":posIdx===2?"#cd7f32":C.accent;
                           return (
                             <div key={h.number} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                              {/* Horse card — tap cycles through 1st→2nd→3rd→4th→off */}
+                              {/* Horse card - tap cycles through 1st→2nd→3rd→4th→off */}
                               <button className="sy" style={{
                                 width:isMobile?72:80,padding:"10px 6px",borderRadius:10,
                                 border:`2.5px solid ${posLabel?posColor:C.border}`,
@@ -4185,7 +4195,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                               </button>
                               {/* Position badge */}
                               <span className="sy" style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20,background:posLabel?`${posColor}22`:"#f0f0f0",color:posLabel?posColor:C.muted}}>
-                                {posLabel||"—"}
+                                {posLabel||"-"}
                               </span>
                             </div>
                           );
@@ -4196,11 +4206,11 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                       <p className="sy soft" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",marginBottom:8}}>Enter TAB Dividends (actual paid prices)</p>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:14}}>
                         {[
-                          ["win",      "Win — 1st",         true],
-                          ["place1",   "Place — 1st",       true],
-                          ["place2",   "Place — 2nd",       false],
-                          ["place3",   "Place — 3rd",       false],
-                          ["place4",   "Place — 4th",       false],
+                          ["win",      "Win - 1st",         true],
+                          ["place1",   "Place - 1st",       true],
+                          ["place2",   "Place - 2nd",       false],
+                          ["place3",   "Place - 3rd",       false],
+                          ["place4",   "Place - 4th",       false],
                           ["quinella", "Quinella",          false],
                           ["exacta",   "Exacta",            false],
                           ["trifecta", "Trifecta",          false],
@@ -4342,7 +4352,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   const race = races.find(r=>r.id===bulkImportFor);
                   const {horses,errors} = parseBulkHorses(bulkText, race.horses.length);
                   if (errors.length>0) return setBulkErr(errors.join(" · "));
-                  if (horses.length===0) return setBulkErr("No horses found — check your format.");
+                  if (horses.length===0) return setBulkErr("No horses found - check your format.");
                   setBulkPreview(horses);
                 }}>Preview Import →</button>
               ):(
@@ -4639,7 +4649,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <PinPad value={resetPinVal} onChange={v=>{setResetPinVal(v);setResetPinErr("");}}/>
                 <button className="btn btn-gold" style={{width:"100%",marginTop:14,padding:12}} disabled={resetPinVal.length<4}
                   onClick={()=>{ if(resetPinVal.length<4) return; setResetPinStep("confirm"); setResetPinVal2(""); setResetPinErr(""); }}>
-                  Next — Confirm →
+                  Next - Confirm →
                 </button>
               </>
             )}
