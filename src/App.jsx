@@ -1019,7 +1019,7 @@ export default function App() {
       {loading&&(
         <div style={{position:"fixed",inset:0,background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999}}>
           <div style={{fontSize:56,marginBottom:16}}>🏇</div>
-          <h2 className="cg" style={{fontSize:32,fontWeight:900,color:"#111",marginBottom:10}}>Spring Carnival</h2>
+          <h2 className="cg" style={{fontSize:32,fontWeight:900,color:"#fff",marginBottom:10}}>Spring Carnival</h2>
           <p className="sy" style={{fontSize:15,color:"#4b5563"}}>Loading...</p>
         </div>
       )}
@@ -1059,7 +1059,7 @@ export default function App() {
       {resultsBanner&&(
         <div style={{position:"fixed",top:72,left:16,right:16,zIndex:9990,maxWidth:520,margin:"0 auto",background:resultsBanner.myWins>0?"rgba(21,128,61,.97)":"rgba(30,92,30,.95)",borderRadius:14,padding:"16px 20px",boxShadow:"0 8px 40px rgba(0,0,0,.25)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,animation:"notif .3s ease"}}>
           <div>
-            <div className="sy" style={{fontSize:15,fontWeight:800,color:"#111"}}>
+            <div className="sy" style={{fontSize:15,fontWeight:800,color:"#fff"}}>
               {resultsBanner.myWins>0?` You won on ${resultsBanner.raceName}!`:` ${resultsBanner.raceName} has been settled`}
             </div>
             {resultsBanner.myWins>0&&<div className="sy" style={{fontSize:13,color:"#374151",marginTop:2}}>+{fmt(resultsBanner.myPayout)} - check My Bets for details</div>}
@@ -1080,7 +1080,7 @@ export default function App() {
           {/* -- HEADER -- */}
           <header style={{background:C.header,padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span className="cg" style={{fontSize:19,fontWeight:900,color:"#111",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
+              <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
                 {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
@@ -1090,13 +1090,13 @@ export default function App() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               {pendingBets.length>0&&false&&(
-                <button className="sy" style={{fontSize:13,padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:8,color:"#111",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6}} onClick={()=>setShowBetslip(true)}>
+                <button className="sy" style={{fontSize:13,padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:8,color:"#fff",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6}} onClick={()=>setShowBetslip(true)}>
                   🎫 <span style={{background:C.goldL,color:"#111",borderRadius:"50%",width:20,height:20,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800}}>{pendingBets.length}</span>
                 </button>
               )}
               {liveAccount&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span className="sy mobile-hide" style={{fontSize:13,color:"#374151"}}>Hi, <strong style={{color:"#111"}}>{liveAccount.name}</strong></span>
+                  <span className="sy mobile-hide" style={{fontSize:13,color:"rgba(255,255,255,.7)"}}>Hi, <strong style={{color:"#fff"}}>{liveAccount.name}</strong></span>
                   <button className="sy" style={{fontSize:12,padding:"6px 10px",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:8,color:"#374151",cursor:"pointer",fontWeight:600}} onClick={doLogout}>Log out</button>
                 </div>
               )}
@@ -1121,7 +1121,7 @@ export default function App() {
 
       {/* Offline banner */}
       {isOffline&&(
-        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:"#dc2626",color:"#111",textAlign:"center",padding:"10px 16px",fontSize:13,fontWeight:700}}>
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:"#dc2626",color:"#fff",textAlign:"center",padding:"10px 16px",fontSize:13,fontWeight:700}}>
           ⚠️ You're offline - bets cannot be placed until you reconnect
         </div>
       )}
@@ -1239,7 +1239,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
       <div style={{width:"100%",maxWidth:420}}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontSize:52,marginBottom:8}}>🏇</div>
-          <h1 className="cg" style={{fontSize:40,fontWeight:900,color:"#111"}}>Spring Carnival</h1>
+          <h1 className="cg" style={{fontSize:40,fontWeight:900,color:"#fff"}}>Spring Carnival</h1>
         </div>
         <div className="card fu">
           <h3 className="cg" style={{fontSize:24,marginBottom:6}}>Forgot your PIN?</h3>
@@ -1583,7 +1583,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             <button className="sy" style={{padding:isMobile?"8px 12px":"9px 16px",borderRadius:10,border:`1.5px solid ${C.gold}`,background:"rgba(184,134,11,.08)",color:C.gold,cursor:"pointer",fontWeight:700,fontSize:isMobile?11:12}}
                               onClick={e=>{e.stopPropagation();onSelect(race.id);}}>⚡ {fmt(raceBal)} left</button>
                           ):(
-                            <button className="sy" style={{padding:isMobile?"10px 14px":"12px 20px",borderRadius:10,background:"#dc2626",border:"none",color:"#111",cursor:"pointer",fontWeight:900,fontSize:isMobile?13:14,animation:"pulse 1.5s infinite",boxShadow:"0 4px 16px rgba(185,28,28,.35)",whiteSpace:"nowrap"}}
+                            <button className="sy" style={{padding:isMobile?"10px 14px":"12px 20px",borderRadius:10,background:"#dc2626",border:"none",color:"#fff",cursor:"pointer",fontWeight:900,fontSize:isMobile?13:14,animation:"pulse 1.5s infinite",boxShadow:"0 4px 16px rgba(185,28,28,.35)",whiteSpace:"nowrap"}}
                               onClick={e=>{e.stopPropagation();onSelect(race.id);}}>🚨 Bet Now!</button>
                           )
                         )}
@@ -1612,7 +1612,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           {leaderboard.length>0&&(
             <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
               <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
-                <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#111",margin:0}}>🏆 Standings</h3>
+                <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>🏆 Standings</h3>
               </div>
               <div style={{padding:"8px 0"}}>
                 {leaderboard.slice(0,5).map((a,i)=>(
@@ -1788,9 +1788,9 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{marginBottom:8,padding:"10px 14px",borderRadius:10,background:urgent?"#dc2626":"#b45309",display:"flex",alignItems:"center",justifyContent:"space-between",animation:urgent?"pulse 1s infinite":"none"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:18}}>⏰</span>
-                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#111"}}>Closes in {label} {urgent?"- Last chance!":""}</div>
+                <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff"}}>Closes in {label} {urgent?"- Last chance!":""}</div>
               </div>
-              {!isMobile&&<div className="cg" style={{fontSize:22,fontWeight:900,color:"#111"}}>{label}</div>}
+              {!isMobile&&<div className="cg" style={{fontSize:22,fontWeight:900,color:"#fff"}}>{label}</div>}
             </div>
           );
         })()}
@@ -1854,7 +1854,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
       {/* Mobile - single Place a Bet button */}
       {isMobile&&race.status==="upcoming"&&(
-        <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#111",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
+        <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
           onClick={()=>setShowBetPanel(true)}>
           🏇 Place a Bet
         </button>
@@ -1893,7 +1893,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",alignSelf:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
                     {/* Runner number - full height flush */}
                     <div style={{minWidth:isMobile?22:28,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a",alignSelf:"stretch"}}>
-                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#111"}}>{h.number}</span>
+                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk */}
                     <div style={{width:isMobile?40:48,display:"flex",alignItems:"center",justifyContent:"center",padding:"5px",background:"#fff"}}>
@@ -1907,7 +1907,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         background:scr?"#d1d5db":silkCol(h.number),
                         display:h.silkUrl?"none":"flex",
                         alignItems:"center",justifyContent:"center",
-                        fontSize:isMobile?11:13,fontWeight:800,color:"#111",
+                        fontSize:isMobile?11:13,fontWeight:800,color:"#fff",
                         boxShadow:"inset 0 -2px 0 rgba(0,0,0,.2)",
                         flexShrink:0,
                       }}>{h.number}</div>
@@ -1921,14 +1921,14 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span className="sy" style={{fontWeight:700,fontSize:isMobile?14:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:10,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:10,padding:"1px 6px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
-                      {!isMobile&&posLabels.map(pl=>(<span key={pl} style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#111",borderRadius:20,fontWeight:700}}>{pl}</span>))}
+                      {!isMobile&&posLabels.map(pl=>(<span key={pl} style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
                     </div>
                     <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>
                       <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?`  ${h.weight}kg`:""}
                     </div>
                     {h.form&&h.form.length>0&&(
                       <div style={{display:"flex",gap:2,marginTop:isMobile?2:4}}>
-                        {h.form.slice(-5).map((f,fi)=>(<span key={fi} style={{width:isMobile?12:16,height:isMobile?12:16,borderRadius:2,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?7:9,fontWeight:800,color:"#111"}}>{f.toUpperCase()}</span>))}
+                        {h.form.slice(-5).map((f,fi)=>(<span key={fi} style={{width:isMobile?12:16,height:isMobile?12:16,borderRadius:2,background:formColor(f),display:"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?7:9,fontWeight:800,color:"#fff"}}>{f.toUpperCase()}</span>))}
                       </div>
                     )}
                     {/* Desktop: position pills for exotics inline */}
@@ -2094,7 +2094,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         const h=race.horses.find(x=>x.number===n);
                         return h?(
                           <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"#f0fdf4",borderRadius:10,border:"2px solid #bbf7d0",marginBottom:10}}>
-                            <div style={{width:26,height:26,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#111",flexShrink:0}}>{h.number}</div>
+                            <div style={{width:26,height:26,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
                             {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                             <div style={{flex:1}}>
                               <div className="sy" style={{fontSize:13,fontWeight:700}}>{h.name} <span style={{color:"#9ca3af",fontSize:11,fontWeight:400}}>({h.barrier||h.number})</span></div>
@@ -2115,7 +2115,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                                 else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}
                                 else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}
                               }}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#111",flexShrink:0}}>{h.number}</div>
+                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
                               {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:22,height:22,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                               <span className="sy" style={{flex:1,fontSize:13,fontWeight:600,color:"#111"}}>{h.name} <span style={{color:"#9ca3af",fontWeight:400,fontSize:11}}>({h.barrier||h.number})</span></span>
                               <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
@@ -2143,7 +2143,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           const inSel=(sel[0]||[]).includes(h.number);
                           return(
                             <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:9,border:`1.5px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#111",flexShrink:0}}>{h.number}</div>
+                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
                               {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                               <span className="sy" style={{flex:1,fontSize:13,fontWeight:600,color:"#111"}}>{h.name}</span>
                               <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
