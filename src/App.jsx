@@ -3602,8 +3602,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               };
               const cols=Math.min(oddsData.length,4);
               const dialW=Math.floor((isMobile?window.innerWidth-64:560)/cols)-8;
-              const dialH=Math.round(dialW*0.8);
-              const dcx=dialW/2,dcy=dialH-18;
+              const dialH=Math.round(dialW*0.75);
+              const dcx=dialW/2,dcy=dialH-4;
               const outerR=Math.round(dialW*0.40),innerR=Math.round(dialW*0.26);
               return(
                 <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
@@ -3644,8 +3644,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                             <line x1={dcx} y1={dcy} x2={nx} y2={ny} stroke={r.col} strokeWidth="2.5" strokeLinecap="round" filter={"url(#df"+i+")"}/>
                             <circle cx={dcx} cy={dcy} r={5} fill={r.col} filter={"url(#df"+i+")"}/>
                             {/* Text */}
-                            <text x={dcx} y={dcy-18} textAnchor="middle" fontSize={Math.round(dialW*0.11)} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
-                            <text x={dcx} y={dcy-5} textAnchor="middle" fontSize={Math.round(dialW*0.065)} fill="#fff" fontFamily="system-ui" fontWeight="600">{grade}</text>
+                            <text x={dcx} y={dcy-Math.round(outerR*0.55)} textAnchor="middle" fontSize={Math.round(dialW*0.11)} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
+                            <text x={dcx} y={dcy-Math.round(outerR*0.28)} textAnchor="middle" fontSize={Math.round(dialW*0.065)} fill="#fff" fontFamily="system-ui" fontWeight="600">{grade}</text>
                           </svg>
                           <div style={{textAlign:"center",marginTop:2}}>
                             <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:r.col}}>{r.label}</div>
