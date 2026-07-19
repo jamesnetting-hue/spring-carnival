@@ -1687,6 +1687,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   };
 
   // Cartesian product filtering duplicate horses across positions
+  const canShowBoxed=betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella";
+
   function cartesian(arrays){
     return arrays.reduce((acc,arr)=>{
       const res=[];
@@ -1766,8 +1768,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     if(boxed) return (effectiveSel[0]||[]).includes(num)?["Selected"]:[];
     return def.positions.map((p,i)=>(effectiveSel[i]||[]).includes(num)?p.label:null).filter(Boolean);
   };
-
-  const canShowBoxed=betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella";
 
   return (
     <div className="sr">
@@ -1902,7 +1902,17 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         ?<img src={h.silkUrl} alt="" style={{width:isMobile?34:40,height:isMobile?34:40,objectFit:"contain",display:"block"}}
                            onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>
                         :null}
-                      <div className="silk-fb" style={{width:isMobile?32:36,height:isMobile?32:36,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:isMobile?12:14,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                      <div className="silk-fb" style={{
+                        width:isMobile?34:40,height:isMobile?34:40,
+                        borderRadius:"50%",
+                        background:scr?"#d1d5db":silkCol(h.number),
+                        display:h.silkUrl?"none":"flex",
+                        alignItems:"center",justifyContent:"center",
+                        fontSize:isMobile?13:15,fontWeight:900,color:"#fff",
+                        boxShadow:`inset 0 -3px 0 rgba(0,0,0,.2)`,
+                        border:"2px solid rgba(255,255,255,.8)",
+                        flexShrink:0,
+                      }}>{h.number}</div>
                     </div>
                   </div>
 
