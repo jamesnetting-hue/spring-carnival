@@ -1883,15 +1883,12 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     {/* Desktop: position pills for exotics inline */}
                     {!isMobile&&!scr&&canShowBoxed&&!boxed&&(
                       <div style={{display:"flex",gap:3,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
-                        {def.positions.map((pos,pi)=>{const isThis=(sel[pi]||[]).includes(h.number);return(<button key={pi} className="sy" style={{fontSize:10,padding:"2px 7px",borderRadius:5,border:`1.5px solid ${isThis?"#1e5c1e":"#d1d5db"}`,background:isThis?C.accent:"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>{pos.label}</button>);})}
-                        <span className="sy" style={{fontSize:9,color:C.accent,fontWeight:600}}>${h.winOdds.toFixed(2)}W</span>
-                        <span className="sy" style={{fontSize:9,color:C.soft}}>${h.placeOdds.toFixed(2)}P</span>
+                        <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:600}}>${h.winOdds.toFixed(2)}W · ${h.placeOdds.toFixed(2)}P</span>
                       </div>
                     )}
                     {!isMobile&&!scr&&canShowBoxed&&boxed&&(
                       <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-                        <button className="sy" style={{fontSize:10,padding:"2px 8px",borderRadius:5,border:`1.5px solid ${(sel[0]||[]).includes(h.number)?"#1e5c1e":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?C.accent:"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>{(sel[0]||[]).includes(h.number)?"✓":"Select"}</button>
-                        <span className="sy" style={{fontSize:9,color:C.accent}}>${h.winOdds.toFixed(2)}W · ${h.placeOdds.toFixed(2)}P</span>
+                        <span className="sy" style={{fontSize:11,color:C.accent}}>${h.winOdds.toFixed(2)}W · ${h.placeOdds.toFixed(2)}P</span>
                       </div>
                     )}
                   </div>
@@ -1924,51 +1921,70 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           </button>
                         </div>
                       ) : canShowBoxed&&!boxed ? (
-                        /* Mobile exotic unboxed — position buttons on RIGHT like Sportsbet */
-                        <div style={{display:"flex",flexDirection:"column",gap:3,padding:"8px 8px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
-                          <div style={{display:"flex",gap:3,flexWrap:"wrap",justifyContent:"flex-end",maxWidth:def.positions.length>3?84:130}}>
+                        /* Exotic position buttons — right side, bigger for accessibility */
+                        <div style={{display:"flex",flexDirection:"column",gap:4,padding:"8px 10px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end",maxWidth:def.positions.length>3?96:160}}>
                             {def.positions.map((pos,pi)=>{
                               const isThis=(sel[pi]||[]).includes(h.number);
                               return(
                                 <button key={pi} className="sy" style={{
-                                  width:38,height:34,borderRadius:6,
+                                  width:isMobile?44:48,height:isMobile?40:44,
+                                  borderRadius:8,
                                   border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,
                                   background:isThis?"#1a3a1a":"#fff",
                                   color:isThis?"#fff":"#374151",
-                                  cursor:"pointer",fontWeight:700,fontSize:10,
+                                  cursor:"pointer",fontWeight:800,fontSize:isMobile?12:13,
                                   fontFamily:"inherit",flexShrink:0,
                                   display:"flex",alignItems:"center",justifyContent:"center",
+                                  boxShadow:isThis?"0 2px 8px rgba(26,58,26,.3)":"none",
                                 }} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
                                   {pos.label}
                                 </button>
                               );
                             })}
                           </div>
-                          {posLabels.length>0&&<div className="sy" style={{fontSize:9,color:"#1a3a1a",fontWeight:700,textAlign:"right"}}>{posLabels.join(" · ")}</div>}
+                          {posLabels.length>0&&<div className="sy" style={{fontSize:10,color:"#1a3a1a",fontWeight:700,textAlign:"right"}}>{posLabels.join(" · ")}</div>}
                         </div>
                       ) : canShowBoxed&&boxed ? (
-                        /* Mobile exotic boxed — single select button */
-                        <div style={{padding:"8px 8px",flexShrink:0,display:"flex",alignItems:"center"}}>
-                          <button className="sy" style={{padding:"8px 14px",borderRadius:8,border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1a3a1a":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?"#1a3a1a":"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:12,fontFamily:"inherit"}}
+                        /* Boxed — single select button */
+                        <div style={{padding:"8px 10px",flexShrink:0,display:"flex",alignItems:"center"}}>
+                          <button className="sy" style={{padding:"10px 16px",borderRadius:10,border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1a3a1a":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?"#1a3a1a":"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}
                             onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
                             {(sel[0]||[]).includes(h.number)?"✓ In":"Select"}
                           </button>
                         </div>
                       ) : null
                     ) : (
-                      /* Desktop WIN/PLACE buttons */
-                      <div style={{display:"flex",gap:5,padding:"10px 8px",flexShrink:0}}>
-                        <button className="sy" style={{width:72,padding:"9px 0",borderRadius:7,border:`2px solid ${winSel===h.number?"#1a3a1a":"rgba(30,92,30,.3)"}`,background:winSel===h.number?"#1a3a1a":"rgba(30,92,30,.06)",color:winSel===h.number?"#fff":"#1a3a1a",cursor:"pointer",textAlign:"center",transition:"all .13s",fontFamily:"inherit"}}
-                          onClick={e=>{e.stopPropagation();const next=winSel===h.number?null:h.number;setWinSel(next);if(next&&placeSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("win");setSel({0:[h.number]});}else if(placeSel===h.number){setBetType("place");setSel({0:[h.number]});}else{setBetType("win");setSel({});}}}>
-                          <div style={{fontSize:15,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
-                          <div style={{fontSize:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>WIN</div>
-                        </button>
-                        <button className="sy" style={{width:72,padding:"9px 0",borderRadius:7,border:`2px solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,background:placeSel===h.number?"#1d4ed8":"#f8f9fb",color:placeSel===h.number?"#fff":"#4b5563",cursor:"pointer",textAlign:"center",transition:"all .13s",fontFamily:"inherit"}}
-                          onClick={e=>{e.stopPropagation();const next=placeSel===h.number?null:h.number;setPlaceSel(next);if(next&&winSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("place");setSel({0:[h.number]});}else if(winSel===h.number){setBetType("win");setSel({0:[h.number]});}else{setBetType("place");setSel({});}}}>
-                          <div style={{fontSize:15,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
-                          <div style={{fontSize:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>PLACE</div>
-                        </button>
-                      </div>
+                      /* Desktop right side — position buttons for exotics, WIN/PLACE for win/place/ew */
+                      canShowBoxed&&!boxed ? (
+                        <div style={{display:"flex",flexDirection:"column",gap:4,padding:"10px 10px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end",maxWidth:def.positions.length>3?110:160}}>
+                            {def.positions.map((pos,pi)=>{
+                              const isThis=(sel[pi]||[]).includes(h.number);
+                              return <button key={pi} className="sy" style={{width:50,height:46,borderRadius:9,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:800,fontSize:13,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isThis?"0 2px 8px rgba(26,58,26,.25)":"none"}} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>{pos.label}</button>;
+                            })}
+                          </div>
+                        </div>
+                      ) : canShowBoxed&&boxed ? (
+                        <div style={{padding:"10px 10px",flexShrink:0,display:"flex",alignItems:"center"}}>
+                          <button className="sy" style={{padding:"10px 18px",borderRadius:9,border:`2px solid ${(sel[0]||[]).includes(h.number)?"#1a3a1a":"#d1d5db"}`,background:(sel[0]||[]).includes(h.number)?"#1a3a1a":"#fff",color:(sel[0]||[]).includes(h.number)?"#fff":"#374151",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();toggleHorse(0,h.number);}}>
+                            {(sel[0]||[]).includes(h.number)?"✓ In":"Select"}
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{display:"flex",gap:5,padding:"10px 8px",flexShrink:0}}>
+                          <button className="sy" style={{width:72,padding:"9px 0",borderRadius:7,border:`2px solid ${winSel===h.number?"#1a3a1a":"rgba(30,92,30,.3)"}`,background:winSel===h.number?"#1a3a1a":"rgba(30,92,30,.06)",color:winSel===h.number?"#fff":"#1a3a1a",cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}
+                            onClick={e=>{e.stopPropagation();const next=winSel===h.number?null:h.number;setWinSel(next);if(next&&placeSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("win");setSel({0:[h.number]});}else if(placeSel===h.number){setBetType("place");setSel({0:[h.number]});}else{setBetType("win");setSel({});}}}>
+                            <div style={{fontSize:15,fontWeight:800}}>${h.winOdds.toFixed(2)}</div>
+                            <div style={{fontSize:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>WIN</div>
+                          </button>
+                          <button className="sy" style={{width:72,padding:"9px 0",borderRadius:7,border:`2px solid ${placeSel===h.number?"#1d4ed8":"#d1d5db"}`,background:placeSel===h.number?"#1d4ed8":"#f8f9fb",color:placeSel===h.number?"#fff":"#4b5563",cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}
+                            onClick={e=>{e.stopPropagation();const next=placeSel===h.number?null:h.number;setPlaceSel(next);if(next&&winSel===h.number){setBetType("eachway");setSel({0:[h.number]});}else if(next){setBetType("place");setSel({0:[h.number]});}else if(winSel===h.number){setBetType("win");setSel({0:[h.number]});}else{setBetType("place");setSel({});}}}>
+                            <div style={{fontSize:15,fontWeight:800}}>${h.placeOdds.toFixed(2)}</div>
+                            <div style={{fontSize:9,fontWeight:700,opacity:.8,letterSpacing:".04em"}}>PLACE</div>
+                          </button>
+                        </div>
+                      )
                     )
                   ) : null}
                   {scr&&(
