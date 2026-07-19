@@ -1892,8 +1892,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
                   {/* Number + Silk - compact TAB style */}
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
-                    {/* Runner number - tight */}
-                    <div style={{width:isMobile?26:32,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a"}}>
+                    {/* Runner number - flush fit */}
+                    <div style={{minWidth:isMobile?22:28,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a"}}>
                       <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk */}
