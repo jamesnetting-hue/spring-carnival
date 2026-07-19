@@ -803,9 +803,13 @@ export default function App() {
     mergedBets.filter(b=>b.raceId===raceId).forEach(b=>{
       sb.update("bets", b.id, { won: b.won, payout: b.payout });
     });
-    mergedBets.filter(b=>b.raceId===raceId&&b.won===true).forEach(b=>{
-      updateAccount(b.playerId,a=>({
-        totalWon:parseFloat((a.totalWon+b.payout).toFixed(2)),
+    // Update account totals for all players who had bets in this race
+    const playerIds = [...new Set(mergedBets.filter(b=>b.raceId===raceId).map(b=>b.playerId))];
+    playerIds.forEach(pid => {
+      const playerBets = mergedBets.filter(b=>b.raceId===raceId&&b.playerId===pid);
+      const playerWon = playerBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+      updateAccount(pid, a=>({
+        totalWon: parseFloat((a.totalWon + playerWon).toFixed(2)),
       }));
     });
 
