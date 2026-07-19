@@ -1849,16 +1849,12 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         </div>
       </div>
 
-      {/* TAB-style bet type tabs + Place Bet button on mobile */}
-      {isMobile&&(
-        <div style={{marginBottom:10}}>
-          <div style={{display:"flex",gap:0,overflowX:"auto",borderBottom:`2px solid ${C.border}`,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
-            {BET_TYPES.map(t=>(
-              <button key={t.id} className="sy" style={{flexShrink:0,padding:"8px 14px",fontSize:12,fontWeight:betType===t.id?700:500,background:"transparent",border:"none",cursor:"pointer",color:betType===t.id?"#1a3a1a":C.soft,borderBottom:`2px solid ${betType===t.id?"#1a3a1a":"transparent"}`,marginBottom:-2,whiteSpace:"nowrap"}}
-                onClick={()=>{changeType(t.id);if(t.id!=="win"&&t.id!=="place"&&t.id!=="eachway"){setShowBetPanel(true);}}}>{t.label}</button>
-            ))}
-          </div>
-        </div>
+      {/* Mobile - single Place a Bet button */}
+      {isMobile&&race.status==="upcoming"&&(
+        <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
+          onClick={()=>setShowBetPanel(true)}>
+          🏇 Place a Bet
+        </button>
       )}
 
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
@@ -2057,138 +2053,152 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           })}
         </div>
 
-        {/* Mobile bet panel - simple clean design */}
+        {/* Mobile bet panel - streamlined */}
         {isMobile&&showBetPanel&&(
           <>
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:899}} onClick={()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}/>
-            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"24px 24px 0 0",boxShadow:"0 -4px 30px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,20px)"}}>
+            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"20px 20px 0 0",boxShadow:"0 -4px 30px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,20px)",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
 
-              {/* Handle */}
-              <div style={{width:36,height:4,borderRadius:2,background:"#e5e7eb",margin:"14px auto 0"}}/>
-
-              {/* Header - bet type + close */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 0"}}>
-                <div style={{display:"flex",gap:6}}>
-                  {["win","place","eachway","quinella","exacta","trifecta","firstfour"].map(id=>{
-                    const t=BET_TYPES.find(x=>x.id===id);
-                    return <button key={id} className="sy" style={{padding:"6px 12px",borderRadius:20,border:`2px solid ${betType===id?"#1a3a1a":"#e5e7eb"}`,background:betType===id?"#1a3a1a":"#fff",color:betType===id?"#fff":"#6b7280",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit"}} onClick={()=>changeType(id)}>{t?.label}</button>;
-                  })}
+              {/* Handle + close */}
+              <div style={{flexShrink:0,padding:"12px 16px 0"}}>
+                <div style={{width:36,height:4,borderRadius:2,background:"#e5e7eb",margin:"0 auto 12px"}}/>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <span className="sy" style={{fontSize:14,fontWeight:700,color:"#111"}}>Place a Bet</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>{fmt(raceBalance)} left</span>
+                    <button style={{width:30,height:30,borderRadius:"50%",background:"#f3f4f6",border:"none",cursor:"pointer",fontSize:16,color:"#6b7280",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}>✕</button>
+                  </div>
                 </div>
-                <button style={{width:32,height:32,borderRadius:"50%",background:"#f3f4f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:"#6b7280",flexShrink:0}} onClick={()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}>✕</button>
+
+                {/* Bet type - scrollable pills */}
+                <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2,WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:12}}>
+                  {BET_TYPES.map(t=>(
+                    <button key={t.id} className="sy" style={{flexShrink:0,padding:"8px 14px",borderRadius:20,border:`2px solid ${betType===t.id?"#1a3a1a":"#e5e7eb"}`,background:betType===t.id?"#1a3a1a":"#fff",color:betType===t.id?"#fff":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}
+                      onClick={()=>changeType(t.id)}>{t.label}</button>
+                  ))}
+                </div>
               </div>
 
-              <div style={{padding:"16px 20px",overflowY:"auto",maxHeight:"65vh"}}>
+              {/* Scrollable content */}
+              <div style={{flex:1,overflowY:"auto",padding:"0 16px"}}>
 
-                {/* Selected horse card */}
-                {(()=>{
-                  const selNum=winSel||placeSel||(sel[0]||[])[0]||(Object.values(effectiveSel).flat()[0]);
-                  const selH=selNum?race.horses.find(x=>x.number===selNum):null;
-                  return selH?(
-                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f0fdf4",borderRadius:14,marginBottom:16,border:"2px solid #bbf7d0"}}>
-                      <div style={{width:34,height:34,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#fff",flexShrink:0}}>{selH.number}</div>
-                      {selH.silkUrl&&<img src={selH.silkUrl} alt="" style={{width:30,height:30,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
-                      <div style={{flex:1}}>
-                        <div className="sy" style={{fontSize:15,fontWeight:700}}>{selH.name}</div>
-                        <div className="sy" style={{fontSize:12,color:"#4b7c4b"}}>Win ${selH.winOdds.toFixed(2)} · Place ${selH.placeOdds.toFixed(2)}</div>
+                {/* Win/Place/EW - show selected horse or picker */}
+                {(betType==="win"||betType==="place"||betType==="eachway")&&(
+                  <div style={{marginBottom:14}}>
+                    {(winSel||placeSel)?(
+                      /* Horse selected - show summary */
+                      (()=>{
+                        const n=winSel||placeSel;
+                        const h=race.horses.find(x=>x.number===n);
+                        return h?(
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f0fdf4",borderRadius:12,border:"2px solid #bbf7d0",marginBottom:12}}>
+                            <div style={{width:32,height:32,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                            {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:28,height:28,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
+                            <div style={{flex:1}}>
+                              <div className="sy" style={{fontSize:14,fontWeight:700}}>{h.name} <span style={{color:"#9ca3af",fontSize:12,fontWeight:400}}>({h.barrier||h.number})</span></div>
+                              <div className="sy" style={{fontSize:12,color:"#4b7c4b"}}>Win ${h.winOdds.toFixed(2)} · Place ${h.placeOdds.toFixed(2)}</div>
+                            </div>
+                            <button style={{background:"none",border:"none",fontSize:20,color:"#9ca3af",cursor:"pointer",lineHeight:1}} onClick={()=>{setWinSel(null);setPlaceSel(null);setSel({});}}>×</button>
+                          </div>
+                        ):null;
+                      })()
+                    ):(
+                      /* Horse picker */
+                      <div>
+                        <p className="sy" style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Select a horse</p>
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {race.horses.filter(h=>!h.scratched).map(h=>(
+                            <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:`1.5px solid ${(winSel===h.number||placeSel===h.number)?"#1a3a1a":"#e5e7eb"}`,background:(winSel===h.number||placeSel===h.number)?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}
+                              onClick={()=>{
+                                if(betType==="win"){setWinSel(h.number);setSel({0:[h.number]});}
+                                else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}
+                                else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}
+                              }}>
+                              <div style={{width:28,height:28,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                              {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
+                              <span className="sy" style={{flex:1,fontSize:14,fontWeight:600,color:"#111"}}>{h.name} <span style={{color:"#9ca3af",fontWeight:400,fontSize:12}}>({h.barrier||h.number})</span></span>
+                              <span className="sy" style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <button style={{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"}} onClick={()=>{setWinSel(null);setPlaceSel(null);setSel({});}}>×</button>
-                    </div>
-                  ):null;
-                })()}
-
-                {/* Horse picker - only for win/place/ew when no horse selected */}
-                {(betType==="win"||betType==="place"||betType==="eachway")&&!winSel&&!placeSel&&(
-                  <div style={{marginBottom:16}}>
-                    <p className="sy" style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>Pick a horse</p>
-                    <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:220,overflowY:"auto"}}>
-                      {race.horses.filter(h=>!h.scratched).map(h=>(
-                        <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:`1.5px solid ${winSel===h.number||placeSel===h.number?"#1a3a1a":"#e5e7eb"}`,background:winSel===h.number||placeSel===h.number?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}
-                          onClick={()=>{if(betType==="win"){setWinSel(h.number);setSel({0:[h.number]});}else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}}}>
-                          <div style={{width:28,height:28,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
-                          {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain"}} onError={e=>e.target.style.display="none"}/>}
-                          <span className="sy" style={{flex:1,fontSize:14,fontWeight:600}}>{h.name} <span style={{color:"#9ca3af",fontWeight:400,fontSize:12}}>({h.barrier||h.number})</span></span>
-                          <span className="sy" style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
-                        </button>
-                      ))}
-                    </div>
+                    )}
                   </div>
                 )}
 
-                {/* Exotics horse picker */}
+                {/* Exotics */}
                 {(betType==="quinella"||betType==="exacta"||betType==="trifecta"||betType==="firstfour")&&(
-                  <div style={{marginBottom:16}}>
+                  <div style={{marginBottom:14}}>
                     {canShowBoxed&&(
-                      <div style={{display:"flex",gap:6,marginBottom:12}}>
-                        <button className="sy" style={{flex:1,padding:"9px",borderRadius:10,border:`2px solid ${!boxed?"#1a3a1a":"#e5e7eb"}`,background:!boxed?"#1a3a1a":"#fff",color:!boxed?"#fff":"#374151",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
-                        <button className="sy" style={{flex:1,padding:"9px",borderRadius:10,border:`2px solid ${boxed?"#1a3a1a":"#e5e7eb"}`,background:boxed?"#1a3a1a":"#fff",color:boxed?"#fff":"#374151",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
+                      <div style={{display:"flex",gap:8,marginBottom:12}}>
+                        <button className="sy" style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${!boxed?"#1a3a1a":"#e5e7eb"}`,background:!boxed?"#1a3a1a":"#fff",color:!boxed?"#fff":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
+                        <button className="sy" style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${boxed?"#1a3a1a":"#e5e7eb"}`,background:boxed?"#1a3a1a":"#fff",color:boxed?"#fff":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
                       </div>
                     )}
-                    <p className="sy" style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>{boxed?`Select ${numPositions}+ horses (any order)`:`Select position for each horse`}</p>
-                    <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:220,overflowY:"auto"}}>
+                    <p className="sy" style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8}}>{boxed?`Select ${numPositions}+ horses (any order)`:"Tap position for each horse"}</p>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       {race.horses.filter(h=>!h.scratched).map(h=>{
                         if(boxed){
                           const inSel=(sel[0]||[]).includes(h.number);
                           return(
                             <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:`1.5px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
                               <div style={{width:28,height:28,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
-                              <span className="sy" style={{flex:1,fontSize:14,fontWeight:600}}>{h.name}</span>
+                              {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
+                              <span className="sy" style={{flex:1,fontSize:14,fontWeight:600,color:"#111"}}>{h.name}</span>
                               <span className="sy" style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
-                              {inSel&&<span style={{fontSize:16,color:"#1a3a1a"}}>✓</span>}
+                              {inSel&&<span style={{fontSize:16,color:"#1a3a1a",fontWeight:800}}>✓</span>}
                             </button>
                           );
                         }
-                        const myPositions=def.positions.map((p,pi)=>(sel[pi]||[]).includes(h.number)?p.label:null).filter(Boolean);
+                        const myPos=def.positions.map((p,pi)=>(sel[pi]||[]).includes(h.number)?p.label:null).filter(Boolean);
                         return(
-                          <div key={h.number} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 10px",borderRadius:10,border:`1.5px solid ${myPositions.length?"#1a3a1a":"#e5e7eb"}`,background:myPositions.length?"#f0fdf4":"#fafafa"}}>
+                          <div key={h.number} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa"}}>
                             <div style={{width:26,height:26,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
-                            <span className="sy" style={{flex:1,fontSize:13,fontWeight:600}}>{h.name}</span>
+                            {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:22,height:22,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
+                            <span className="sy" style={{flex:1,fontSize:13,fontWeight:600,color:"#111"}}>{h.name}</span>
                             <div style={{display:"flex",gap:4}}>
                               {def.positions.map((pos,pi)=>{
                                 const isThis=(sel[pi]||[]).includes(h.number);
-                                return <button key={pi} className="sy" style={{padding:"5px 9px",borderRadius:7,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>toggleHorse(pi,h.number)}>{pos.label}</button>;
+                                return <button key={pi} className="sy" style={{minWidth:42,height:36,borderRadius:8,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>toggleHorse(pi,h.number)}>{pos.label}</button>;
                               })}
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    {combos>0&&<div style={{marginTop:8,padding:"8px 12px",background:"#f0fdf4",borderRadius:8,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,color:"#1a3a1a"}}>✓</span><span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>{combos} combination{combos!==1?"s":" "}{combos>1?` ${flexiPct}% flexi`:""}</span></div>}
+                    {combos>0&&<div style={{marginTop:10,padding:"8px 12px",background:"#f0fdf4",borderRadius:8,display:"flex",gap:6,alignItems:"center"}}><span style={{color:"#1a3a1a",fontSize:14}}>✓</span><span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>{combos} combination{combos!==1?"s":""}{combos>1?` · ${flexiPct}% flexi`:""}</span></div>}
                   </div>
                 )}
 
-                {/* Stake section */}
-                <div style={{borderTop:"1px solid #f3f4f6",paddingTop:16}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                {/* Stake */}
+                <div style={{borderTop:"1px solid #f3f4f6",paddingTop:14,marginBottom:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                     <span className="sy" style={{fontSize:13,fontWeight:700,color:"#374151"}}>Stake</span>
-                    <span className="sy" style={{fontSize:12,color:"#6b7280"}}>{fmt(raceBalance)} remaining</span>
+                    <span className="sy" style={{fontSize:12,color:"#9ca3af"}}>{fmt(raceBalance)} remaining</span>
                   </div>
-
-                  {/* Big stake input */}
                   <div style={{position:"relative",marginBottom:10}}>
-                    <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:22,fontWeight:700,color:"#9ca3af"}}>$</span>
+                    <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:20,fontWeight:700,color:"#9ca3af"}}>$</span>
                     <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
-                      style={{paddingLeft:36,fontSize:24,fontWeight:700,padding:"14px 14px 14px 36px",width:"100%",borderRadius:12,border:"2px solid #e5e7eb",textAlign:"left"}}/>
+                      style={{paddingLeft:32,fontSize:22,fontWeight:700,padding:"13px 14px 13px 32px",width:"100%",borderRadius:12,border:"2px solid #e5e7eb"}}/>
                   </div>
-
-                  {/* Quick amounts */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:14}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:12}}>
                     {[2,5,10,raceBalance].filter((v,i,a)=>v>0&&a.indexOf(v)===i).slice(0,4).map(v=>(
-                      <button key={v} className="sy" style={{padding:"10px 4px",borderRadius:10,border:`1.5px solid ${stakeStr===String(v)?"#1a3a1a":"#e5e7eb"}`,background:stakeStr===String(v)?"#1a3a1a":"#fff",color:stakeStr===String(v)?"#fff":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
-                        onClick={()=>setStakeStr(String(v))}>
+                      <button key={v} className="sy" style={{padding:"11px 4px",borderRadius:10,border:`2px solid ${stakeStr===String(v)?"#1a3a1a":"#e5e7eb"}`,background:stakeStr===String(v)?"#1a3a1a":"#fff",color:stakeStr===String(v)?"#fff":"#374151",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>setStakeStr(String(v))}>
                         ${v}
                       </button>
                     ))}
                   </div>
-
-                  {betType==="eachway"&&stake>0&&<p className="sy" style={{fontSize:12,color:"#6b7280",marginBottom:10}}>Each Way = {fmt(stake)} Win + {fmt(stake)} Place = <strong>{fmt(totalCost)}</strong> total</p>}
-                  {totalCost>raceBalance&&stake>0&&<p className="sy" style={{fontSize:12,color:"#dc2626",marginBottom:10,fontWeight:600}}>⚠ Only {fmt(raceBalance)} remaining</p>}
-
-                  {/* Add to betslip */}
-                  <button className="sy" disabled={!isReady()} onClick={()=>{handleAdd();setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}
-                    style={{width:"100%",padding:"16px",borderRadius:14,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:16,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",transition:"all .15s"}}>
-                    {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Place Bet${stake>0?` - ${fmt(totalCost)}`:""}`}
-                  </button>
+                  {betType==="eachway"&&stake>0&&<p className="sy" style={{fontSize:12,color:"#6b7280",marginBottom:8}}>Each Way = {fmt(stake)} Win + {fmt(stake)} Place = <strong>{fmt(totalCost)}</strong> total</p>}
+                  {totalCost>raceBalance&&stake>0&&<p className="sy" style={{fontSize:12,color:"#dc2626",marginBottom:8,fontWeight:600}}>⚠ Only {fmt(raceBalance)} remaining</p>}
                 </div>
+              </div>
+
+              {/* Fixed bottom button */}
+              <div style={{flexShrink:0,padding:"12px 16px"}}>
+                <button className="sy" disabled={!isReady()} onClick={()=>{handleAdd();setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}
+                  style={{width:"100%",padding:"16px",borderRadius:14,background:isReady()?"#1a3a1a":"#e5e7eb",color:isReady()?"#fff":"#9ca3af",fontSize:16,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit"}}>
+                  {!isReady()?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget"):`Place Bet${stake>0?` - ${fmt(totalCost)}`:""}`}
+                </button>
               </div>
             </div>
           </>
