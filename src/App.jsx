@@ -3411,29 +3411,66 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
             {/* WIN RATE + STREAK */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-              <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,.25)"}}>
-                <div className="sy" style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",marginBottom:14,textTransform:"uppercase",letterSpacing:".1em"}}>Race Win Rate</div>
-                <div style={{position:"relative",width:100,height:100,margin:"0 auto 12px"}}>
-                  <svg viewBox="0 0 36 36" style={{transform:"rotate(-90deg)",width:100,height:100}}>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="3"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none"
-                      stroke={raceWinRate>=50?"#4ade80":raceWinRate>=30?"#fbbf24":"#f87171"}
-                      strokeWidth="3" strokeDasharray={raceWinRate+" "+(100-raceWinRate)} strokeLinecap="round"
-                      style={{filter:"drop-shadow(0 0 5px "+(raceWinRate>=50?"#4ade80":raceWinRate>=30?"#fbbf24":"#f87171")+")"}}/>
-                  </svg>
-                  <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                    <span className="cg" style={{fontSize:24,fontWeight:900,color:raceWinRate>=50?"#4ade80":raceWinRate>=30?"#fbbf24":"#f87171"}}>{raceWinRate}%</span>
+
+              {/* Race Win Rate - clean big ring */}
+              <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,.25)",display:"flex",flexDirection:"column",alignItems:"center"}}>
+                <div className="sy" style={{fontSize:10,fontWeight:700,color:"#fff",marginBottom:16,textTransform:"uppercase",letterSpacing:".12em"}}>Race Win Rate</div>
+                {(()=>{
+                  const ringCol=raceWinRate>=50?"#4ade80":raceWinRate>=30?"#fbbf24":"#f87171";
+                  const size=isMobile?110:130;
+                  const r=44, cx=size/2, cy=size/2;
+                  const circ=2*Math.PI*r;
+                  const dash=(raceWinRate/100)*circ;
+                  return(
+                    <div style={{position:"relative",width:size,height:size,marginBottom:14}}>
+                      <svg width={size} height={size} style={{display:"block"}}>
+                        <defs>
+                          <filter id="ringGlow">
+                            <feGaussianBlur stdDeviation="4" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                          </filter>
+                        </defs>
+                        {/* Outer subtle glow ring */}
+                        <circle cx={cx} cy={cy} r={r+6} fill="none" stroke={ringCol} strokeWidth="1" strokeOpacity="0.1"/>
+                        {/* Track */}
+                        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="7"/>
+                        {/* Progress */}
+                        <circle cx={cx} cy={cy} r={r} fill="none"
+                          stroke={ringCol} strokeWidth="7"
+                          strokeDasharray={`${dash} ${circ}`}
+                          strokeLinecap="round"
+                          transform={`rotate(-90 ${cx} ${cy})`}
+                          filter="url(#ringGlow)"/>
+                      </svg>
+                      {/* Centre text - separate from SVG to avoid overlap */}
+                      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2}}>
+                        <span className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:ringCol,lineHeight:1}}>{raceWinRate}%</span>
+                        <span className="sy" style={{fontSize:9,color:"rgba(255,255,255,.6)",fontWeight:500,letterSpacing:".04em"}}>hit rate</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div style={{display:"flex",gap:16}}>
+                  <div>
+                    <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:"#4ade80"}}>{racesWon}</div>
+                    <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.7)"}}>Wins</div>
+                  </div>
+                  <div style={{width:1,background:"rgba(255,255,255,.1)"}}/>
+                  <div>
+                    <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:"#f87171"}}>{racesLost}</div>
+                    <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.7)"}}>Losses</div>
                   </div>
                 </div>
-                <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>{racesWon} wins - {racesLost} losses</div>
               </div>
+
+              {/* Streak */}
               <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,.25)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                <div className="sy" style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",marginBottom:10,textTransform:"uppercase",letterSpacing:".1em"}}>Current Streak</div>
+                <div className="sy" style={{fontSize:10,fontWeight:700,color:"#fff",marginBottom:12,textTransform:"uppercase",letterSpacing:".12em"}}>Current Streak</div>
                 {streak&&streak.count>0?(<>
-                  <div style={{fontSize:48,lineHeight:1,marginBottom:6}}>{streak.type==="win"?"🔥":"❄️"}</div>
-                  <div className="cg" style={{fontSize:40,fontWeight:900,color:streak.type==="win"?"#4ade80":"#f87171",lineHeight:1}}>{streak.count}</div>
-                  <div className="sy" style={{fontSize:12,color:streak.type==="win"?"#4ade80":"#f87171",marginTop:4,fontWeight:600}}>{streak.type==="win"?"wins":"losses"} in a row</div>
-                </>):<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.25)"}}>No streak yet</div>}
+                  <div style={{fontSize:44,lineHeight:1,marginBottom:8,filter:streak.type==="win"?"drop-shadow(0 0 12px #4ade80)":"drop-shadow(0 0 12px #60a5fa)"}}>{streak.type==="win"?"🔥":"❄️"}</div>
+                  <div className="cg" style={{fontSize:isMobile?36:44,fontWeight:900,color:streak.type==="win"?"#4ade80":"#f87171",lineHeight:1}}>{streak.count}</div>
+                  <div className="sy" style={{fontSize:11,color:streak.type==="win"?"#4ade80":"#f87171",marginTop:6,fontWeight:600}}>{streak.type==="win"?"wins":"losses"} in a row</div>
+                </>):<div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.5)"}}>No streak yet</div>}
               </div>
             </div>
 
@@ -3565,9 +3602,9 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               };
               const cols=Math.min(oddsData.length,4);
               const dialW=Math.floor((isMobile?window.innerWidth-64:560)/cols)-8;
-              const dialH=Math.round(dialW*0.72);
-              const dcx=dialW/2,dcy=dialH-12;
-              const outerR=Math.round(dialW*0.42),innerR=Math.round(dialW*0.28);
+              const dialH=Math.round(dialW*0.8);
+              const dcx=dialW/2,dcy=dialH-18;
+              const outerR=Math.round(dialW*0.40),innerR=Math.round(dialW*0.26);
               return(
                 <div style={{background:"#0f1f0f",borderRadius:14,padding:"20px 16px",marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>
                   <div className="sy" style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:2}}>🎯 Win Rate by Odds</div>
@@ -3607,8 +3644,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                             <line x1={dcx} y1={dcy} x2={nx} y2={ny} stroke={r.col} strokeWidth="2.5" strokeLinecap="round" filter={"url(#df"+i+")"}/>
                             <circle cx={dcx} cy={dcy} r={5} fill={r.col} filter={"url(#df"+i+")"}/>
                             {/* Text */}
-                            <text x={dcx} y={dcy-10} textAnchor="middle" fontSize={Math.round(dialW*0.11)} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
-                            <text x={dcx} y={dcy+4} textAnchor="middle" fontSize={Math.round(dialW*0.065)} fill="#fff" fontFamily="system-ui" fontWeight="600">{grade}</text>
+                            <text x={dcx} y={dcy-18} textAnchor="middle" fontSize={Math.round(dialW*0.11)} fontWeight="900" fill={r.col} fontFamily="system-ui">{r.hitRate}%</text>
+                            <text x={dcx} y={dcy-5} textAnchor="middle" fontSize={Math.round(dialW*0.065)} fill="#fff" fontFamily="system-ui" fontWeight="600">{grade}</text>
                           </svg>
                           <div style={{textAlign:"center",marginTop:2}}>
                             <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:r.col}}>{r.label}</div>
