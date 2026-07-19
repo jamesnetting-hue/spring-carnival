@@ -1890,27 +1890,26 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:0}}>
-                  {/* Number + Silk - dark green TAB style */}
+                  {/* Number + Silk - compact TAB style */}
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
-                    {/* Dark green number */}
-                    <div style={{width:isMobile?36:44,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#6b7280":"#1a3a1a"}}>
-                      <span style={{fontSize:isMobile?15:17,fontWeight:900,color:"#fff",letterSpacing:"-0.5px"}}>{h.number}</span>
+                    {/* Runner number - tight */}
+                    <div style={{width:isMobile?26:32,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a"}}>
+                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk */}
-                    <div style={{width:isMobile?48:56,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"6px 6px":"8px 8px",background:"#fff"}}>
+                    <div style={{width:isMobile?40:48,display:"flex",alignItems:"center",justifyContent:"center",padding:"5px",background:"#fff"}}>
                       {h.silkUrl
-                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?34:40,height:isMobile?34:40,objectFit:"contain",display:"block"}}
+                        ?<img src={h.silkUrl} alt="" style={{width:isMobile?28:34,height:isMobile?28:34,objectFit:"contain",display:"block"}}
                            onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>
                         :null}
                       <div className="silk-fb" style={{
-                        width:isMobile?34:40,height:isMobile?34:40,
+                        width:isMobile?28:34,height:isMobile?28:34,
                         borderRadius:"50%",
                         background:scr?"#d1d5db":silkCol(h.number),
                         display:h.silkUrl?"none":"flex",
                         alignItems:"center",justifyContent:"center",
-                        fontSize:isMobile?13:15,fontWeight:900,color:"#fff",
-                        boxShadow:`inset 0 -3px 0 rgba(0,0,0,.2)`,
-                        border:"2px solid rgba(255,255,255,.8)",
+                        fontSize:isMobile?11:13,fontWeight:800,color:"#fff",
+                        boxShadow:"inset 0 -2px 0 rgba(0,0,0,.2)",
                         flexShrink:0,
                       }}>{h.number}</div>
                     </div>
