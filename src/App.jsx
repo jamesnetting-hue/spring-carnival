@@ -3436,7 +3436,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                         </defs>
                         {/* Outer subtle glow ring */}
                         <circle cx={cx} cy={cy} r={r+6} fill="none" stroke={ringCol} strokeWidth="1" strokeOpacity="0.08"/>
-                        {/* Track */
+                        {/* Track */}
                         <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,.08)" strokeWidth="7"/>
                         {/* Progress */}
                         <circle cx={cx} cy={cy} r={r} fill="none"
