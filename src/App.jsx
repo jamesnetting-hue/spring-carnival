@@ -2547,7 +2547,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
                       {/* Rank badge */}
                       <div style={{width:28,height:28,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 8px ${col}66`}}>
-                        <span style={{fontSize:13,fontWeight:900,color:rank===0?"#1a1a00":rank===1?"#1a1a1a":"#1a0800"}}>{"🥇🥈🥉"[rank]}</span>
+                        <span style={{fontSize:13,fontWeight:900}}>{medals[rank]}</span>
                       </div>
                       {/* Name */}
                       <div style={{flex:1,minWidth:0}}>
