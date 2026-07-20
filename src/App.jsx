@@ -2643,22 +2643,21 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         }).sort((a,b)=>b.streak-a.streak)[0];
 
         const awards=[
-          mostProfit.a&&{emoji:"🏆",label:"Most Profitable",name:mostProfit.a.name,detail:`+${fmt(mostProfit.p)} season profit`},
-          biggestWinAcc&&{emoji:"🎯",label:"Biggest Win",name:biggestWinAcc.name,detail:`+${fmt(biggestWin.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`},
-          roughieAcc&&{emoji:"🐎",label:"Biggest Roughie",name:roughieAcc.name,detail:`$${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`},
-          bigTriAcc&&{emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc.name,detail:`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`},
-          bigFFAcc&&{emoji:"🤑",label:"Biggest First Four",name:bigFFAcc.name,detail:`+${fmt(bigFF.payout||0)}`},
-          hotStreak?.streak>1&&{emoji:"🔥",label:"Hot Streak",name:hotStreak.name,detail:`${hotStreak.streak} races in a row`},
-          coldStreak?.streak>1&&{emoji:"❄️",label:"Cold Streak",name:coldStreak.name,detail:`${coldStreak.streak} races without a profit`},
-        ].filter(Boolean);
+          {emoji:"🏆",label:"Most Profitable",name:mostProfit.a?.name||"TBD",detail:mostProfit.a?`+${fmt(mostProfit.p)} season profit`:"No races settled yet",active:!!mostProfit.a},
+          {emoji:"🎯",label:"Biggest Win",name:biggestWinAcc?.name||"TBD",detail:biggestWinAcc?`+${fmt(biggestWin.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`:"-",active:!!biggestWinAcc},
+          {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"TBD",detail:roughieAcc?`$${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
+          {emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc?.name||"TBD",detail:bigTriAcc?`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`:"-",active:!!bigTriAcc},
+          {emoji:"🤑",label:"Biggest First Four",name:bigFFAcc?.name||"TBD",detail:bigFFAcc?`+${fmt(bigFF.payout||0)}`:"-",active:!!bigFFAcc},
+          {emoji:"🔥",label:"Hot Streak",name:hotStreak?.streak>0?hotStreak.name:"TBD",detail:hotStreak?.streak>0?`${hotStreak.streak} races in a row`:"No streak yet",active:hotStreak?.streak>0},
+          {emoji:"❄️",label:"Cold Streak",name:coldStreak?.streak>0?coldStreak.name:"TBD",detail:coldStreak?.streak>0?`${coldStreak.streak} races without a profit`:"No streak yet",active:coldStreak?.streak>0},
+        ];
 
-        if(!awards.length) return null;
         return(
           <div style={{marginBottom:16}}>
             <h3 className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,marginBottom:10}}>🎖️ Season Awards</h3>
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:8}}>
               {awards.map(a=>(
-                <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"12px 12px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"12px 12px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)",opacity:a.active?1:0.55}}>
                   <div style={{fontSize:22,marginBottom:5}}>{a.emoji}</div>
                   <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:3,fontWeight:700}}>{a.label}</div>
                   <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#111",marginBottom:3}}>{a.name}</div>
@@ -2676,7 +2675,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         :(
           <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
             {/* Table header */}
-            <div style={{display:"grid",gridTemplateColumns:"44px 1fr auto",gap:0,background:"#f8f9fa",borderBottom:`1px solid ${C.border}`,padding:"8px 14px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"44px 1fr auto",gap:0,background:"#f0f4f0",borderBottom:`2px solid ${C.border}`,padding:"9px 14px"}}>
               <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}}>#</span>
               <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}}>Player</span>
               <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em",textAlign:"right"}}>Profit</span>
@@ -2700,7 +2699,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               }).filter(Boolean).slice(-5);
               const bestWin=pb.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
               const medalC2=["#ffd700","#c0c0c0","#cd7f32"];
-              const rowBg=isMe?"rgba(26,58,26,.04)":"#fff";
+              const rowBg=isMe?"rgba(26,58,26,.06)":fi%2===0?"#fff":"#fafbfa";
               const borderCol=i<3?medalC2[i]:isMe?C.accent:C.border;
 
               return(
