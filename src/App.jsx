@@ -982,8 +982,8 @@ export default function App() {
   };
 
   const leaderboard = [...accounts].sort((a,b)=>{
-    const profitA = a.totalWon - a.totalStaked;
-    const profitB = b.totalWon - b.totalStaked;
+    const profitA = a.totalWon;
+    const profitB = b.totalWon;
     return profitB - profitA;
   });
 
@@ -1619,7 +1619,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 16px",background:a.id===account?.id?"rgba(26,58,26,.04)":"transparent",borderLeft:a.id===account?.id?"3px solid #1a3a1a":"3px solid transparent"}}>
                     <span className="sy" style={{fontSize:13,fontWeight:700,color:i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`}</span>
                     <span className="sy" style={{flex:1,fontSize:13,fontWeight:a.id===account?.id?700:500,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
-                    <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon-a.totalStaked>=0?C.green:C.red}}>{a.totalWon-a.totalStaked>=0?"+":""}{fmt(a.totalWon-a.totalStaked)}</span>
+                    <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon>=0?C.green:C.red}}>{a.totalWon>0?"+":""}{fmt(a.totalWon)}</span>
                   </div>
                 ))}
               </div>
@@ -2516,7 +2516,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       {/* TOP 3 - Racing Speed Bar Design */}
       {!search&&accounts.length>=3&&(()=>{
         const top3=[accounts[0],accounts[1],accounts[2]];
-        const profits=top3.map(a=>parseFloat((a.totalWon-a.totalStaked).toFixed(2)));
+        const profits=top3.map(a=>parseFloat((a.totalWon).toFixed(2)));
         const mc=["#ffd700","#c0c0c0","#cd7f32"];
         // Display order: 2nd left, 1st centre, 3rd right
         const display=[1,0,2];
@@ -2608,13 +2608,13 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const bigFFAcc=bigFF?accounts.find(a=>a.id===bigFF.playerId):null;
         // Hot streak
         const hotStreak=accounts.map(a=>{
-          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);return p;}).filter(x=>x!==null);
+          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);return p;}).filter(x=>x!==null);
           let streak=0;for(const p of ar){if(p>0)streak++;else break;}
           return{name:a.name,streak};
         }).sort((a,b)=>b.streak-a.streak)[0];
         // Cold streak
         const coldStreak=accounts.map(a=>{
-          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);return p;}).filter(x=>x!==null);
+          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);return p;}).filter(x=>x!==null);
           let streak=0;for(const p of ar){if(p<=0)streak++;else break;}
           return{name:a.name,streak};
         }).sort((a,b)=>b.streak-a.streak)[0];
@@ -2663,7 +2663,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               const won=pb.filter(b=>b.won===true).length;
               const lost=pb.filter(b=>b.won===false).length;
               const pend=pb.filter(b=>b.won===null).length;
-              const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
+              const profit=parseFloat((a.totalWon).toFixed(2));
               const movement=getMovement?getMovement(a.id,i+1):null;
               const isMe=a.id===myAccount?.id;
               const isExpanded=expanded===a.id;
@@ -2770,8 +2770,8 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       {h2h&&(()=>{
         const pa=bets.filter(b=>b.playerId===h2h.a.id&&b.won!==null);
         const pb2=bets.filter(b=>b.playerId===h2h.b.id&&b.won!==null);
-        const profitA=parseFloat((h2h.a.totalWon-h2h.a.totalStaked).toFixed(2));
-        const profitB=parseFloat((h2h.b.totalWon-h2h.b.totalStaked).toFixed(2));
+        const profitA=parseFloat((h2h.a.totalWon).toFixed(2));
+        const profitB=parseFloat((h2h.b.totalWon).toFixed(2));
         return(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setH2h(null)}>
             <div className="card" style={{maxWidth:480,width:"100%",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
@@ -2822,7 +2822,7 @@ function SeasonScreen({accounts, bets, races}) {
     const lost = settled.filter(b => b.won === false);
     const totalWon = won.reduce((s,b) => s + (b.payout||0), 0);
     const totalStaked = pb.reduce((s,b) => s + b.stake, 0);
-    const profit = parseFloat((totalWon - totalStaked).toFixed(2));
+    const profit = parseFloat((totalWon).toFixed(2));
     const winRate = settled.length ? Math.round((won.length / settled.length) * 100) : 0;
 
     // Best win
@@ -3177,7 +3177,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
     const rb = bets.filter(b=>b.raceId===race.id&&b.won!==null);
     const staked = rb.reduce((s,b)=>s+b.stake,0);
     const returned = rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-    const raceProfit = parseFloat((returned-staked).toFixed(2));
+    const raceProfit = parseFloat((returned).toFixed(2));
     const hadWin = rb.some(b=>b.won===true);
     const bestBet = rb.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
     return { race, rb, staked, returned, profit:raceProfit, hadWin, bestBet };
@@ -3188,7 +3188,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const totalSettledRaces = raceStats.length;
   const raceWinRate = totalSettledRaces ? Math.round((racesWon/totalSettledRaces)*100) : 0;
 
-  const profit = parseFloat((account.totalWon - account.totalStaked).toFixed(2));
+  const profit = parseFloat((account.totalWon).toFixed(2));
   const settledStaked = raceStats.reduce((s,r)=>s+r.staked,0);
   const roi = settledStaked>0 ? parseFloat(((profit/settledStaked)*100).toFixed(1)) : 0;
 
