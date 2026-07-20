@@ -3567,52 +3567,48 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   <div className="sy" style={{fontSize:13,fontWeight:700}}>🏇 Barrier Speed Map</div>
                   {luckyBarrier&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>#{luckyBarrier[0]} most backed</div>}
                 </div>
-                {/* Racing lanes */}
-                <div style={{background:"#0f1f0f",borderRadius:12,overflow:"hidden",padding:"10px 0 4px"}}>
-                  {/* Track header */}
-                  <div style={{display:"flex",alignItems:"center",padding:"0 10px 6px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-                    <div style={{width:28,flexShrink:0}}/>
-                    <div style={{flex:1,height:1,background:"rgba(255,255,255,.06)"}}/>
-                    <div style={{fontSize:8,color:"rgba(255,255,255,.4)",marginLeft:6,marginRight:4,fontFamily:"system-ui",letterSpacing:".1em"}}>FREQUENCY</div>
-                    <div style={{fontSize:10}}>🏁</div>
+                {/* Racing lanes - light theme */}
+                <div style={{background:"#f0f7f0",borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`}}>
+                  {/* Header */}
+                  <div style={{display:"flex",alignItems:"center",padding:"6px 10px",background:"#1a3a1a",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{width:30,flexShrink:0}}/>
+                    <div style={{flex:1}}/>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,.7)",fontFamily:"system-ui",letterSpacing:".1em",marginRight:4}}>FREQUENCY →</div>
+                    <div style={{fontSize:11}}>🏁</div>
                   </div>
                   {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map((n,idx)=>{
                     const freq=numFreq[n]||0;
-                    const barW=freq>0?Math.max(8,Math.round((freq/maxFreq)*100)):0;
+                    const barW=freq>0?Math.max(6,Math.round((freq/maxFreq)*100)):0;
                     const isLucky=luckyBarrier&&n===parseInt(luckyBarrier[0]);
-                    const col=isLucky?"#fbbf24":freq>0?"#4ade80":"rgba(255,255,255,.1)";
-                    const laneCol=idx%2===0?"rgba(0,60,0,.3)":"rgba(0,50,0,.2)";
+                    const laneCol=idx%2===0?"#fff":"#f5f9f5";
+                    const barCol=isLucky?"#d97706":C.accent;
                     return(
-                      <div key={n} style={{display:"flex",alignItems:"center",height:26,background:laneCol,borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-                        {/* Barrier gate */}
-                        <div style={{width:28,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"2px solid rgba(255,255,255,.08)"}}>
-                          <span style={{fontSize:10,fontWeight:800,color:isLucky?"#fbbf24":"rgba(255,255,255,.6)",fontFamily:"system-ui"}}>{n}</span>
+                      <div key={n} style={{display:"flex",alignItems:"center",height:28,background:laneCol,borderBottom:`1px solid #e8f0e8`}}>
+                        {/* Barrier number */}
+                        <div style={{width:30,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",borderRight:`2px solid #d1e8d1`,background:isLucky?"#fef3c7":"#e8f5e8"}}>
+                          <span style={{fontSize:11,fontWeight:800,color:isLucky?"#d97706":C.accent,fontFamily:"system-ui"}}>{n}</span>
                         </div>
-                        {/* Lane */}
-                        <div style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"center",paddingLeft:4}}>
-                          {freq>0&&(
+                        {/* Track lane */}
+                        <div style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"center",paddingLeft:6,paddingRight:8}}>
+                          {freq>0?(
                             <>
+                              {/* Bar */}
                               <div style={{
-                                width:`${barW}%`,height:10,
-                                background:`linear-gradient(to right,${col}66,${col})`,
-                                borderRadius:"0 4px 4px 0",
-                                flexShrink:0,
+                                width:`${barW}%`,height:12,
+                                background:isLucky?`linear-gradient(to right,#fbbf2444,#fbbf24)`:`linear-gradient(to right,${C.accent}44,${C.accent})`,
+                                borderRadius:4,flexShrink:0,
                               }}/>
-                              <span style={{fontSize:11,marginLeft:4,filter:isLucky?"drop-shadow(0 0 4px #fbbf24)":"none"}}>🐎</span>
-                              <span style={{fontSize:8,marginLeft:3,color:"rgba(255,255,255,.5)",fontFamily:"system-ui"}}>{freq}×</span>
-                              {isLucky&&<span style={{fontSize:8,marginLeft:4,color:"#fbbf24",fontWeight:700,fontFamily:"system-ui"}}>⭐ fav</span>}
+                              <span style={{fontSize:12,marginLeft:5}}>🐎</span>
+                              <span style={{fontSize:11,marginLeft:3,color:"#555",fontFamily:"system-ui",fontWeight:600}}>{freq}×</span>
+                              {isLucky&&<span style={{fontSize:11,marginLeft:5,color:"#d97706",fontWeight:700}}>⭐</span>}
                             </>
+                          ):(
+                            <span style={{fontSize:11,color:"#ccc",marginLeft:6,fontFamily:"system-ui"}}>—</span>
                           )}
-                          {freq===0&&<span style={{fontSize:9,color:"rgba(255,255,255,.15)",marginLeft:6,fontFamily:"system-ui"}}>—</span>}
                         </div>
                       </div>
                     );
                   })}
-                  {/* Track footer */}
-                  <div style={{display:"flex",justifyContent:"space-between",padding:"4px 10px 2px 36px"}}>
-                    <span style={{fontSize:8,color:"rgba(255,255,255,.25)",fontFamily:"system-ui",letterSpacing:".08em"}}>BARRIER</span>
-                    <span style={{fontSize:8,color:"rgba(255,255,255,.25)",fontFamily:"system-ui",letterSpacing:".06em"}}>TIMES BACKED →</span>
-                  </div>
                 </div>
                 {luckyBarrier&&(
                   <div style={{display:"flex",alignItems:"center",gap:6,marginTop:10}}>
