@@ -2578,27 +2578,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                 );
               })}
             </div>
-
-            {/* Podium blocks at the bottom */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,marginTop:10}}>
-              {display.map((rank,slot)=>{
-                const a=top3[rank];
-                const profit=profits[rank];
-                const col=displayCols[slot];
-                return(
-                  <div key={slot} style={{
-                    height:podH[slot],
-                    background:`linear-gradient(180deg,${col} 0%,${col}aa 100%)`,
-                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,
-                    borderRadius:slot===1?"6px 6px 0 0":slot===0?"6px 0 0 0":"0 6px 0 0",
-                    boxShadow:`inset 0 3px 0 rgba(255,255,255,.25)`,
-                  }}>
-                    <span className="sy" style={{fontSize:isMobile?8:9,fontWeight:700,color:"rgba(0,0,0,.6)",textTransform:"uppercase",letterSpacing:".06em"}}>{labels[slot]}</span>
-                    <span className="sy" style={{fontSize:isMobile?9:11,fontWeight:800,color:"rgba(0,0,0,.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"90%",textAlign:"center"}}>{a.name}</span>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         );
       })()}
@@ -2609,8 +2588,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const settled=bets.filter(b=>b.won!==null);
         if(!finishedRaces.length||!settled.length) return null;
 
-        // Most profitable
-        const mostProfit=accounts.reduce((best,a)=>{const p=parseFloat((a.totalWon-a.totalStaked).toFixed(2));return(!best||p>best.p)?{a,p}:best;},{a:null,p:-Infinity});
         // Biggest single win
         const biggestWin=settled.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
         const biggestWinAcc=biggestWin?accounts.find(a=>a.id===biggestWin.playerId):null;
@@ -2643,7 +2620,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         }).sort((a,b)=>b.streak-a.streak)[0];
 
         const awards=[
-          {emoji:"🏆",label:"Most Profitable",name:mostProfit.a?.name||"TBD",detail:mostProfit.a?`+${fmt(mostProfit.p)} season profit`:"No races settled yet",active:!!mostProfit.a},
           {emoji:"🎯",label:"Biggest Win",name:biggestWinAcc?.name||"TBD",detail:biggestWinAcc?`+${fmt(biggestWin.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`:"-",active:!!biggestWinAcc},
           {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"TBD",detail:roughieAcc?`$${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
           {emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc?.name||"TBD",detail:bigTriAcc?`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`:"-",active:!!bigTriAcc},
