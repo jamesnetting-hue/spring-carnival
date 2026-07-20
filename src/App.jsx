@@ -3312,191 +3312,217 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           <div className="sy" style={{fontSize:13,color:C.soft}}>Once races are settled you'll see your profit chart, win rates and more.</div>
         </div>
       ):(()=>{
+
+        // ── Core calcs ──────────────────────────────────────────────
         const profitCurve=[];let curRun=0;
         raceStats.forEach(r=>{curRun=parseFloat((curRun+r.profit).toFixed(2));profitCurve.push({val:curRun,name:r.race.name,profit:r.profit});});
-        const maxCurve=Math.max(...profitCurve.map(p=>p.val),0.01);
-        const minCurve=Math.min(...profitCurve.map(p=>p.val),0);
-        const curveRange=maxCurve-minCurve||1;
-        const svgW=isMobile?300:520;const svgH=120;const pad=14;
-        const pts=profitCurve.map((p,i)=>{const x=pad+(i/(profitCurve.length-1||1))*(svgW-pad*2);const y=pad+((maxCurve-p.val)/curveRange)*(svgH-pad*2);return[x,y];});
-        const pathD=pts.length>1?"M"+pts.map(p=>p.join(",")).join(" L"):"";
-        const fillD=pts.length>1?"M"+pts[0][0]+","+(svgH-pad)+" L"+pts.map(p=>p.join(",")).join(" L")+" L"+pts[pts.length-1][0]+","+(svgH-pad)+" Z":"";
-        const zeroY=pad+((maxCurve-0)/curveRange)*(svgH-pad*2);
-        const lineCol=profit>0?C.green:profit<0?C.red:"#9ca3af";
         const peakBal=Math.max(...profitCurve.map(b=>b.val),0);
         const troughBal=Math.min(...profitCurve.map(b=>b.val),0);
+        const lineCol=profit>0?C.green:profit<0?C.red:"#9ca3af";
+
+        // Bet type breakdown
+        const typeColors={win:"#1a3a1a",place:"#1d4ed8",eachway:"#7c3aed",quinella:"#b45309",exacta:"#0e7490",trifecta:"#be185d",firstfour:"#d97706"};
+        const typeData=BET_TYPES.map(t=>{
+          const tb=settled.filter(b=>b.type===t.id);if(!tb.length)return null;
+          const tw=tb.filter(b=>b.won===true);
+          const payout=tw.reduce((s,b)=>s+(b.payout||0),0);
+          const hitRate=Math.round((tw.length/tb.length)*100);
+          return{label:t.label,id:t.id,payout,count:tb.length,wins:tw.length,hitRate,col:typeColors[t.id]||C.accent};
+        }).filter(Boolean);
+
+        // Stake buckets
         const buckets=[{label:"$1-4",min:1,max:4},{label:"$5-8",min:5,max:8},{label:"$9-12",min:9,max:12},{label:"$13-16",min:13,max:16},{label:"$17+",min:17,max:999}];
         const bucketData=buckets.map(b=>{const tb=settled.filter(x=>x.stake>=b.min&&x.stake<=b.max);const tw=tb.filter(x=>x.won===true);return{...b,total:tb.length,wins:tw.length,payout:tw.reduce((s,x)=>s+(x.payout||0),0),staked:tb.reduce((s,x)=>s+x.stake,0)};}).filter(b=>b.total>0);
+
+        // Barrier frequency
         const numFreq={};bets.forEach(b=>b.horses.forEach(n=>{numFreq[n]=(numFreq[n]||0)+1;}));
         const maxFreq=Math.max(...Object.values(numFreq),1);
         const luckyNum=Object.entries(numFreq).sort(([,a],[,b])=>b-a)[0];
-        const typeColors={win:C.accent,place:"#1d4ed8",eachway:"#7c3aed",quinella:"#b45309",exacta:"#0e7490",trifecta:"#be185d",firstfour:"#d97706"};
-        const typeData=BET_TYPES.map(t=>{const tb=settled.filter(b=>b.type===t.id);if(!tb.length)return null;const tw=tb.filter(b=>b.won===true);const p=parseFloat((tw.reduce((s,b)=>s+(b.payout||0),0)-tb.reduce((s,b)=>s+b.stake,0)).toFixed(2));const hitRate=Math.round((tw.length/tb.length)*100);return{label:t.label,id:t.id,profit:p,count:tb.length,wins:tw.length,hitRate,col:typeColors[t.id]||C.accent};}).filter(Boolean);
-        const bestRaceStat2=raceStats.length>0?[...raceStats].sort((a,b)=>b.profit-a.profit)[0]:null;
+
+        // Best race & horse
+        const bestRaceStat2=[...raceStats].sort((a,b)=>b.profit-a.profit)[0];
         const bestBetInBest=bestRaceStat2?.rb?.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
         const bestHorse=bestBetInBest?races.find(r=>r.id===bestRaceStat2?.race?.id)?.horses?.find(h=>h.number===bestBetInBest?.horses?.[0]):null;
+
+        // New stats ─────────────────────────────────────────────────
+        // Lucky number: barrier that wins most
+        const winningBarriers={};won.forEach(b=>b.horses.forEach(n=>{winningBarriers[n]=(winningBarriers[n]||0)+1;}));
+        const luckyBarrier=Object.entries(winningBarriers).sort(([,a],[,b])=>b-a)[0];
+
+        // Average odds backed (potential/stake ratio)
+        const oddsArr=settled.filter(b=>b.potential&&b.stake>0).map(b=>b.potential/b.stake);
+        const avgOdds=oddsArr.length?parseFloat((oddsArr.reduce((s,o)=>s+o,0)/oddsArr.length).toFixed(1)):0;
+
+        // Biggest single race payday
+        const biggestPayout=won.sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestPayoutRace=biggestPayout?races.find(r=>r.id===biggestPayout.raceId):null;
+
+        // Total bets count by type
+        const mostUsedType=typeData.sort((a,b)=>b.count-a.count)[0];
+        const bestTypeByHitRate=typeData.filter(t=>t.count>=2).sort((a,b)=>b.hitRate-a.hitRate)[0];
+
+        // Hot/cold runs
+        const longestWinStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit>0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
+        const longestLossStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit<=0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
+
+        // Chart sizing
+        const svgW=isMobile?Math.min(window.innerWidth-56,360):520;
+        const svgH=130; const pad=16;
+        const pts=profitCurve.map((p,i)=>{
+          const mn=Math.min(...profitCurve.map(x=>x.val),0),mx=Math.max(...profitCurve.map(x=>x.val),.01),rng=mx-mn||1;
+          const x=pad+(i/(profitCurve.length-1||1))*(svgW-pad*2);
+          const y=pad+((mx-p.val)/rng)*(svgH-pad*2);
+          return[x,y];
+        });
+        const pathD=pts.length>1?"M"+pts.map(p=>p.join(",")).join(" L"):"";
+        const fillD=pts.length>1?`M${pts[0][0]},${svgH-pad} L`+pts.map(p=>p.join(",")).join(" L")+` L${pts[pts.length-1][0]},${svgH-pad} Z`:"";
 
         return(
           <div style={{marginBottom:24}}>
 
-            {/* Profit Chart */}
-            <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#f8fffe,#f0fff8)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+            {/* ① PROFIT JOURNEY ─────────────────────────────────── */}
+            <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#f0fff8,#f8fffe)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                 <div>
-                  <div className="sy" style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:C.muted,marginBottom:3}}>Season Profit</div>
-                  <div className="cg" style={{fontSize:isMobile?28:34,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af",lineHeight:1}}>{profit>0?"+":""}{fmt(profit)}</div>
-                  <div className="sy" style={{fontSize:12,color:C.soft,marginTop:4}}>{raceStats.length} races · {racesWon}W {racesLost}L</div>
+                  <div className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:C.muted,marginBottom:3}}>📈 Profit Journey</div>
+                  <div className="cg" style={{fontSize:isMobile?30:36,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af",lineHeight:1}}>{profit>0?"+":""}{fmt(profit)}</div>
+                  <div className="sy" style={{fontSize:13,color:C.soft,marginTop:4}}>{raceStats.length} races settled</div>
                 </div>
-                <div style={{display:"flex",gap:16}}>
-                  <div style={{textAlign:"right"}}>
-                    <div className="sy" style={{fontSize:12,color:C.muted,textTransform:"uppercase",letterSpacing:".06em"}}>Peak</div>
-                    <div className="cg" style={{fontSize:14,fontWeight:700,color:C.green}}>+{fmt(peakBal)}</div>
+                <div style={{display:"flex",gap:12,flexShrink:0}}>
+                  <div style={{textAlign:"center",background:"#f0fdf4",borderRadius:10,padding:"8px 12px",border:`1px solid ${C.greenBd}`}}>
+                    <div className="sy" style={{fontSize:11,color:C.muted}}>Peak</div>
+                    <div className="cg" style={{fontSize:15,fontWeight:800,color:C.green}}>+{fmt(peakBal)}</div>
                   </div>
-                  <div style={{textAlign:"right"}}>
-                    <div className="sy" style={{fontSize:12,color:C.muted,textTransform:"uppercase",letterSpacing:".06em"}}>Low</div>
-                    <div className="cg" style={{fontSize:14,fontWeight:700,color:C.red}}>{fmt(troughBal)}</div>
+                  <div style={{textAlign:"center",background:"#fef2f2",borderRadius:10,padding:"8px 12px",border:`1px solid ${C.redBd}`}}>
+                    <div className="sy" style={{fontSize:11,color:C.muted}}>Low</div>
+                    <div className="cg" style={{fontSize:15,fontWeight:800,color:C.red}}>{fmt(troughBal)}</div>
                   </div>
                 </div>
               </div>
               <div style={{overflowX:"auto"}}>
                 <svg width={svgW} height={svgH} style={{display:"block"}}>
                   <defs>
-                    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={lineCol} stopOpacity="0.25"/>
+                    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={lineCol} stopOpacity="0.3"/>
                       <stop offset="100%" stopColor={lineCol} stopOpacity="0.02"/>
                     </linearGradient>
                   </defs>
-                  {[0.25,0.5,0.75].map((t,i)=><line key={i} x1={pad} y1={pad+t*(svgH-pad*2)} x2={svgW-pad} y2={pad+t*(svgH-pad*2)} stroke="rgba(0,0,0,.06)" strokeWidth="1"/>)}
-                  {minCurve<0&&maxCurve>0&&<line x1={pad} y1={zeroY} x2={svgW-pad} y2={zeroY} stroke="rgba(0,0,0,.15)" strokeWidth="1" strokeDasharray="4,4"/>}
-                  {fillD&&<path d={fillD} fill="url(#profitGrad)"/>}
+                  {[.25,.5,.75].map((t,i)=><line key={i} x1={pad} y1={pad+t*(svgH-pad*2)} x2={svgW-pad} y2={pad+t*(svgH-pad*2)} stroke="rgba(0,0,0,.06)" strokeWidth="1"/>)}
+                  {fillD&&<path d={fillD} fill="url(#pg)"/>}
                   {pathD&&<path d={pathD} fill="none" stroke={lineCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
-                  {pts.map(([x,y],i)=>profitCurve[i].profit!==0&&<circle key={i} cx={x} cy={y} r="3" fill={profitCurve[i].profit>0?C.green:profit<0?C.red:"#9ca3af"}/>)}
-                  {pts.length>0&&<circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="5" fill={lineCol} stroke="#fff" strokeWidth="2"/>}
+                  {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={i===pts.length-1?5:3} fill={profitCurve[i].profit>0?C.green:profitCurve[i].profit===0?"#9ca3af":C.red} stroke="#fff" strokeWidth={i===pts.length-1?2:0}/>)}
                 </svg>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                <span className="sy" style={{fontSize:12,color:C.muted}}>Race 1</span>
-                <span className="sy" style={{fontSize:12,color:C.muted}}>Race {profitCurve.length}</span>
+                <span className="sy" style={{fontSize:11,color:C.muted}}>Race 1</span>
+                <span className="sy" style={{fontSize:11,color:C.muted}}>Race {profitCurve.length}</span>
               </div>
             </div>
 
-            {/* Win Rate + Streak */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              {/* Win Rate Ring */}
+            {/* ② KEY NUMBERS ─────────────────────────────────────── */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:12}}>
+              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                <div style={{fontSize:32,marginBottom:4}}>🏆</div>
+                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Best Race</div>
+                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(bestRaceStat2?.profit||0)}</div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{bestRaceStat2?.race?.name||"-"}</div>
+                {bestHorse&&<div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>🐎 {bestHorse.name}</div>}
+              </div>
+              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                <div style={{fontSize:32,marginBottom:4}}>💰</div>
+                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Biggest Win</div>
+                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(biggestPayout?.payout||0)}</div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{biggestPayoutRace?.name||"-"}</div>
+                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>{BET_TYPES.find(t=>t.id===biggestPayout?.type)?.label||""}</div>
+              </div>
+            </div>
+
+            {/* ③ WIN RATE RING + STREAK ────────────────────────────── */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
               <div className="card" style={{textAlign:"center",padding:"18px 12px"}}>
-                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:12,textTransform:"uppercase",letterSpacing:".08em"}}>Race Win Rate</div>
+                <div className="sy" style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:12,textTransform:"uppercase",letterSpacing:".08em"}}>Race Win Rate</div>
                 {(()=>{
                   const ringCol=raceWinRate>=50?C.green:raceWinRate>=30?C.gold:C.red;
-                  const size=isMobile?100:118;const r=40;const cx=size/2;const cy=size/2;
-                  const circ=2*Math.PI*r;const dash=(raceWinRate/100)*circ;
+                  const sz=isMobile?96:112; const r=38; const cx=sz/2; const cy=sz/2;
+                  const circ=2*Math.PI*r; const dash=(raceWinRate/100)*circ;
                   return(
-                    <div style={{position:"relative",width:size,height:size,margin:"0 auto 10px"}}>
-                      <svg width={size} height={size}>
-                        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e5e7eb" strokeWidth="7"/>
-                        <circle cx={cx} cy={cy} r={r} fill="none" stroke={ringCol} strokeWidth="7"
+                    <div style={{position:"relative",width:sz,height:sz,margin:"0 auto 10px"}}>
+                      <svg width={sz} height={sz}>
+                        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e5e7eb" strokeWidth="8"/>
+                        <circle cx={cx} cy={cy} r={r} fill="none" stroke={ringCol} strokeWidth="8"
                           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`}/>
                       </svg>
                       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                         <span className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:ringCol,lineHeight:1}}>{raceWinRate}%</span>
-                        <span className="sy" style={{fontSize:8,color:C.muted,marginTop:1}}>hit rate</span>
+                        <span className="sy" style={{fontSize:10,color:C.muted,marginTop:1}}>hit rate</span>
                       </div>
                     </div>
                   );
                 })()}
-                <div style={{display:"flex",gap:14,justifyContent:"center"}}>
-                  <div><div className="cg" style={{fontSize:18,fontWeight:800,color:C.green}}>{racesWon}</div><div className="sy" style={{fontSize:12,color:C.muted}}>Wins</div></div>
+                <div style={{display:"flex",gap:16,justifyContent:"center"}}>
+                  <div><div className="cg" style={{fontSize:18,fontWeight:800,color:C.green}}>{racesWon}</div><div className="sy" style={{fontSize:11,color:C.muted}}>Wins</div></div>
                   <div style={{width:1,background:C.border}}/>
-                  <div><div className="cg" style={{fontSize:18,fontWeight:800,color:C.red}}>{racesLost}</div><div className="sy" style={{fontSize:12,color:C.muted}}>Losses</div></div>
+                  <div><div className="cg" style={{fontSize:18,fontWeight:800,color:C.red}}>{racesLost}</div><div className="sy" style={{fontSize:11,color:C.muted}}>Losses</div></div>
                 </div>
               </div>
-              {/* Streak */}
               <div className="card" style={{textAlign:"center",padding:"18px 12px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:".08em"}}>Current Streak</div>
+                <div className="sy" style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Current Streak</div>
                 {streak&&streak.count>0?(<>
                   <div style={{fontSize:36,lineHeight:1,marginBottom:4}}>{streak.type==="win"?"🔥":"❄️"}</div>
                   <div className="cg" style={{fontSize:32,fontWeight:900,color:streak.type==="win"?C.green:C.red,lineHeight:1}}>{streak.count}</div>
                   <div className="sy" style={{fontSize:12,color:streak.type==="win"?C.green:C.red,marginTop:4,fontWeight:600}}>{streak.type==="win"?"wins":"losses"} in a row</div>
+                  <div style={{display:"flex",gap:16,marginTop:10}}>
+                    <div style={{textAlign:"center"}}>
+                      <div className="sy" style={{fontSize:10,color:C.muted}}>Best run</div>
+                      <div className="sy" style={{fontSize:13,fontWeight:700,color:C.green}}>{longestWinStreak} 🔥</div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div className="sy" style={{fontSize:10,color:C.muted}}>Worst run</div>
+                      <div className="sy" style={{fontSize:13,fontWeight:700,color:C.red}}>{longestLossStreak} ❄️</div>
+                    </div>
+                  </div>
                 </>):<div className="sy" style={{fontSize:13,color:C.muted}}>No streak yet</div>}
               </div>
             </div>
 
-            {/* Best Race Trophy */}
-            {bestRaceStat2&&(
-              <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#fffbeb,#fefce8)",border:`1px solid ${C.gold}44`,position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",top:8,right:12,fontSize:48,opacity:.08}}>🏆</div>
-                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.gold,textTransform:"uppercase",letterSpacing:".12em",marginBottom:8}}>✦ Best Race</div>
-                <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:bestHorse?12:0}}>
-                  <div>
-                    <div className="cg" style={{fontSize:isMobile?28:34,fontWeight:900,color:C.gold,lineHeight:1}}>+{fmt(bestRaceStat2.profit)}</div>
-                    <div className="sy" style={{fontSize:12,color:C.soft,marginTop:4}}>{bestRaceStat2.race.name}</div>
-                  </div>
-                  <div style={{fontSize:36}}>🏆</div>
+            {/* ④ JOCKEY STATS — fun snapshot row ────────────────────── */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+              {[
+                {emoji:"🎯",label:"Avg Odds",value:`$${avgOdds}`,sub:"per bet backed"},
+                {emoji:"🍀",label:"Lucky Barrier",value:luckyBarrier?`#${luckyBarrier[0]}`:"-",sub:luckyBarrier?`${luckyBarrier[1]}W from that gate`:"no wins yet"},
+                {emoji:"📊",label:"Best Bet Type",value:bestTypeByHitRate?.label||mostUsedType?.label||"-",sub:bestTypeByHitRate?`${bestTypeByHitRate.hitRate}% hit rate`:"keep betting!"},
+              ].map(({emoji,label,value,sub})=>(
+                <div key={label} className="card" style={{textAlign:"center",padding:"14px 8px"}}>
+                  <div style={{fontSize:24,marginBottom:4}}>{emoji}</div>
+                  <div className="sy" style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{label}</div>
+                  <div className="cg" style={{fontSize:isMobile?14:16,fontWeight:800,color:"#111"}}>{value}</div>
+                  <div className="sy" style={{fontSize:10,color:C.soft,marginTop:2}}>{sub}</div>
                 </div>
-                {bestHorse&&(
-                  <div style={{background:"rgba(184,134,11,.08)",border:"1px solid rgba(184,134,11,.2)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(184,134,11,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🐎</div>
-                    <div style={{flex:1}}>
-                      <div className="sy" style={{fontSize:8,color:C.gold,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>Winning Horse</div>
-                      <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111"}}>#{bestHorse.number} {bestHorse.name}</div>
-                      {bestHorse.winOdds&&<div className="sy" style={{fontSize:13,color:C.soft}}>@ ${bestHorse.winOdds.toFixed(2)} · {BET_TYPES.find(t=>t.id===bestBetInBest?.type)?.label}</div>}
-                    </div>
-                    {bestBetInBest&&<div style={{textAlign:"right"}}>
-                      <div className="sy" style={{fontSize:12,color:C.muted}}>Return</div>
-                      <div className="cg" style={{fontSize:18,fontWeight:900,color:C.green}}>+{fmt(bestBetInBest.payout||0)}</div>
-                    </div>}
-                  </div>
-                )}
-              </div>
-            )}
+              ))}
+            </div>
 
-            {/* Bet Type Performance */}
-            {typeData.length>0&&(
-              <div className="card" style={{marginBottom:12}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>🎯 Bet Type Performance</div>
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {typeData.map(t=>(
-                    <div key={t.id}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <div style={{width:8,height:8,borderRadius:"50%",background:t.col,flexShrink:0}}/>
-                          <span className="sy" style={{fontSize:13,fontWeight:600}}>{t.label}</span>
-                          <span className="sy" style={{fontSize:13,color:C.soft}}>{t.wins}/{t.count}</span>
-                        </div>
-                        <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                          <span className="sy" style={{fontSize:13,color:C.soft}}>{t.hitRate}%</span>
-                          <span className="sy" style={{fontSize:13,fontWeight:700,color:t.profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{t.profit>0?"+":""}{fmt(t.profit)}</span>
-                        </div>
-                      </div>
-                      <div style={{height:6,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${t.hitRate}%`,background:t.col,borderRadius:3,opacity:.85}}/>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Race by Race */}
+            {/* ⑤ RACE BY RACE BARS ────────────────────────────────── */}
             {raceStats.length>0&&(
               <div className="card" style={{marginBottom:12}}>
                 <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>🐎 Race by Race</div>
                 <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
                   {(()=>{
-                    const maxAbs=Math.max(...raceStats.map(x=>Math.abs(x.profit)),1);
+                    const maxAbs=Math.max(...raceStats.map(x=>Math.abs(x.profit)),.01);
                     const maxH=90;
-                    const colW=Math.max(40,Math.floor((isMobile?280:500)/raceStats.length)-4);
+                    const n=raceStats.length;
+                    const colW=Math.max(36,Math.floor(((isMobile?Math.min(window.innerWidth-56,360):500))/n)-4);
                     return(
                       <div style={{display:"flex",gap:4,alignItems:"flex-end",width:"100%",paddingBottom:4}}>
                         {raceStats.map((r,i)=>{
-                          const h=Math.max(12,Math.round((Math.abs(r.profit)/maxAbs)*maxH));
-                          const col=r.profit>0?C.green:profit<0?C.red:"#9ca3af";
-                          const emoji=r.profit>=0?"👍":"👎";
+                          const h=Math.max(10,Math.round((Math.abs(r.profit)/maxAbs)*maxH));
+                          const col=r.profit>0?C.green:r.profit===0?"#9ca3af":C.red;
+                          const emoji=r.profit>0?"👍":"👎";
                           return(
-                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1}} title={`${r.race.name}: ${r.profit>0?"+":""}${r.profit.toFixed(2)}`}>
-                              <span style={{fontSize:isMobile?11:12,lineHeight:1}}>{emoji}</span>
-                              <span className="sy" style={{fontSize:7,color:col,fontWeight:700}}>{r.profit>0?"+":""}{Math.round(r.profit)}</span>
-                              <div style={{width:"85%",height:h,background:col,opacity:.75,borderRadius:"3px 3px 0 0",flexShrink:0}}/>
-                              <span className="sy" style={{fontSize:7,color:C.muted}}>R{i+1}</span>
+                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1}} title={`${r.race.name}: ${r.profit>0?"+":""}${fmt(r.profit)}`}>
+                              <span style={{fontSize:isMobile?11:13}}>{emoji}</span>
+                              <span className="sy" style={{fontSize:8,color:col,fontWeight:700}}>{r.profit>0?"+":""}{fmt(r.profit)}</span>
+                              <div style={{width:"85%",height:h,background:col,opacity:.8,borderRadius:"3px 3px 0 0",flexShrink:0}}/>
+                              <span className="sy" style={{fontSize:8,color:C.muted}}>R{i+1}</span>
                             </div>
                           );
                         })}
@@ -3504,60 +3530,127 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     );
                   })()}
                 </div>
-                <div style={{display:"flex",gap:12,marginTop:8}}>
-                  {[["👍","Profitable"],["👎","Loss"]].map(([e,l])=>(
-                    <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
-                      <span style={{fontSize:12}}>{e}</span>
-                      <span className="sy" style={{fontSize:13,color:C.soft}}>{l}</span>
+              </div>
+            )}
+
+            {/* ⑥ BET TYPE PERFORMANCE ─────────────────────────────── */}
+            {typeData.length>0&&(
+              <div className="card" style={{marginBottom:12}}>
+                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>🎯 Bet Type Performance</div>
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  {typeData.map(t=>(
+                    <div key={t.id}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:5}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:t.col,flexShrink:0}}/>
+                          <span className="sy" style={{fontSize:14,fontWeight:600}}>{t.label}</span>
+                          <span className="sy" style={{fontSize:12,color:C.muted}}>{t.wins}/{t.count}</span>
+                        </div>
+                        <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                          <span style={{fontSize:12,color:C.muted,fontFamily:"inherit"}}>{t.hitRate}%</span>
+                          <span className="sy" style={{fontSize:14,fontWeight:700,color:t.payout>0?C.green:"#9ca3af",minWidth:60,textAlign:"right"}}>{t.payout>0?"+":""}{fmt(t.payout)}</span>
+                        </div>
+                      </div>
+                      <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${t.hitRate}%`,background:t.col,borderRadius:4,opacity:.85}}/>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Favourite Barriers */}
+            {/* ⑦ BARRIER HEATMAP ──────────────────────────────────── */}
             {Object.keys(numFreq).length>0&&(
               <div className="card" style={{marginBottom:12}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:4}}>🎯 Favourite Barriers</div>
-                <div className="sy" style={{fontSize:12,color:C.soft,marginBottom:12}}>Which horse numbers you back most</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div className="sy" style={{fontSize:13,fontWeight:700}}>🔢 Favourite Barriers</div>
+                  {luckyBarrier&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>#{luckyBarrier[0]} most picked</div>}
+                </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map(n=>{
-                    const freq=numFreq[n]||0;const intensity=freq/maxFreq;
-                    const bg=freq>0?`rgba(30,92,30,${0.1+intensity*0.8})`:"#f3f4f6";
+                    const freq=numFreq[n]||0;
+                    const intensity=freq/maxFreq;
+                    const bg=freq>0?`rgba(26,58,26,${0.08+intensity*0.78})`:"#f3f4f6";
+                    const textCol=freq>0?(intensity>0.45?"#fff":C.accent):C.muted;
                     return(
-                      <div key={n} style={{width:36,height:36,borderRadius:8,background:bg,display:"flex",alignItems:"center",justifyContent:"center"}} title={`#${n}: backed ${freq}x`}>
-                        <span style={{fontSize:12,fontWeight:700,color:freq>0?(intensity>0.5?"#fff":C.accent):C.muted}}>{n}</span>
+                      <div key={n} style={{width:36,height:36,borderRadius:8,background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}} title={`#${n}: picked ${freq}x`}>
+                        <span style={{fontSize:13,fontWeight:700,color:textCol}}>{n}</span>
+                        {freq>0&&<span style={{fontSize:7,color:textCol,opacity:.8}}>{freq}x</span>}
                       </div>
                     );
                   })}
                 </div>
-                {luckyNum&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700,marginTop:10}}>Most backed: #{luckyNum[0]} ({luckyNum[1]}x)</div>}
+                <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
+                  <div style={{display:"flex",gap:3}}>
+                    {[.08,.3,.55,.78].map((o,i)=><div key={i} style={{width:14,height:14,borderRadius:3,background:`rgba(26,58,26,${o})`}}/>)}
+                  </div>
+                  <span className="sy" style={{fontSize:11,color:C.muted}}>Rarely → Always</span>
+                </div>
               </div>
             )}
 
-            {/* Stake Size */}
+            {/* ⑧ STAKE SIZE RESULTS ────────────────────────────────── */}
             {bucketData.length>0&&(
               <div className="card" style={{marginBottom:12}}>
                 <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:4}}>💰 Results by Stake Size</div>
-                <div className="sy" style={{fontSize:12,color:C.soft,marginBottom:12}}>Do bigger bets pay off?</div>
-                {bucketData.map(b=>{
-                  const bProfit=parseFloat((b.payout-b.staked).toFixed(2));
-                  const hitRate=b.total?Math.round((b.wins/b.total)*100):0;
-                  return(
-                    <div key={b.label} style={{marginBottom:12}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5,alignItems:"center"}}>
-                        <div>
-                          <span className="sy" style={{fontSize:13,fontWeight:700}}>{b.label}</span>
-                          <span className="sy" style={{fontSize:12,color:C.soft,marginLeft:8}}>{b.total} bets · {hitRate}% hit</span>
-                        </div>
-                        <span className="sy" style={{fontSize:13,fontWeight:700,color:bProfit>0?C.green:bProfit<0?C.red:"#9ca3af"}}>{bProfit>0?"+":""}{fmt(bProfit)}</span>
-                      </div>
-                      <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${hitRate}%`,background:bProfit>0?C.green:bProfit<0?C.red:"#9ca3af",borderRadius:4,opacity:.8}}/>
-                      </div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginBottom:14}}>Do your bigger bets pay off?</div>
+                {(()=>{
+                  const profits2=bucketData.map(b=>parseFloat((b.payout-b.staked).toFixed(2)));
+                  const cumulativePts=[];let cum=0;
+                  bucketData.forEach((b,i)=>{cum=parseFloat((cum+profits2[i]).toFixed(2));cumulativePts.push({x:b.label,y:cum,profit:profits2[i],b});});
+                  const cW=isMobile?Math.min(window.innerWidth-56,360):520;
+                  const cH=100;const cPad=36;
+                  const cVals=cumulativePts.map(p=>p.y);
+                  const cMin=Math.min(...cVals,0),cMax=Math.max(...cVals,.01),cRng=cMax-cMin||1;
+                  const cPts=cumulativePts.map((p,i)=>{
+                    const x=cPad+(i/(cumulativePts.length-1||1))*(cW-cPad*2);
+                    const y=12+((cMax-p.y)/cRng)*(cH-24);
+                    return[x,y,p];
+                  });
+                  const cPath=cPts.length>1?"M"+cPts.map(p=>p[0]+","+p[1]).join(" L"):"";
+                  const cFill=cPts.length>1?`M${cPts[0][0]},${cH-12} L`+cPts.map(p=>p[0]+","+p[1]).join(" L")+` L${cPts[cPts.length-1][0]},${cH-12} Z`:"";
+                  const totalProfit=parseFloat(profits2.reduce((s,p)=>s+p,0).toFixed(2));
+                  const cCol=totalProfit>0?C.green:totalProfit<0?C.red:"#9ca3af";
+                  return(<>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:10}}>
+                      <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:cCol}}>{totalProfit>0?"+":""}{fmt(totalProfit)}</div>
+                      <div className="sy" style={{fontSize:12,color:C.muted}}>cumulative return</div>
                     </div>
-                  );
-                })}
+                    <div style={{overflowX:"auto"}}>
+                      <svg width={cW} height={cH} style={{display:"block"}}>
+                        <defs>
+                          <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={cCol} stopOpacity="0.2"/>
+                            <stop offset="100%" stopColor={cCol} stopOpacity="0.02"/>
+                          </linearGradient>
+                        </defs>
+                        {cFill&&<path d={cFill} fill="url(#cg2)"/>}
+                        {cPath&&<path d={cPath} fill="none" stroke={cCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
+                        {cPts.map(([x,y,p],i)=>(
+                          <g key={i}>
+                            <circle cx={x} cy={y} r={5} fill={p.profit>0?C.green:p.profit<0?C.red:"#9ca3af"} stroke="#fff" strokeWidth="2"/>
+                            <text x={x} y={cH-2} textAnchor="middle" fontSize="9" fill="#555" fontFamily="system-ui">{p.x}</text>
+                            <text x={x} y={y-9} textAnchor="middle" fontSize="8" fill={p.profit>0?C.green:p.profit<0?C.red:"#999"} fontFamily="system-ui" fontWeight="700">{p.profit>0?"+":""}{Math.round(p.profit)}</text>
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+                      {bucketData.map((b,i)=>{
+                        const col2=profits2[i]>0?C.green:profits2[i]<0?C.red:"#9ca3af";
+                        const hitRate2=b.total?Math.round((b.wins/b.total)*100):0;
+                        return(
+                          <div key={b.label} style={{flex:1,minWidth:isMobile?60:80,background:"#f8f9fa",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
+                            <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{b.label}</div>
+                            <div className="sy" style={{fontSize:11,color:col2,fontWeight:700}}>{profits2[i]>0?"+":""}{fmt(profits2[i])}</div>
+                            <div className="sy" style={{fontSize:10,color:C.muted}}>{hitRate2}% hit</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>);
+                })()}
               </div>
             )}
 
