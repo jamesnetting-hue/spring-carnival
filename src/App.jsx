@@ -2513,64 +2513,121 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       )}
 
-      {/* Top 3 podium - only show when not searching */}
-      {!search&&accounts.length>=3&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-          {[1,0,2].map(idx=>{
-            const a=accounts[idx];
-            if(!a) return <div key={idx}/>;
-            const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
-            const heights=[isMobile?72:90,isMobile?88:110,isMobile?60:76];
-            const cols=["#c0c0c0","#ffd700","#cd7f32"];
-            const orderIdx=[1,0,2];// silver, gold, bronze visual order
-            const isMe=a.id===myAccount?.id;
-            return(
-              <div key={idx} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:0}}>
-                <div style={{background:"#fff",borderRadius:12,padding:"12px 8px",textAlign:"center",border:`2px solid ${cols[orderIdx[idx]]}`,width:"100%",boxShadow:`0 2px 12px ${cols[orderIdx[idx]]}33`}}>
-                  <div style={{fontSize:isMobile?22:28,marginBottom:4}}>{medals[idx]}</div>
-                  <div className="cg" style={{fontSize:isMobile?12:14,fontWeight:800,color:"#111",marginBottom:2,lineHeight:1.2}}>{a.name}</div>
-                  <div className="cg" style={{fontSize:isMobile?15:18,fontWeight:900,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
-                </div>
-                <div style={{height:heights[orderIdx[idx]],width:4,background:cols[orderIdx[idx]],borderRadius:"0 0 4px 4px",opacity:.5}}/>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Top 3 Saddle Podium */}
+      {!search&&accounts.length>=3&&(()=>{
+        const podiumOrder=[1,0,2]; // left=2nd, centre=1st, right=3rd
+        const podiumHeights=[isMobile?70:88,isMobile?100:124,isMobile?54:68];
+        const medalCols=["#ffd700","#c0c0c0","#cd7f32"];
+        const podiumLabels=["2nd","1st","3rd"];
+        return(
+          <div style={{background:"linear-gradient(180deg,#1a3a1a 0%,#2d5a2d 60%,#4a7a4a 100%)",borderRadius:16,padding:isMobile?"20px 12px 0":"24px 20px 0",marginBottom:16,overflow:"hidden",position:"relative",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
+            {/* Track/grass texture lines */}
+            <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 22px,rgba(255,255,255,.03) 22px,rgba(255,255,255,.03) 23px)",pointerEvents:"none"}}/>
+            <div style={{position:"absolute",bottom:0,left:0,right:0,height:4,background:"rgba(255,255,255,.1)"}}/>
 
-      {/* Awards strip */}
+            <div className="sy" style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",textAlign:"center",marginBottom:isMobile?14:18}}>🏁 Top 3</div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:isMobile?6:10,alignItems:"flex-end"}}>
+              {podiumOrder.map((idx,col)=>{
+                const a=accounts[idx];
+                if(!a) return <div key={col}/>;
+                const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
+                const mc=medalCols[idx];
+                const isMe=a.id===myAccount?.id;
+                const isFirst=idx===0;
+                return(
+                  <div key={col} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                    {/* Floating card above podium */}
+                    <div style={{background:"rgba(255,255,255,.97)",borderRadius:isMobile?10:12,padding:isMobile?"10px 6px":"12px 10px",textAlign:"center",width:"100%",border:`2px solid ${mc}`,boxShadow:`0 4px 20px ${mc}44`,marginBottom:0,transform:isFirst?"translateY(-6px)":"none",position:"relative"}}>
+                      {isMe&&<div style={{position:"absolute",top:-8,right:-4,fontSize:8,padding:"2px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>You</div>}
+                      {/* Saddle SVG */}
+                      <svg width={isMobile?32:40} height={isMobile?20:25} viewBox="0 0 40 25" style={{display:"block",margin:"0 auto 6px"}}>
+                        <ellipse cx="20" cy="18" rx="18" ry="7" fill={mc} opacity="0.9"/>
+                        <ellipse cx="20" cy="15" rx="12" ry="8" fill={mc}/>
+                        <ellipse cx="20" cy="12" rx="8" ry="5" fill="rgba(255,255,255,.3)"/>
+                        <ellipse cx="6" cy="19" rx="5" ry="3" fill={mc} opacity="0.7"/>
+                        <ellipse cx="34" cy="19" rx="5" ry="3" fill={mc} opacity="0.7"/>
+                        <path d="M8 20 Q20 22 32 20" fill="none" stroke="rgba(0,0,0,.15)" strokeWidth="1.5"/>
+                      </svg>
+                      <div style={{fontSize:isMobile?18:22,lineHeight:1,marginBottom:3}}>{"🥇🥈🥉"[idx]}</div>
+                      <div className="sy" style={{fontSize:isMobile?10:12,fontWeight:800,color:"#111",lineHeight:1.2,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>{a.name}</div>
+                      <div className="cg" style={{fontSize:isMobile?12:15,fontWeight:900,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+                    </div>
+                    {/* Podium block */}
+                    <div style={{width:"100%",height:podiumHeights[idx],background:`linear-gradient(180deg,${mc} 0%,${mc}bb 100%)`,borderRadius:"4px 4px 0 0",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:8}}>
+                      <span className="sy" style={{fontSize:isMobile?11:13,fontWeight:800,color:"rgba(255,255,255,.8)"}}>{podiumLabels[idx]}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Full Season Awards */}
       {!search&&(()=>{
         const finishedRaces=races.filter(r=>r.status==="finished"||r.status==="archived");
         const settled=bets.filter(b=>b.won!==null);
         if(!finishedRaces.length||!settled.length) return null;
+
+        // Most profitable
+        const mostProfit=accounts.reduce((best,a)=>{const p=parseFloat((a.totalWon-a.totalStaked).toFixed(2));return(!best||p>best.p)?{a,p}:best;},{a:null,p:-Infinity});
+        // Biggest single win
         const biggestWin=settled.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
         const biggestWinAcc=biggestWin?accounts.find(a=>a.id===biggestWin.playerId):null;
         const biggestWinRace=biggestWin?races.find(r=>r.id===biggestWin.raceId):null;
         const biggestWinHorse=biggestWin?biggestWinRace?.horses?.find(h=>h.number===biggestWin.horses?.[0]):null;
+        // Biggest roughie
+        const roughies=settled.filter(b=>b.won===true&&b.potential&&b.stake&&b.potential/b.stake>=10).sort((a,b)=>(b.potential/b.stake)-(a.potential/a.stake));
+        const biggestRoughie=roughies[0];
+        const roughieAcc=biggestRoughie?accounts.find(a=>a.id===biggestRoughie.playerId):null;
+        const roughieRace=biggestRoughie?races.find(r=>r.id===biggestRoughie.raceId):null;
+        const roughieHorse=biggestRoughie?roughieRace?.horses?.find(h=>h.number===biggestRoughie.horses?.[0]):null;
+        // Biggest trifecta
+        const bigTri=settled.filter(b=>b.won===true&&b.type==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const bigTriAcc=bigTri?accounts.find(a=>a.id===bigTri.playerId):null;
+        const bigTriRace=bigTri?races.find(r=>r.id===bigTri.raceId):null;
+        // Biggest first four
+        const bigFF=settled.filter(b=>b.won===true&&b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const bigFFAcc=bigFF?accounts.find(a=>a.id===bigFF.playerId):null;
+        // Hot streak
         const hotStreak=accounts.map(a=>{
           const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);return p;}).filter(x=>x!==null);
           let streak=0;for(const p of ar){if(p>0)streak++;else break;}
           return{name:a.name,streak};
         }).sort((a,b)=>b.streak-a.streak)[0];
+        // Cold streak
+        const coldStreak=accounts.map(a=>{
+          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);return p;}).filter(x=>x!==null);
+          let streak=0;for(const p of ar){if(p<=0)streak++;else break;}
+          return{name:a.name,streak};
+        }).sort((a,b)=>b.streak-a.streak)[0];
+
         const awards=[
-          biggestWinAcc&&{emoji:"🌟",label:"Biggest Win",name:biggestWinAcc.name,detail:`+${fmt(biggestWin.payout||0)} · ${biggestWinHorse?.name||""}`,col:"#b45309"},
-          hotStreak?.streak>0&&{emoji:"🔥",label:"Hot Streak",name:hotStreak.name,detail:`${hotStreak.streak} race${hotStreak.streak!==1?"s":""} in a row`,col:"#dc2626"},
+          mostProfit.a&&{emoji:"🏆",label:"Most Profitable",name:mostProfit.a.name,detail:`+${fmt(mostProfit.p)} season profit`},
+          biggestWinAcc&&{emoji:"🎯",label:"Biggest Win",name:biggestWinAcc.name,detail:`+${fmt(biggestWin.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`},
+          roughieAcc&&{emoji:"🐎",label:"Biggest Roughie",name:roughieAcc.name,detail:`$${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`},
+          bigTriAcc&&{emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc.name,detail:`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`},
+          bigFFAcc&&{emoji:"🤑",label:"Biggest First Four",name:bigFFAcc.name,detail:`+${fmt(bigFF.payout||0)}`},
+          hotStreak?.streak>1&&{emoji:"🔥",label:"Hot Streak",name:hotStreak.name,detail:`${hotStreak.streak} races in a row`},
+          coldStreak?.streak>1&&{emoji:"❄️",label:"Cold Streak",name:coldStreak.name,detail:`${coldStreak.streak} races without a profit`},
         ].filter(Boolean);
+
         if(!awards.length) return null;
         return(
-          <div style={{display:"grid",gridTemplateColumns:`repeat(${awards.length},1fr)`,gap:8,marginBottom:16}}>
-            {awards.map(a=>(
-              <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"12px 14px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontSize:22}}>{a.emoji}</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,fontWeight:700}}>{a.label}</div>
-                    <div className="sy" style={{fontSize:13,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
-                    <div className="sy" style={{fontSize:11,color:a.col,fontWeight:600}}>{a.detail}</div>
-                  </div>
+          <div style={{marginBottom:16}}>
+            <h3 className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,marginBottom:10}}>🎖️ Season Awards</h3>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:8}}>
+              {awards.map(a=>(
+                <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"12px 12px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div style={{fontSize:22,marginBottom:5}}>{a.emoji}</div>
+                  <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:3,fontWeight:700}}>{a.label}</div>
+                  <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#111",marginBottom:3}}>{a.name}</div>
+                  <div className="sy" style={{fontSize:isMobile?10:11,color:C.soft,lineHeight:1.3}}>{a.detail}</div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         );
       })()}
