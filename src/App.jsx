@@ -2513,49 +2513,125 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       )}
 
-      {/* Top 3 Saddle Podium */}
+      {/* TOP 3 PODIUM - Dramatic Racing Design */}
       {!search&&accounts.length>=3&&(()=>{
-        const podiumOrder=[1,0,2]; // left=2nd, centre=1st, right=3rd
-        const podiumHeights=[isMobile?70:88,isMobile?100:124,isMobile?54:68];
+        const top3=[accounts[0],accounts[1],accounts[2]];
+        const profits=top3.map(a=>parseFloat((a.totalWon-a.totalStaked).toFixed(2)));
         const medalCols=["#ffd700","#c0c0c0","#cd7f32"];
-        const podiumLabels=["2nd","1st","3rd"];
+        const medalNames=["GOLD","SILVER","BRONZE"];
+        // Heights: 1st tallest in centre, 2nd left, 3rd right
+        const podH=isMobile?[96,140,76]:[112,164,88];
+        // Display order: 2nd | 1st | 3rd
+        const order=[1,0,2];
         return(
-          <div style={{background:"linear-gradient(180deg,#1a3a1a 0%,#2d5a2d 60%,#4a7a4a 100%)",borderRadius:16,padding:isMobile?"20px 12px 0":"24px 20px 0",marginBottom:16,overflow:"hidden",position:"relative",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
-            {/* Track/grass texture lines */}
-            <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 22px,rgba(255,255,255,.03) 22px,rgba(255,255,255,.03) 23px)",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",bottom:0,left:0,right:0,height:4,background:"rgba(255,255,255,.1)"}}/>
+          <div style={{background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 40%,#2d5a2d 100%)",borderRadius:20,padding:isMobile?"20px 12px 0":"28px 24px 0",marginBottom:16,overflow:"hidden",position:"relative",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
+            {/* Animated grass stripes */}
+            <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,.02) 28px,rgba(255,255,255,.02) 29px)",pointerEvents:"none"}}/>
+            {/* Finish line right edge */}
+            <div style={{position:"absolute",top:0,right:0,bottom:0,width:6,background:"repeating-linear-gradient(180deg,#fff 0,#fff 10px,#111 10px,#111 20px)",opacity:.15}}/>
 
-            <div className="sy" style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",textAlign:"center",marginBottom:isMobile?14:18}}>🏁 Top 3</div>
+            {/* Header */}
+            <div style={{textAlign:"center",marginBottom:isMobile?16:22,position:"relative"}}>
+              <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".2em",textTransform:"uppercase",color:"rgba(255,255,255,.5)"}}>🏁 SPRING CARNIVAL</div>
+              <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:900,color:"#fff",marginTop:2}}>Season Standings</div>
+            </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:isMobile?6:10,alignItems:"flex-end"}}>
-              {podiumOrder.map((idx,col)=>{
-                const a=accounts[idx];
-                if(!a) return <div key={col}/>;
-                const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
+            {/* Three columns: 2nd | 1st | 3rd */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1.15fr 1fr",gap:isMobile?6:10,alignItems:"flex-end",position:"relative",zIndex:1}}>
+              {order.map((idx,col)=>{
+                const a=top3[idx];
+                const profit=profits[idx];
                 const mc=medalCols[idx];
                 const isMe=a.id===myAccount?.id;
                 const isFirst=idx===0;
+                const pb=bets.filter(b=>b.playerId===a.id);
+                const wonCount=pb.filter(b=>b.won===true).length;
+                const lostCount=pb.filter(b=>b.won===false).length;
                 return(
                   <div key={col} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                    {/* Floating card above podium */}
-                    <div style={{background:"rgba(255,255,255,.97)",borderRadius:isMobile?10:12,padding:isMobile?"10px 6px":"12px 10px",textAlign:"center",width:"100%",border:`2px solid ${mc}`,boxShadow:`0 4px 20px ${mc}44`,marginBottom:0,transform:isFirst?"translateY(-6px)":"none",position:"relative"}}>
-                      {isMe&&<div style={{position:"absolute",top:-8,right:-4,fontSize:8,padding:"2px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>You</div>}
-                      {/* Saddle SVG */}
-                      <svg width={isMobile?32:40} height={isMobile?20:25} viewBox="0 0 40 25" style={{display:"block",margin:"0 auto 6px"}}>
-                        <ellipse cx="20" cy="18" rx="18" ry="7" fill={mc} opacity="0.9"/>
-                        <ellipse cx="20" cy="15" rx="12" ry="8" fill={mc}/>
-                        <ellipse cx="20" cy="12" rx="8" ry="5" fill="rgba(255,255,255,.3)"/>
-                        <ellipse cx="6" cy="19" rx="5" ry="3" fill={mc} opacity="0.7"/>
-                        <ellipse cx="34" cy="19" rx="5" ry="3" fill={mc} opacity="0.7"/>
-                        <path d="M8 20 Q20 22 32 20" fill="none" stroke="rgba(0,0,0,.15)" strokeWidth="1.5"/>
+
+                    {/* Player card - floats above podium */}
+                    <div style={{
+                      background:"rgba(255,255,255,.97)",
+                      borderRadius:isMobile?12:14,
+                      padding:isMobile?"10px 8px 12px":"14px 12px 16px",
+                      textAlign:"center",
+                      width:"100%",
+                      border:`2.5px solid ${mc}`,
+                      boxShadow:`0 8px 32px ${mc}55, 0 2px 8px rgba(0,0,0,.3)`,
+                      transform:isFirst?"translateY(-10px)":"none",
+                      position:"relative",
+                      zIndex:2,
+                    }}>
+                      {isMe&&<div style={{position:"absolute",top:-9,left:"50%",transform:"translateX(-50%)",fontSize:8,padding:"2px 8px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"}}>YOU</div>}
+
+                      {/* Saddle SVG - more detailed */}
+                      <svg width={isMobile?44:54} height={isMobile?28:34} viewBox="0 0 54 34" style={{display:"block",margin:"0 auto",marginBottom:isFirst?6:4}}>
+                        {/* Saddle flap */}
+                        <ellipse cx="27" cy="26" rx="23" ry="8" fill={mc} opacity="0.7"/>
+                        {/* Main seat */}
+                        <ellipse cx="27" cy="20" rx="17" ry="12" fill={mc}/>
+                        {/* Seat rise front */}
+                        <ellipse cx="27" cy="10" rx="10" ry="7" fill={mc}/>
+                        {/* Knee rolls */}
+                        <ellipse cx="10" cy="22" rx="6" ry="4" fill={mc} opacity="0.8"/>
+                        <ellipse cx="44" cy="22" rx="6" ry="4" fill={mc} opacity="0.8"/>
+                        {/* Seat shine */}
+                        <ellipse cx="24" cy="14" rx="6" ry="4" fill="rgba(255,255,255,.35)" transform="rotate(-15 24 14)"/>
+                        {/* Girth strap */}
+                        <path d="M14 28 Q27 32 40 28" fill="none" stroke="rgba(0,0,0,.2)" strokeWidth="2" strokeLinecap="round"/>
+                        {/* Stirrup */}
+                        <path d="M10 26 L8 30 L13 30 L12 26" fill="none" stroke="rgba(0,0,0,.3)" strokeWidth="1.5" strokeLinejoin="round"/>
+                        <path d="M44 26 L42 30 L47 30 L46 26" fill="none" stroke="rgba(0,0,0,.3)" strokeWidth="1.5" strokeLinejoin="round"/>
                       </svg>
-                      <div style={{fontSize:isMobile?18:22,lineHeight:1,marginBottom:3}}>{"🥇🥈🥉"[idx]}</div>
-                      <div className="sy" style={{fontSize:isMobile?10:12,fontWeight:800,color:"#111",lineHeight:1.2,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>{a.name}</div>
-                      <div className="cg" style={{fontSize:isMobile?12:15,fontWeight:900,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+
+                      {/* Medal */}
+                      <div style={{fontSize:isFirst?(isMobile?28:34):(isMobile?22:27),lineHeight:1,marginBottom:4}}>{"🥇🥈🥉"[idx]}</div>
+
+                      {/* Name */}
+                      <div className="sy" style={{
+                        fontSize:isMobile?(isFirst?11:10):(isFirst?13:11),
+                        fontWeight:800,color:"#111",lineHeight:1.2,
+                        marginBottom:4,
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                        maxWidth:"100%",
+                      }}>{a.name}</div>
+
+                      {/* Profit */}
+                      <div className="cg" style={{
+                        fontSize:isMobile?(isFirst?16:13):(isFirst?20:16),
+                        fontWeight:900,
+                        color:profit>=0?C.green:C.red,
+                        marginBottom:isFirst?6:4,
+                      }}>{profit>=0?"+":""}{fmt(profit)}</div>
+
+                      {/* W/L tiny */}
+                      <div className="sy" style={{fontSize:9,color:"#9ca3af"}}>
+                        <span style={{color:C.green,fontWeight:700}}>{wonCount}W</span>
+                        <span style={{margin:"0 3px"}}>·</span>
+                        <span style={{color:C.red,fontWeight:700}}>{lostCount}L</span>
+                      </div>
                     </div>
+
                     {/* Podium block */}
-                    <div style={{width:"100%",height:podiumHeights[idx],background:`linear-gradient(180deg,${mc} 0%,${mc}bb 100%)`,borderRadius:"4px 4px 0 0",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:8}}>
-                      <span className="sy" style={{fontSize:isMobile?11:13,fontWeight:800,color:"rgba(255,255,255,.8)"}}>{podiumLabels[idx]}</span>
+                    <div style={{
+                      width:"100%",
+                      height:podH[idx],
+                      background:`linear-gradient(180deg,${mc} 0%,${mc}99 50%,${mc}66 100%)`,
+                      borderRadius:"6px 6px 0 0",
+                      display:"flex",
+                      flexDirection:"column",
+                      alignItems:"center",
+                      justifyContent:"flex-start",
+                      paddingTop:10,
+                      boxShadow:`inset 0 2px 0 rgba(255,255,255,.3), 0 -2px 12px ${mc}44`,
+                      position:"relative",
+                      overflow:"hidden",
+                    }}>
+                      {/* Podium shine */}
+                      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"rgba(255,255,255,.4)",borderRadius:"6px 6px 0 0"}}/>
+                      <span className="sy" style={{fontSize:isMobile?10:12,fontWeight:900,color:"rgba(255,255,255,.9)",letterSpacing:".06em"}}>{medalNames[idx]}</span>
+                      <span className="sy" style={{fontSize:isMobile?9:10,fontWeight:700,color:"rgba(255,255,255,.6)",marginTop:2}}>#{idx+1}</span>
                     </div>
                   </div>
                 );
