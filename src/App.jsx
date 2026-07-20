@@ -2513,126 +2513,88 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       )}
 
-      {/* TOP 3 PODIUM - Dramatic Racing Design */}
+      {/* TOP 3 - Racing Speed Bar Design */}
       {!search&&accounts.length>=3&&(()=>{
         const top3=[accounts[0],accounts[1],accounts[2]];
         const profits=top3.map(a=>parseFloat((a.totalWon-a.totalStaked).toFixed(2)));
-        const medalCols=["#ffd700","#c0c0c0","#cd7f32"];
-        const medalNames=["GOLD","SILVER","BRONZE"];
-        // Heights: 1st tallest in centre, 2nd left, 3rd right
-        const podH=isMobile?[96,140,76]:[112,164,88];
-        // Display order: 2nd | 1st | 3rd
-        const order=[1,0,2];
+        const mc=["#ffd700","#c0c0c0","#cd7f32"];
+        // Display order: 2nd left, 1st centre, 3rd right
+        const display=[1,0,2];
+        // Podium heights per DISPLAY slot (left=2nd, centre=1st, right=3rd)
+        const podH=isMobile?[72,108,56]:[88,132,68];
+        const labels=["2nd","1st","3rd"];
+        const displayCols=[mc[1],mc[0],mc[2]];
         return(
-          <div style={{background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 40%,#2d5a2d 100%)",borderRadius:20,padding:isMobile?"20px 12px 0":"28px 24px 0",marginBottom:16,overflow:"hidden",position:"relative",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-            {/* Animated grass stripes */}
-            <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,.02) 28px,rgba(255,255,255,.02) 29px)",pointerEvents:"none"}}/>
-            {/* Finish line right edge */}
-            <div style={{position:"absolute",top:0,right:0,bottom:0,width:6,background:"repeating-linear-gradient(180deg,#fff 0,#fff 10px,#111 10px,#111 20px)",opacity:.15}}/>
-
-            {/* Header */}
-            <div style={{textAlign:"center",marginBottom:isMobile?16:22,position:"relative"}}>
-              <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".2em",textTransform:"uppercase",color:"rgba(255,255,255,.5)"}}>🏁 SPRING CARNIVAL</div>
-              <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:900,color:"#fff",marginTop:2}}>Season Standings</div>
+          <div style={{background:"#1a3a1a",borderRadius:16,overflow:"hidden",marginBottom:16,boxShadow:"0 4px 24px rgba(0,0,0,.3)"}}>
+            {/* Top label */}
+            <div style={{padding:"14px 16px 10px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
+              <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".18em",color:"rgba(255,255,255,.5)",textTransform:"uppercase"}}>🏁 Season Leaders</div>
             </div>
 
-            {/* Three columns: 2nd | 1st | 3rd */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1.15fr 1fr",gap:isMobile?6:10,alignItems:"flex-end",position:"relative",zIndex:1}}>
-              {order.map((idx,col)=>{
-                const a=top3[idx];
-                const profit=profits[idx];
-                const mc=medalCols[idx];
-                const isMe=a.id===myAccount?.id;
-                const isFirst=idx===0;
+            {/* Racing speed bars — horizontal lanes */}
+            <div style={{padding:"12px 16px 0"}}>
+              {top3.map((a,rank)=>{
+                const profit=profits[rank];
+                const maxProfit=Math.max(...profits.map(Math.abs),1);
+                const barW=Math.max(20,Math.round((Math.abs(profit)/maxProfit)*100));
+                const col=mc[rank];
                 const pb=bets.filter(b=>b.playerId===a.id);
-                const wonCount=pb.filter(b=>b.won===true).length;
-                const lostCount=pb.filter(b=>b.won===false).length;
+                const won=pb.filter(b=>b.won===true).length;
+                const lost=pb.filter(b=>b.won===false).length;
+                const isMe=a.id===myAccount?.id;
                 return(
-                  <div key={col} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-
-                    {/* Player card - floats above podium */}
-                    <div style={{
-                      background:"rgba(255,255,255,.97)",
-                      borderRadius:isMobile?12:14,
-                      padding:isMobile?"10px 8px 12px":"14px 12px 16px",
-                      textAlign:"center",
-                      width:"100%",
-                      border:`2.5px solid ${mc}`,
-                      boxShadow:`0 8px 32px ${mc}55, 0 2px 8px rgba(0,0,0,.3)`,
-                      transform:isFirst?"translateY(-10px)":"none",
-                      position:"relative",
-                      zIndex:2,
-                    }}>
-                      {isMe&&<div style={{position:"absolute",top:-9,left:"50%",transform:"translateX(-50%)",fontSize:8,padding:"2px 8px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,whiteSpace:"nowrap"}}>YOU</div>}
-
-                      {/* Saddle SVG - more detailed */}
-                      <svg width={isMobile?44:54} height={isMobile?28:34} viewBox="0 0 54 34" style={{display:"block",margin:"0 auto",marginBottom:isFirst?6:4}}>
-                        {/* Saddle flap */}
-                        <ellipse cx="27" cy="26" rx="23" ry="8" fill={mc} opacity="0.7"/>
-                        {/* Main seat */}
-                        <ellipse cx="27" cy="20" rx="17" ry="12" fill={mc}/>
-                        {/* Seat rise front */}
-                        <ellipse cx="27" cy="10" rx="10" ry="7" fill={mc}/>
-                        {/* Knee rolls */}
-                        <ellipse cx="10" cy="22" rx="6" ry="4" fill={mc} opacity="0.8"/>
-                        <ellipse cx="44" cy="22" rx="6" ry="4" fill={mc} opacity="0.8"/>
-                        {/* Seat shine */}
-                        <ellipse cx="24" cy="14" rx="6" ry="4" fill="rgba(255,255,255,.35)" transform="rotate(-15 24 14)"/>
-                        {/* Girth strap */}
-                        <path d="M14 28 Q27 32 40 28" fill="none" stroke="rgba(0,0,0,.2)" strokeWidth="2" strokeLinecap="round"/>
-                        {/* Stirrup */}
-                        <path d="M10 26 L8 30 L13 30 L12 26" fill="none" stroke="rgba(0,0,0,.3)" strokeWidth="1.5" strokeLinejoin="round"/>
-                        <path d="M44 26 L42 30 L47 30 L46 26" fill="none" stroke="rgba(0,0,0,.3)" strokeWidth="1.5" strokeLinejoin="round"/>
-                      </svg>
-
-                      {/* Medal */}
-                      <div style={{fontSize:isFirst?(isMobile?28:34):(isMobile?22:27),lineHeight:1,marginBottom:4}}>{"🥇🥈🥉"[idx]}</div>
-
-                      {/* Name */}
-                      <div className="sy" style={{
-                        fontSize:isMobile?(isFirst?11:10):(isFirst?13:11),
-                        fontWeight:800,color:"#111",lineHeight:1.2,
-                        marginBottom:4,
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
-                        maxWidth:"100%",
-                      }}>{a.name}</div>
-
-                      {/* Profit */}
-                      <div className="cg" style={{
-                        fontSize:isMobile?(isFirst?16:13):(isFirst?20:16),
-                        fontWeight:900,
-                        color:profit>=0?C.green:C.red,
-                        marginBottom:isFirst?6:4,
-                      }}>{profit>=0?"+":""}{fmt(profit)}</div>
-
-                      {/* W/L tiny */}
-                      <div className="sy" style={{fontSize:9,color:"#9ca3af"}}>
-                        <span style={{color:C.green,fontWeight:700}}>{wonCount}W</span>
-                        <span style={{margin:"0 3px"}}>·</span>
-                        <span style={{color:C.red,fontWeight:700}}>{lostCount}L</span>
+                  <div key={rank} style={{marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
+                      {/* Rank badge */}
+                      <div style={{width:28,height:28,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 8px ${col}66`}}>
+                        <span style={{fontSize:13,fontWeight:900,color:rank===0?"#1a1a00":rank===1?"#1a1a1a":"#1a0800"}}>{"🥇🥈🥉"[rank]}</span>
                       </div>
+                      {/* Name */}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <span className="sy" style={{fontSize:isMobile?12:14,fontWeight:800,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
+                          {isMe&&<span style={{fontSize:8,padding:"1px 6px",background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>YOU</span>}
+                        </div>
+                        <span className="sy" style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>{won}W · {lost}L</span>
+                      </div>
+                      {/* Profit */}
+                      <span className="cg" style={{fontSize:isMobile?14:17,fontWeight:900,color:profit>=0?col:"#f87171",flexShrink:0}}>{profit>=0?"+":""}{fmt(profit)}</span>
                     </div>
+                    {/* Speed bar */}
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:16,height:16,fontSize:10,textAlign:"center",flexShrink:0}}>🐎</div>
+                      <div style={{flex:1,height:8,background:"rgba(255,255,255,.08)",borderRadius:4,overflow:"hidden"}}>
+                        <div style={{
+                          height:"100%",width:`${barW}%`,
+                          background:`linear-gradient(to right,${col}99,${col})`,
+                          borderRadius:4,
+                          transition:"width .6s ease",
+                          boxShadow:`0 0 8px ${col}44`,
+                        }}/>
+                      </div>
+                      <div style={{fontSize:10,textAlign:"center",flexShrink:0}}>🏁</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                    {/* Podium block */}
-                    <div style={{
-                      width:"100%",
-                      height:podH[idx],
-                      background:`linear-gradient(180deg,${mc} 0%,${mc}99 50%,${mc}66 100%)`,
-                      borderRadius:"6px 6px 0 0",
-                      display:"flex",
-                      flexDirection:"column",
-                      alignItems:"center",
-                      justifyContent:"flex-start",
-                      paddingTop:10,
-                      boxShadow:`inset 0 2px 0 rgba(255,255,255,.3), 0 -2px 12px ${mc}44`,
-                      position:"relative",
-                      overflow:"hidden",
-                    }}>
-                      {/* Podium shine */}
-                      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"rgba(255,255,255,.4)",borderRadius:"6px 6px 0 0"}}/>
-                      <span className="sy" style={{fontSize:isMobile?10:12,fontWeight:900,color:"rgba(255,255,255,.9)",letterSpacing:".06em"}}>{medalNames[idx]}</span>
-                      <span className="sy" style={{fontSize:isMobile?9:10,fontWeight:700,color:"rgba(255,255,255,.6)",marginTop:2}}>#{idx+1}</span>
-                    </div>
+            {/* Podium blocks at the bottom */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0,marginTop:10}}>
+              {display.map((rank,slot)=>{
+                const a=top3[rank];
+                const profit=profits[rank];
+                const col=displayCols[slot];
+                return(
+                  <div key={slot} style={{
+                    height:podH[slot],
+                    background:`linear-gradient(180deg,${col} 0%,${col}aa 100%)`,
+                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,
+                    borderRadius:slot===1?"6px 6px 0 0":slot===0?"6px 0 0 0":"0 6px 0 0",
+                    boxShadow:`inset 0 3px 0 rgba(255,255,255,.25)`,
+                  }}>
+                    <span className="sy" style={{fontSize:isMobile?8:9,fontWeight:700,color:"rgba(0,0,0,.6)",textTransform:"uppercase",letterSpacing:".06em"}}>{labels[slot]}</span>
+                    <span className="sy" style={{fontSize:isMobile?9:11,fontWeight:800,color:"rgba(0,0,0,.75)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"90%",textAlign:"center"}}>{a.name}</span>
                   </div>
                 );
               })}
