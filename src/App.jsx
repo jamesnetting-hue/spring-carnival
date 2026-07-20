@@ -2476,358 +2476,258 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const [h2h, setH2h] = useState(null);
   const [compareId, setCompareId] = useState(null);
   const [copied, setCopied] = useState(false);
-  const medals=["🥇","🥈","🥉"]; const medalC=["#ffd700","#c0c0c0","#cd7f32"];
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState(null);
+  const medals=["🥇","🥈","🥉"];
 
   const copyStandings = () => {
     const lines = accounts.map((a,i) => {
       const profit = parseFloat((a.totalWon - a.totalStaked).toFixed(2));
-      const medal = medals[i] || `#${i+1}`;
-      return `${medal} ${a.name} - ${profit>=0?"+":""}${fmt(profit)}`;
+      return `${medals[i]||`#${i+1}`} ${a.name} ${profit>=0?"+":""}${fmt(profit)}`;
     });
-    const text = ` Spring Carnival Standings\n\n${lines.join("\n")}`;
-    navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
+    navigator.clipboard.writeText(`Spring Carnival Standings\n\n${lines.join("\n")}`).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
   };
+
+  const filtered = accounts.filter(a => !search || a.name.toLowerCase().includes(search.toLowerCase()));
+
   return (
     <div className="fu">
-      {/* Page header */}
-      <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"16px":"20px 24px",marginBottom:20,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
-        <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:800,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
-        <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.75)",margin:0}}>Ranked by net profit across all Group 1 races</p>
+      {/* Dark green header */}
+      <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"14px 16px":"18px 24px",marginBottom:16,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div>
+            <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:800,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
+            <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.75)",margin:0}}>Ranked by net profit · {accounts.length} players</p>
+          </div>
+          <button className="sy" style={{fontSize:11,padding:"7px 14px",background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,color:"#fff",cursor:"pointer",fontWeight:600,fontFamily:"inherit"}}
+            onClick={copyStandings}>{copied?"✓ Copied!":"📋 Copy"}</button>
+        </div>
       </div>
 
-      {/* Season Awards - above leaderboard */}
-      {accounts.length>0&&(()=>{
-        const wins = bets.filter(b=>b.won===true);
-        const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
-        const mostProfitable = [...accounts].sort((a,b)=>(b.totalWon-b.totalStaked)-(a.totalWon-a.totalStaked))[0];
-        const mostProfitableProfit = mostProfitable ? parseFloat((mostProfitable.totalWon-mostProfitable.totalStaked).toFixed(2)) : 0;
-        const biggestRoughie = wins.reduce((best,b)=>{
-          const h=races.find(r=>r.id===b.raceId)?.horses?.find(x=>x.number===b.horses[0]);
-          const odds=h?.winOdds||0;
-          return odds>(best?.odds||0)?{...b,odds,horse:h?.name,player:accounts.find(a=>a.id===b.playerId)?.name}:best;
-        },{odds:0});
-        const luckiestWin = [...wins].sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
-        const luckiestPlayer = luckiestWin ? accounts.find(a=>a.id===luckiestWin.playerId) : null;
-        const luckiestRace = luckiestWin ? races.find(r=>r.id===luckiestWin.raceId) : null;
-        const biggestLoser = [...accounts].sort((a,b)=>(a.totalWon-a.totalStaked)-(b.totalWon-b.totalStaked))[0];
-        const biggestLoserProfit = biggestLoser ? parseFloat((biggestLoser.totalWon-biggestLoser.totalStaked).toFixed(2)) : 0;
-        const biggestTri = [...wins].filter(b=>b.type==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
-        const biggestTriPlayer = biggestTri ? accounts.find(a=>a.id===biggestTri.playerId) : null;
-        const biggestFF = [...wins].filter(b=>b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
-        const biggestFFPlayer = biggestFF ? accounts.find(a=>a.id===biggestFF.playerId) : null;
-        const awards = [
-          {
-            emoji:"🏆",label:"Most Profitable",
-            name:mostProfitable?.name||"TBD",
-            detail:mostProfitable?`${mostProfitableProfit>=0?"+":""}${fmt(mostProfitableProfit)} profit`:"-",
-          },
-          {
-            emoji:"🐎",label:"Biggest Roughie",
-            name:biggestRoughie.odds>0?biggestRoughie.player||"TBD":"TBD",
-            detail:biggestRoughie.odds>0?`${biggestRoughie.horse} @ $${biggestRoughie.odds?.toFixed(2)}  ${races.find(r=>r.id===biggestRoughie.raceId)?.name||""}`:"No winners yet",
-          },
-          {
-            emoji:"💸",label:"Biggest Trifecta",
-            name:biggestTriPlayer?.name||"TBD",
-            detail:biggestTri?`${fmt(biggestTri.payout||0)}  #${biggestTri.horses?.join("-")}  ${races.find(r=>r.id===biggestTri.raceId)?.name}`:"None yet",
-          },
-          {
-            emoji:"🤑",label:"Biggest First Four",
-            name:biggestFFPlayer?.name||"TBD",
-            detail:biggestFF?`${fmt(biggestFF.payout||0)}  #${biggestFF.horses?.join("-")}  ${races.find(r=>r.id===biggestFF.raceId)?.name}`:"None yet",
-          },
-          {
-            emoji:"🔥",label:"Hot Streak",
-            name:luckiestPlayer?.name||"TBD",
-            detail:luckiestWin?`${fmt(luckiestWin.payout||0)}  ${BET_TYPES.find(t=>t.id===luckiestWin.type)?.label}  ${luckiestRace?.name}`:"No wins yet",
-          },
-          {
-            emoji:"❄️",label:"Cold Streak",
-            name:biggestLoserProfit<0?biggestLoser?.name||"TBD":"Everyone's up!",
-            detail:biggestLoserProfit<0?`${fmt(Math.abs(biggestLoserProfit))} down`:"🎉",
-          },
-        ];
-        return(
-          <div style={{marginBottom:24}}>
-            <h3 className="cg" style={{fontSize:isMobile?17:20,fontWeight:700,marginBottom:12}}>🎖️ Season Awards</h3>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:8}}>
-              {awards.map(a=>(
-                <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"14px 12px",textAlign:"center",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                  <div style={{fontSize:26,marginBottom:4}}>{a.emoji}</div>
-                  <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:3,fontWeight:700}}>{a.label}</div>
-                  <div className="cg" style={{fontSize:isMobile?13:14,fontWeight:800,marginBottom:3,color:"#111"}}>{a.name}</div>
-                  <div className="sy" style={{fontSize:isMobile?10:11,color:C.soft,lineHeight:1.4}}>{a.detail}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {/* Search */}
+      {accounts.length>10&&(
+        <div style={{position:"relative",marginBottom:12}}>
+          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#9ca3af"}}>🔍</span>
+          <input className="inp sy" placeholder="Search players..." value={search} onChange={e=>setSearch(e.target.value)}
+            style={{paddingLeft:34,fontSize:13}}/>
+        </div>
+      )}
 
-      {accounts.length===0?<p className="sy soft">No players yet.</p>:(
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
-          {accounts.map((a,i)=>{
-            const pb=bets.filter(b=>b.playerId===a.id);
-            const won=pb.filter(b=>b.won===true).length, lost=pb.filter(b=>b.won===false).length, pend=pb.filter(b=>b.won===null).length;
+      {/* Top 3 podium - only show when not searching */}
+      {!search&&accounts.length>=3&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+          {[1,0,2].map(idx=>{
+            const a=accounts[idx];
+            if(!a) return <div key={idx}/>;
             const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
-            const movement = getMovement ? getMovement(a.id, i+1) : null;
-
-            // Best win this season
-            const bestWin = pb.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
-            const bestWinRace = bestWin ? races.find(r=>r.id===bestWin.raceId) : null;
-            const bestWinType = bestWin ? BET_TYPES.find(t=>t.id===bestWin.type) : null;
-
-            // Last 5 races - profit/loss per race
-            const settledRaces = races
-              .filter(r=>r.status==="finished"||r.status==="archived")
-              .map(r=>{
-                const rb = pb.filter(b=>b.raceId===r.id&&b.won!==null);
-                if(!rb.length) return null;
-                const raceProfit = rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
-                return { raceId:r.id, name:r.name, profit:raceProfit };
-              })
-              .filter(Boolean)
-              .slice(-5);
-
+            const heights=[isMobile?72:90,isMobile?88:110,isMobile?60:76];
+            const cols=["#c0c0c0","#ffd700","#cd7f32"];
+            const orderIdx=[1,0,2];// silver, gold, bronze visual order
+            const isMe=a.id===myAccount?.id;
             return(
-              <div key={a.id} className="card" style={{borderLeft:`4px solid ${medalC[i]||C.border}`,position:"relative"}}>
-                {/* Main row */}
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{fontSize:i<3?28:16,width:36,textAlign:"center",flexShrink:0,fontWeight:700}}>
-                    {medals[i]||<span className="sy" style={{color:C.muted}}>#{i+1}</span>}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                      <div className="cg" style={{fontSize:isMobile?16:20,fontWeight:700}}>{a.name}</div>
-                      {movement!==null&&movement!==0&&(
-                        <span className="sy" style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:3,background:movement>0?C.greenBg:C.redBg,color:movement>0?C.green:C.red,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
-                          {movement>0?` ${movement}`:` ${Math.abs(movement)}`}
-                        </span>
-                      )}
-                    </div>
-                    <div className="sy" style={{fontSize:12,marginTop:3,color:C.soft}}>
-                      <span style={{color:C.green,fontWeight:600}}>{won}W</span>
-                      <span style={{margin:"0 4px",color:C.muted}}>·</span>
-                      <span style={{color:C.red,fontWeight:600}}>{lost}L</span>
-                      {pend>0&&<><span style={{margin:"0 4px",color:C.muted}}>·</span><span>{pend} pending</span></>}
-                      <span style={{margin:"0 4px",color:C.muted}}>·</span>
-                      <span>{pb.length} bets</span>
-                    </div>
-                  </div>
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:700,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
-                    {!isMobile&&<div className="sy" style={{fontSize:11,marginTop:2,color:C.soft}}>Won {fmt(a.totalWon)} · Staked {fmt(a.totalStaked)}</div>}
-                  </div>
+              <div key={idx} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:0}}>
+                <div style={{background:"#fff",borderRadius:12,padding:"12px 8px",textAlign:"center",border:`2px solid ${cols[orderIdx[idx]]}`,width:"100%",boxShadow:`0 2px 12px ${cols[orderIdx[idx]]}33`}}>
+                  <div style={{fontSize:isMobile?22:28,marginBottom:4}}>{medals[idx]}</div>
+                  <div className="cg" style={{fontSize:isMobile?12:14,fontWeight:800,color:"#111",marginBottom:2,lineHeight:1.2}}>{a.name}</div>
+                  <div className="cg" style={{fontSize:isMobile?15:18,fontWeight:900,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
                 </div>
-
-                {/* Form + Best Win strip */}
-                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-
-                  {/* Last 5 race form dots */}
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span className="sy" style={{fontSize:11,color:C.muted,marginRight:2}}>Form</span>
-                    {settledRaces.length===0?(
-                      <span className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>No races settled yet</span>
-                    ):settledRaces.map((r,fi)=>(
-                      <div key={fi} title={`${r.name}: ${r.profit>=0?"+":""}$${Math.abs(r.profit).toFixed(2)}`}
-                        style={{width:22,height:22,borderRadius:"50%",background:r.profit>=0?C.green:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0,cursor:"default"}}>
-                        {r.profit>=0?"W":"L"}
-                      </div>
-                    ))}
-                    {settledRaces.length>0&&settledRaces.length<5&&Array.from({length:5-settledRaces.length}).map((_,fi)=>(
-                      <div key={`e${fi}`} style={{width:22,height:22,borderRadius:"50%",background:C.border,flexShrink:0}}/>
-                    ))}
-                  </div>
-
-                  {/* Best win */}
-                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    {bestWin?(()=>{
-                      const bestWinHorse = bestWinRace?.horses?.find(h=>h.number===bestWin.horses[0]);
-                      return(
-                        <div style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"8px 12px"}}>
-                          <span className="sy" style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>🌟 Best Win</span>
-                          <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}}>
-                            <span className="cg" style={{fontSize:16,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</span>
-                            <span className="sy" style={{fontSize:11,color:C.accent,fontWeight:600}}>{bestWinType?.label}</span>
-                          </div>
-                          {bestWinHorse&&<span className="sy" style={{fontSize:12,fontWeight:700,color:C.text,display:"block",marginTop:3}}>{bestWinHorse.name} <span style={{color:C.muted,fontWeight:400}}>@ ${bestWinHorse.winOdds?.toFixed(2)}</span></span>}
-                          <span className="sy" style={{fontSize:11,color:C.soft,display:"block",marginTop:1}}>{bestWinRace?.name}</span>
-                        </div>
-                      );
-                    })():(
-                      <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
-                        <span style={{fontSize:14}}>🥶</span>
-                        <span className="sy" style={{fontSize:12,color:C.soft}}>Yet to get off the mark</span>
-                      </div>
-                    )}
-                    {a.id&&(
-                      <button className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:8,border:`1.5px solid ${C.accent}`,background:C.accentGlow,color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0}}
-                        onClick={(e)=>{
-                          e.stopPropagation();
-                          setH2h(a.id);
-                          // Default compare to first other player
-                          const other = accounts.find(x=>x.id!==a.id);
-                          setCompareId(other?.id||null);
-                        }}>
-                        🥊 Head2Head
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <div style={{height:heights[orderIdx[idx]],width:4,background:cols[orderIdx[idx]],borderRadius:"0 0 4px 4px",opacity:.5}}/>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* H2H Modal */}
-      {h2h&&(()=>{
-        const player1 = accounts.find(a=>a.id===h2h);
-        if(!player1) return null;
-        const player2 = accounts.find(a=>a.id===compareId);
-        const finishedRaces = races.filter(r=>r.status==="finished"||r.status==="archived");
-        const getProfit=(acc)=>race=>{
-          if(!acc) return 0;
-          const rb=bets.filter(b=>b.raceId===race.id&&b.playerId===acc.id&&b.won!==null);
-          return parseFloat(rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0).toFixed(2));
-        };
-        const getBets=(acc)=>bets.filter(b=>b.playerId===acc?.id);
-        const getWins=(acc)=>bets.filter(b=>b.playerId===acc?.id&&b.won===true);
-        const p1fn=getProfit(player1), p2fn=getProfit(player2);
-        const p1Total=parseFloat((player1.totalWon-player1.totalStaked).toFixed(2));
-        const p2Total=player2?parseFloat((player2.totalWon-player2.totalStaked).toFixed(2)):0;
-        let p1Wins=0,p2Wins=0,draws=0;
-        let biggestGapRace=null,biggestGap=0;
-        if(player2) finishedRaces.forEach(r=>{
-          const a=p1fn(r),b=p2fn(r);
-          if(a>b){p1Wins++;if(a-b>biggestGap){biggestGap=a-b;biggestGapRace={race:r,winner:player1.name,gap:a-b};}}
-          else if(b>a){p2Wins++;if(b-a>biggestGap){biggestGap=b-a;biggestGapRace={race:r,winner:player2.name,gap:b-a};}}
-          else draws++;
-        });
-
-        // Best single bet for each
-        const p1BestBet = getWins(player1).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
-        const p2BestBet = player2?getWins(player2).sort((a,b)=>(b.payout||0)-(a.payout||0))[0]:null;
-
-        // Fav bet type
-        const favType=(acc)=>{
-          const b=getBets(acc); if(!b.length) return "-";
-          const counts={}; b.forEach(x=>{counts[x.type]=(counts[x.type]||0)+1;});
-          const top=Object.entries(counts).sort(([,a],[,b])=>b-a)[0];
-          return BET_TYPES.find(t=>t.id===top?.[0])?.label||"-";
-        };
-
-        // Avg stake
-        const avgStake=(acc)=>{
-          const b=getBets(acc); return b.length?parseFloat((b.reduce((s,x)=>s+x.stake,0)/b.length).toFixed(2)):0;
-        };
-
-        // Current streak
-        const getStreak=(acc)=>{
-          const settled=getBets(acc).filter(b=>b.won!==null);
-          if(!settled.length) return null;
-          const type=settled[settled.length-1].won?"🔥 Win":"❄️ Loss";
-          let count=0;
-          for(let i=settled.length-1;i>=0;i--){
-            if((settled[i].won&&type.includes("Win"))||(!settled[i].won&&type.includes("Loss")))count++; else break;
-          }
-          return `${type} ${count}`;
-        };
-
+      {/* Awards strip */}
+      {!search&&(()=>{
+        const finishedRaces=races.filter(r=>r.status==="finished"||r.status==="archived");
+        const settled=bets.filter(b=>b.won!==null);
+        if(!finishedRaces.length||!settled.length) return null;
+        const biggestWin=settled.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+        const biggestWinAcc=biggestWin?accounts.find(a=>a.id===biggestWin.playerId):null;
+        const biggestWinRace=biggestWin?races.find(r=>r.id===biggestWin.raceId):null;
+        const biggestWinHorse=biggestWin?biggestWinRace?.horses?.find(h=>h.number===biggestWin.horses?.[0]):null;
+        const hotStreak=accounts.map(a=>{
+          const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);return p;}).filter(x=>x!==null);
+          let streak=0;for(const p of ar){if(p>0)streak++;else break;}
+          return{name:a.name,streak};
+        }).sort((a,b)=>b.streak-a.streak)[0];
+        const awards=[
+          biggestWinAcc&&{emoji:"🌟",label:"Biggest Win",name:biggestWinAcc.name,detail:`+${fmt(biggestWin.payout||0)} · ${biggestWinHorse?.name||""}`,col:"#b45309"},
+          hotStreak?.streak>0&&{emoji:"🔥",label:"Hot Streak",name:hotStreak.name,detail:`${hotStreak.streak} race${hotStreak.streak!==1?"s":""} in a row`,col:"#dc2626"},
+        ].filter(Boolean);
+        if(!awards.length) return null;
         return(
-          <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setH2h(null)}>
-            <div className="modal sr" style={{maxWidth:580}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <h3 className="cg" style={{fontSize:20,fontWeight:700}}>🥊 Head2Head</h3>
-                <button onClick={()=>setH2h(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.soft}}>×</button>
-              </div>
-
-              {/* Player picker */}
-              <div style={{marginBottom:14}}>
-                <label className="sy" style={{fontSize:11,color:C.soft,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>Compare {player1.name} vs</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {accounts.filter(a=>a.id!==h2h).map(a=>(
-                    <button key={a.id} className="sy" style={{fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:20,border:`1.5px solid ${compareId===a.id?C.accent:C.border}`,background:compareId===a.id?C.accentGlow:"#fff",color:compareId===a.id?C.accent:C.soft,cursor:"pointer"}}
-                      onClick={()=>setCompareId(a.id)}>{a.name}</button>
-                  ))}
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${awards.length},1fr)`,gap:8,marginBottom:16}}>
+            {awards.map(a=>(
+              <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"12px 14px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontSize:22}}>{a.emoji}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,fontWeight:700}}>{a.label}</div>
+                    <div className="sy" style={{fontSize:13,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                    <div className="sy" style={{fontSize:11,color:a.col,fontWeight:600}}>{a.detail}</div>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        );
+      })()}
 
-              {player2&&(
-                <div style={{display:"flex",flexDirection:"column",gap:10,maxHeight:"70vh",overflowY:"auto"}}>
-                  {/* Score card */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}}>
-                    <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(30,92,30,.05)",border:`2px solid ${C.green}`}}>
-                      <div className="cg" style={{fontSize:15,fontWeight:700,marginBottom:4}}>{player1.name}</div>
-                      <div className="cg" style={{fontSize:22,fontWeight:800,color:p1Total>=0?C.green:C.red}}>{p1Total>=0?"+":""}{fmt(p1Total)}</div>
+      {/* Compact table - works for 70 players */}
+      {accounts.length===0
+        ?<p className="sy soft">No players yet.</p>
+        :(
+          <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+            {/* Table header */}
+            <div style={{display:"grid",gridTemplateColumns:"44px 1fr auto",gap:0,background:"#f8f9fa",borderBottom:`1px solid ${C.border}`,padding:"8px 14px"}}>
+              <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}}>#</span>
+              <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em"}}>Player</span>
+              <span className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em",textAlign:"right"}}>Profit</span>
+            </div>
+
+            {filtered.map((a,fi)=>{
+              const i=accounts.indexOf(a);
+              const pb=bets.filter(b=>b.playerId===a.id);
+              const won=pb.filter(b=>b.won===true).length;
+              const lost=pb.filter(b=>b.won===false).length;
+              const pend=pb.filter(b=>b.won===null).length;
+              const profit=parseFloat((a.totalWon-a.totalStaked).toFixed(2));
+              const movement=getMovement?getMovement(a.id,i+1):null;
+              const isMe=a.id===myAccount?.id;
+              const isExpanded=expanded===a.id;
+              const settledRaces=races.filter(r=>r.status==="finished"||r.status==="archived").map(r=>{
+                const rb=pb.filter(b=>b.raceId===r.id&&b.won!==null);
+                if(!rb.length)return null;
+                const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0)-b.stake:-b.stake),0);
+                return{name:r.name,profit:p};
+              }).filter(Boolean).slice(-5);
+              const bestWin=pb.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+              const medalC2=["#ffd700","#c0c0c0","#cd7f32"];
+              const rowBg=isMe?"rgba(26,58,26,.04)":"#fff";
+              const borderCol=i<3?medalC2[i]:isMe?C.accent:C.border;
+
+              return(
+                <div key={a.id}>
+                  {/* Main compact row */}
+                  <div onClick={()=>setExpanded(isExpanded?null:a.id)}
+                    style={{display:"grid",gridTemplateColumns:"44px 1fr auto",gap:0,padding:"10px 14px",background:rowBg,borderBottom:`1px solid ${C.border}`,cursor:"pointer",borderLeft:`3px solid ${borderCol}`,transition:"background .1s"}}
+                    onMouseEnter={e=>e.currentTarget.style.background=isMe?"rgba(26,58,26,.08)":"#f9fafb"}
+                    onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
+                    {/* Rank */}
+                    <div style={{display:"flex",alignItems:"center"}}>
+                      {i<3
+                        ?<span style={{fontSize:16}}>{medals[i]}</span>
+                        :<span className="sy" style={{fontSize:12,fontWeight:700,color:i<10?C.text:C.muted}}>#{i+1}</span>}
                     </div>
-                    <div style={{textAlign:"center"}}>
-                      <div className="cg" style={{fontSize:26,fontWeight:900}}>{p1Wins}-{p2Wins}</div>
-                      {draws>0&&<div className="sy" style={{fontSize:10,color:C.soft}}>{draws} draw{draws>1?"s":""}</div>}
-                      <div className="sy" style={{fontSize:9,color:C.muted,marginTop:2}}>races won</div>
-                      <div className="sy" style={{fontSize:11,fontWeight:700,marginTop:4,color:p1Total>p2Total?C.green:p2Total>p1Total?C.red:C.soft}}>
-                        {p1Total>p2Total?` ${fmt(p1Total-p2Total)} ahead`:p2Total>p1Total?` ${fmt(p2Total-p1Total)} behind`:"Even"}
+                    {/* Name + stats */}
+                    <div style={{minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <span className="sy" style={{fontSize:isMobile?13:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
+                        {isMe&&<span style={{fontSize:9,padding:"1px 6px",background:C.accentGlow,color:C.accent,border:`1px solid ${C.accent}`,borderRadius:20,fontWeight:700,flexShrink:0}}>You</span>}
+                        {movement!==null&&movement!==0&&<span style={{fontSize:9,padding:"1px 5px",borderRadius:20,background:movement>0?C.greenBg:C.redBg,color:movement>0?C.green:C.red,border:`1px solid ${movement>0?C.greenBd:C.redBd}`,fontWeight:700,flexShrink:0}}>{movement>0?"↑":"↓"}{Math.abs(movement)}</span>}
+                      </div>
+                      <div className="sy" style={{fontSize:10,color:C.muted,marginTop:1}}>
+                        <span style={{color:C.green}}>{won}W</span>
+                        <span style={{margin:"0 3px",color:C.border}}>·</span>
+                        <span style={{color:C.red}}>{lost}L</span>
+                        {pend>0&&<><span style={{margin:"0 3px",color:C.border}}>·</span><span>{pend} pending</span></>}
                       </div>
                     </div>
-                    <div className="card" style={{textAlign:"center",padding:"14px 10px",background:"rgba(184,134,11,.05)",border:`2px solid ${C.gold}`}}>
-                      <div className="cg" style={{fontSize:15,fontWeight:700,marginBottom:4}}>{player2.name}</div>
-                      <div className="cg" style={{fontSize:22,fontWeight:800,color:p2Total>=0?C.green:C.red}}>{p2Total>=0?"+":""}{fmt(p2Total)}</div>
+                    {/* Profit */}
+                    <div style={{textAlign:"right",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                      <span className="cg" style={{fontSize:isMobile?15:17,fontWeight:800,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</span>
+                      {!isMobile&&<span className="sy" style={{fontSize:9,color:C.muted}}>ROI {a.totalStaked>0?Math.round((profit/a.totalStaked)*100):0}%</span>}
                     </div>
                   </div>
 
-                  {/* Fun stats comparison */}
-                  <div className="card" style={{padding:"14px"}}>
-                    <div className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:C.soft,marginBottom:10}}>Season Stats</div>
-                    {[
-                      ["Best Win", fmt(p1BestBet?.payout||0), fmt(p2BestBet?.payout||0)],
-                      ["Fav Bet Type", favType(player1), favType(player2)],
-                      ["Avg Stake", fmt(avgStake(player1)), fmt(avgStake(player2))],
-                      ["Current Streak", getStreak(player1)||"-", getStreak(player2)||"-"],
-                      ["Bets Placed", getBets(player1).length, getBets(player2).length],
-                      ["Win Rate", getBets(player1).filter(b=>b.won!==null).length?Math.round(getWins(player1).length/getBets(player1).filter(b=>b.won!==null).length*100)+"%":"-", getBets(player2).filter(b=>b.won!==null).length?Math.round(getWins(player2).length/getBets(player2).filter(b=>b.won!==null).length*100)+"%":"-"],
-                    ].map(([label,v1,v2])=>(
-                      <div key={label} style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
-                        <span className="sy" style={{fontSize:12,fontWeight:700,color:C.green,textAlign:"right"}}>{v1}</span>
-                        <span className="sy" style={{fontSize:10,color:C.muted,textAlign:"center",minWidth:80}}>{label}</span>
-                        <span className="sy" style={{fontSize:12,fontWeight:700,color:C.gold}}>{v2}</span>
+                  {/* Expanded detail */}
+                  {isExpanded&&(
+                    <div style={{padding:"12px 14px 14px",background:"#f8fffe",borderBottom:`1px solid ${C.border}`,borderLeft:`3px solid ${borderCol}`}}>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12}}>
+                        {/* Form dots */}
+                        <div>
+                          <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>Last {settledRaces.length} Races</div>
+                          {settledRaces.length===0
+                            ?<span className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>No settled races yet</span>
+                            :<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                              {settledRaces.map((r,fi)=>(
+                                <div key={fi} title={`${r.name}: ${r.profit>=0?"+":""}$${Math.abs(r.profit).toFixed(2)}`}
+                                  style={{width:24,height:24,borderRadius:"50%",background:r.profit>=0?C.green:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",cursor:"default"}}>
+                                  {r.profit>=0?"W":"L"}
+                                </div>
+                              ))}
+                            </div>}
+                        </div>
+                        {/* Best win */}
+                        {bestWin&&(()=>{
+                          const bwr=races.find(r=>r.id===bestWin.raceId);
+                          const bwh=bwr?.horses?.find(h=>h.number===bestWin.horses?.[0]);
+                          const bwt=BET_TYPES.find(t=>t.id===bestWin.type);
+                          return(
+                            <div>
+                              <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>🌟 Best Win</div>
+                              <div className="cg" style={{fontSize:18,fontWeight:800,color:C.green,marginBottom:2}}>+{fmt(bestWin.payout||0)}</div>
+                              {bwh&&<div className="sy" style={{fontSize:12,fontWeight:700,color:C.text}}>{bwh.name} @ ${bwh.winOdds?.toFixed(2)}</div>}
+                              <div className="sy" style={{fontSize:11,color:C.soft}}>{bwt?.label} · {bwr?.name}</div>
+                            </div>
+                          );
+                        })()}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Biggest race gap */}
-                  {biggestGapRace&&(
-                    <div className="card" style={{padding:"12px 14px",background:"rgba(30,92,30,.04)"}}>
-                      <div className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:C.soft,marginBottom:6}}>🏆 Biggest Single Race Gap</div>
-                      <div className="cg" style={{fontSize:15,fontWeight:700}}>{biggestGapRace.race.name}</div>
-                      <div className="sy" style={{fontSize:13,marginTop:3}}><strong style={{color:C.green}}>{biggestGapRace.winner}</strong> won by <strong style={{color:C.green}}>{fmt(biggestGapRace.gap)}</strong></div>
+                      {/* Full stats */}
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginTop:10}}>
+                        {[["Bets",pb.length],["Staked",fmt(a.totalStaked)],["Won",fmt(a.totalWon)],["ROI",`${a.totalStaked>0?Math.round((profit/a.totalStaked)*100):0}%`]].map(([l,v])=>(
+                          <div key={l} style={{background:"#fff",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
+                            <div className="sy" style={{fontSize:8,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:2}}>{l}</div>
+                            <div className="sy" style={{fontSize:12,fontWeight:700,color:C.text}}>{v}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {myAccount&&a.id!==myAccount.id&&(
+                        <button className="sy" style={{marginTop:10,fontSize:11,padding:"5px 12px",borderRadius:7,border:`1px solid ${C.border}`,background:"#fff",color:C.accent,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}}
+                          onClick={e=>{e.stopPropagation();setH2h({a:myAccount,b:a});}}>Compare with me →</button>
+                      )}
                     </div>
                   )}
-
-                  {/* Race by race */}
-                  <div>
-                    <div className="sy" style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:C.soft,marginBottom:8}}>Race by Race</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                      {finishedRaces.length===0&&<p className="sy" style={{fontSize:13,color:C.soft,textAlign:"center",padding:20}}>No settled races yet</p>}
-                      {finishedRaces.map(race=>{
-                        const p1P=p1fn(race),p2P=p2fn(race);
-                        const winner=p1P>p2P?"p1":p2P>p1P?"p2":"draw";
-                        return(
-                          <div key={race.id} style={{padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:winner==="draw"?"#f9f9f9":winner==="p1"?"rgba(21,128,61,.05)":"rgba(185,28,28,.05)"}}>
-                            <div className="sy" style={{fontSize:12,fontWeight:700,color:C.soft,marginBottom:5}}>{race.name}</div>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                              <span className="sy" style={{fontSize:15,fontWeight:700,color:p1P>=0?C.green:C.red}}>{p1P>=0?"+":""}{fmt(p1P)}</span>
-                              <span className="sy" style={{fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:winner==="p1"?C.greenBg:winner==="p2"?C.redBg:"#f0f0f0",color:winner==="p1"?C.green:winner==="p2"?C.red:C.soft}}>
-                                {winner==="p1"?`${player1.name} `:winner==="p2"?`${player2.name} `:"Draw"}
-                              </span>
-                              <span className="sy" style={{fontSize:15,fontWeight:700,color:p2P>=0?C.green:C.red}}>{p2P>=0?"+":""}{fmt(p2P)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
-              )}
+              );
+            })}
+          </div>
+        )}
+
+      {/* H2H Modal */}
+      {h2h&&(()=>{
+        const pa=bets.filter(b=>b.playerId===h2h.a.id&&b.won!==null);
+        const pb2=bets.filter(b=>b.playerId===h2h.b.id&&b.won!==null);
+        const profitA=parseFloat((h2h.a.totalWon-h2h.a.totalStaked).toFixed(2));
+        const profitB=parseFloat((h2h.b.totalWon-h2h.b.totalStaked).toFixed(2));
+        return(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setH2h(null)}>
+            <div className="card" style={{maxWidth:480,width:"100%",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <h3 className="cg" style={{fontSize:18,fontWeight:700}}>Head to Head</h3>
+                <button className="sy" style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:C.muted}} onClick={()=>setH2h(null)}>✕</button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",marginBottom:16}}>
+                {[h2h.a,h2h.b].map((p,pi)=>{
+                  const prof=pi===0?profitA:profitB;
+                  return(
+                    <div key={pi} style={{textAlign:pi===0?"left":"right"}}>
+                      <div className="sy" style={{fontSize:15,fontWeight:800}}>{p.name}</div>
+                      <div className="cg" style={{fontSize:22,fontWeight:900,color:prof>=0?C.green:C.red}}>{prof>=0?"+":""}{fmt(prof)}</div>
+                    </div>
+                  );
+                })}
+                <div style={{textAlign:"center",fontSize:22}}>⚔️</div>
+              </div>
+              {[["Bets",pa.length,pb2.length],["Wins",pa.filter(b=>b.won).length,pb2.filter(b=>b.won).length],["Hit Rate",`${pa.length?Math.round(pa.filter(b=>b.won).length/pa.length*100):0}%`,`${pb2.length?Math.round(pb2.filter(b=>b.won).length/pb2.length*100):0}%`],["Staked",fmt(h2h.a.totalStaked),fmt(h2h.b.totalStaked)],["Returned",fmt(h2h.a.totalWon),fmt(h2h.b.totalWon)]].map(([l,va,vb])=>(
+                <div key={l} style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span className="sy" style={{fontSize:13,fontWeight:600}}>{va}</span>
+                  <span className="sy" style={{fontSize:11,color:C.muted,textAlign:"center"}}>{l}</span>
+                  <span className="sy" style={{fontSize:13,fontWeight:600,textAlign:"right"}}>{vb}</span>
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -2835,6 +2735,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
     </div>
   );
 }
+
 
 // --- SEASON SUMMARY -----------------------------------------------------------
 function SeasonScreen({accounts, bets, races}) {
