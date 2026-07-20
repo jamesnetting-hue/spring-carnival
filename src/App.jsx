@@ -1619,7 +1619,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 16px",background:a.id===account?.id?"rgba(26,58,26,.04)":"transparent",borderLeft:a.id===account?.id?"3px solid #1a3a1a":"3px solid transparent"}}>
                     <span className="sy" style={{fontSize:13,fontWeight:700,color:i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`}</span>
                     <span className="sy" style={{flex:1,fontSize:13,fontWeight:a.id===account?.id?700:500,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
-                    <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon>=0?C.green:C.red}}>{a.totalWon>0?"+":""}{fmt(a.totalWon)}</span>
+                    <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon>0?C.green:a.totalWon<0?C.red:"#9ca3af"}}>{a.totalWon>0?"+":""}{fmt(a.totalWon)}</span>
                   </div>
                 ))}
               </div>
@@ -2483,7 +2483,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const copyStandings = () => {
     const lines = accounts.map((a,i) => {
       const profit = parseFloat((a.totalWon - a.totalStaked).toFixed(2));
-      return `${medals[i]||`#${i+1}`} ${a.name} ${profit>=0?"+":""}${fmt(profit)}`;
+      return `${medals[i]||`#${i+1}`} ${a.name} ${profit>0?"+":""}${fmt(profit)}`;
     });
     navigator.clipboard.writeText(`Spring Carnival Standings\n\n${lines.join("\n")}`).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
   };
@@ -2558,7 +2558,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         <span className="sy" style={{fontSize:10,color:"rgba(255,255,255,.5)"}}>{won}W · {lost}L</span>
                       </div>
                       {/* Profit */}
-                      <span className="cg" style={{fontSize:isMobile?14:17,fontWeight:900,color:profit>=0?col:"#f87171",flexShrink:0}}>{profit>=0?"+":""}{fmt(profit)}</span>
+                      <span className="cg" style={{fontSize:isMobile?14:17,fontWeight:900,color:profit>0?col:profit<0?"#f87171":"#9ca3af",flexShrink:0}}>{profit>0?"+":""}{fmt(profit)}</span>
                     </div>
                     {/* Speed bar */}
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2707,7 +2707,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     </div>
                     {/* Profit */}
                     <div style={{textAlign:"right",display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                      <span className="cg" style={{fontSize:isMobile?15:17,fontWeight:800,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</span>
+                      <span className="cg" style={{fontSize:isMobile?15:17,fontWeight:800,color:profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{profit>0?"+":""}{fmt(profit)}</span>
                       {!isMobile&&<span className="sy" style={{fontSize:9,color:C.muted}}>ROI {a.totalStaked>0?Math.round((profit/a.totalStaked)*100):0}%</span>}
                     </div>
                   </div>
@@ -2723,8 +2723,8 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                             ?<span className="sy" style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>No settled races yet</span>
                             :<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                               {settledRaces.map((r,fi)=>(
-                                <div key={fi} title={`${r.name}: ${r.profit>=0?"+":""}$${Math.abs(r.profit).toFixed(2)}`}
-                                  style={{width:24,height:24,borderRadius:"50%",background:r.profit>=0?C.green:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",cursor:"default"}}>
+                                <div key={fi} title={`${r.name}: ${r.profit>0?"+":""}$${Math.abs(r.profit).toFixed(2)}`}
+                                  style={{width:24,height:24,borderRadius:"50%",background:r.profit>0?C.green:profit<0?C.red:"#9ca3af",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",cursor:"default"}}>
                                   {r.profit>=0?"W":"L"}
                                 </div>
                               ))}
@@ -2919,8 +2919,8 @@ function SeasonScreen({accounts, bets, races}) {
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div className="sy soft" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".06em"}}>Net Profit</div>
-                  <div className="cg" style={{fontSize:26,fontWeight:800,color:p.profit>=0?C.green:C.red}}>
-                    {p.profit>=0?"+":""}{fmt(p.profit)}
+                  <div className="cg" style={{fontSize:26,fontWeight:800,color:p.profit>0?C.green:profit<0?C.red:"#9ca3af"}}>
+                    {p.profit>0?"+":""}{fmt(p.profit)}
                   </div>
                   <div className="sy soft" style={{fontSize:11}}>Won {fmt(p.totalWon)} · Staked {fmt(p.totalStaked)}</div>
                 </div>
@@ -3044,7 +3044,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           </div>
           <div style={{textAlign:"right",flexShrink:0}}>
             <div className="sy soft" style={{fontSize:10,textTransform:"uppercase",letterSpacing:".06em"}}>Net Profit</div>
-            <div className="cg" style={{fontSize:isMobile?22:28,fontWeight:700,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+            <div className="cg" style={{fontSize:isMobile?22:28,fontWeight:700,color:profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{profit>0?"+":""}{fmt(profit)}</div>
           </div>
         </div>
       </div>
@@ -3250,7 +3250,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           </button>
           <div style={{textAlign:"right",flexShrink:0}}>
             <div className="sy" style={{fontSize:10,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".06em"}}>Season Profit</div>
-            <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+            <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{profit>0?"+":""}{fmt(profit)}</div>
           </div>
         </div>
         {pinOk&&<div className="sy" style={{fontSize:12,color:"#fff",marginTop:6,textAlign:"center"}}>✓ PIN updated successfully!</div>}
@@ -3322,7 +3322,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         const pathD=pts.length>1?"M"+pts.map(p=>p.join(",")).join(" L"):"";
         const fillD=pts.length>1?"M"+pts[0][0]+","+(svgH-pad)+" L"+pts.map(p=>p.join(",")).join(" L")+" L"+pts[pts.length-1][0]+","+(svgH-pad)+" Z":"";
         const zeroY=pad+((maxCurve-0)/curveRange)*(svgH-pad*2);
-        const lineCol=profit>=0?C.green:C.red;
+        const lineCol=profit>0?C.green:profit<0?C.red:"#9ca3af";
         const peakBal=Math.max(...profitCurve.map(b=>b.val),0);
         const troughBal=Math.min(...profitCurve.map(b=>b.val),0);
         const buckets=[{label:"$1-4",min:1,max:4},{label:"$5-8",min:5,max:8},{label:"$9-12",min:9,max:12},{label:"$13-16",min:13,max:16},{label:"$17+",min:17,max:999}];
@@ -3344,7 +3344,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:C.muted,marginBottom:3}}>Season Profit</div>
-                  <div className="cg" style={{fontSize:isMobile?28:34,fontWeight:900,color:profit>=0?C.green:C.red,lineHeight:1}}>{profit>=0?"+":""}{fmt(profit)}</div>
+                  <div className="cg" style={{fontSize:isMobile?28:34,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af",lineHeight:1}}>{profit>0?"+":""}{fmt(profit)}</div>
                   <div className="sy" style={{fontSize:11,color:C.soft,marginTop:4}}>{raceStats.length} races · {racesWon}W {racesLost}L</div>
                 </div>
                 <div style={{display:"flex",gap:16}}>
@@ -3370,7 +3370,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   {minCurve<0&&maxCurve>0&&<line x1={pad} y1={zeroY} x2={svgW-pad} y2={zeroY} stroke="rgba(0,0,0,.15)" strokeWidth="1" strokeDasharray="4,4"/>}
                   {fillD&&<path d={fillD} fill="url(#profitGrad)"/>}
                   {pathD&&<path d={pathD} fill="none" stroke={lineCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
-                  {pts.map(([x,y],i)=>profitCurve[i].profit!==0&&<circle key={i} cx={x} cy={y} r="3" fill={profitCurve[i].profit>=0?C.green:C.red}/>)}
+                  {pts.map(([x,y],i)=>profitCurve[i].profit!==0&&<circle key={i} cx={x} cy={y} r="3" fill={profitCurve[i].profit>0?C.green:profit<0?C.red:"#9ca3af"}/>)}
                   {pts.length>0&&<circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="5" fill={lineCol} stroke="#fff" strokeWidth="2"/>}
                 </svg>
               </div>
@@ -3464,7 +3464,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                         </div>
                         <div style={{display:"flex",gap:12,alignItems:"center"}}>
                           <span className="sy" style={{fontSize:11,color:C.soft}}>{t.hitRate}%</span>
-                          <span className="sy" style={{fontSize:13,fontWeight:700,color:t.profit>=0?C.green:C.red}}>{t.profit>=0?"+":""}{fmt(t.profit)}</span>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:t.profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{t.profit>0?"+":""}{fmt(t.profit)}</span>
                         </div>
                       </div>
                       <div style={{height:6,background:"#f3f4f6",borderRadius:3,overflow:"hidden"}}>
@@ -3489,12 +3489,12 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                       <div style={{display:"flex",gap:4,alignItems:"flex-end",width:"100%",paddingBottom:4}}>
                         {raceStats.map((r,i)=>{
                           const h=Math.max(12,Math.round((Math.abs(r.profit)/maxAbs)*maxH));
-                          const col=r.profit>=0?C.green:C.red;
+                          const col=r.profit>0?C.green:profit<0?C.red:"#9ca3af";
                           const emoji=r.profit>=0?"👍":"👎";
                           return(
-                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1}} title={`${r.race.name}: ${r.profit>=0?"+":""}${r.profit.toFixed(2)}`}>
+                            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1}} title={`${r.race.name}: ${r.profit>0?"+":""}${r.profit.toFixed(2)}`}>
                               <span style={{fontSize:isMobile?11:12,lineHeight:1}}>{emoji}</span>
-                              <span className="sy" style={{fontSize:7,color:col,fontWeight:700}}>{r.profit>=0?"+":""}{Math.round(r.profit)}</span>
+                              <span className="sy" style={{fontSize:7,color:col,fontWeight:700}}>{r.profit>0?"+":""}{Math.round(r.profit)}</span>
                               <div style={{width:"85%",height:h,background:col,opacity:.75,borderRadius:"3px 3px 0 0",flexShrink:0}}/>
                               <span className="sy" style={{fontSize:7,color:C.muted}}>R{i+1}</span>
                             </div>
@@ -3550,10 +3550,10 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           <span className="sy" style={{fontSize:13,fontWeight:700}}>{b.label}</span>
                           <span className="sy" style={{fontSize:11,color:C.soft,marginLeft:8}}>{b.total} bets · {hitRate}% hit</span>
                         </div>
-                        <span className="sy" style={{fontSize:13,fontWeight:700,color:bProfit>=0?C.green:C.red}}>{bProfit>=0?"+":""}{fmt(bProfit)}</span>
+                        <span className="sy" style={{fontSize:13,fontWeight:700,color:bProfit>0?C.green:bProfit<0?C.red:"#9ca3af"}}>{bProfit>0?"+":""}{fmt(bProfit)}</span>
                       </div>
                       <div style={{height:8,background:"#f3f4f6",borderRadius:4,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${hitRate}%`,background:bProfit>=0?C.green:C.red,borderRadius:4,opacity:.8}}/>
+                        <div style={{height:"100%",width:`${hitRate}%`,background:bProfit>0?C.green:bProfit<0?C.red:"#9ca3af",borderRadius:4,opacity:.8}}/>
                       </div>
                     </div>
                   );
@@ -3945,7 +3945,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                       </div>
                       <div style={{textAlign:"right", flexShrink:0}}>
                         <div className="sy soft" style={{fontSize:9, textTransform:"uppercase", letterSpacing:".08em"}}>Net profit</div>
-                        <div className="cg" style={{fontSize:18, fontWeight:700, color:profit>=0?C.green:C.red}}>{profit>=0?"+":""}{fmt(profit)}</div>
+                        <div className="cg" style={{fontSize:18, fontWeight:700, color:profit>0?C.green:profit<0?C.red:"#9ca3af"}}>{profit>0?"+":""}{fmt(profit)}</div>
                       </div>
                       <span style={{fontSize:14, color:C.muted, marginLeft:4}}>{isExpanded ? "▲" : "▼"}</span>
                     </div>
