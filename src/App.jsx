@@ -2621,7 +2621,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
 
         const awards=[
           {emoji:"🎯",label:"Biggest Win",name:biggestWinAcc?.name||"TBD",detail:biggestWinAcc?`+${fmt(biggestWin.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`:"-",active:!!biggestWinAcc},
-          {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"TBD",detail:roughieAcc?`$${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
+          {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"TBD",detail:roughieAcc?`+${fmt(biggestRoughie.payout||0)} · $${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
           {emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc?.name||"TBD",detail:bigTriAcc?`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`:"-",active:!!bigTriAcc},
           {emoji:"🤑",label:"Biggest First Four",name:bigFFAcc?.name||"TBD",detail:bigFFAcc?`+${fmt(bigFF.payout||0)}`:"-",active:!!bigFFAcc},
           {emoji:"🔥",label:"Hot Streak",name:hotStreak?.streak>0?hotStreak.name:"TBD",detail:hotStreak?.streak>0?`${hotStreak.streak} races in a row`:"No streak yet",active:hotStreak?.streak>0},
