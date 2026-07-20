@@ -3560,33 +3560,66 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             )}
 
-            {/* ⑦ BARRIER HEATMAP ──────────────────────────────────── */}
+            {/* ⑦ BARRIER SPEED MAP ────────────────────────────────── */}
             {Object.keys(numFreq).length>0&&(
-              <div className="card" style={{marginBottom:12}}>
+              <div className="card" style={{marginBottom:12,overflow:"hidden"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700}}>🔢 Favourite Barriers</div>
-                  {luckyBarrier&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>#{luckyBarrier[0]} most picked</div>}
+                  <div className="sy" style={{fontSize:13,fontWeight:700}}>🏇 Barrier Speed Map</div>
+                  {luckyBarrier&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>#{luckyBarrier[0]} most backed</div>}
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map(n=>{
+                {/* Racing lanes */}
+                <div style={{background:"#0f1f0f",borderRadius:12,overflow:"hidden",padding:"10px 0 4px"}}>
+                  {/* Track header */}
+                  <div style={{display:"flex",alignItems:"center",padding:"0 10px 6px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+                    <div style={{width:28,flexShrink:0}}/>
+                    <div style={{flex:1,height:1,background:"rgba(255,255,255,.06)"}}/>
+                    <div style={{fontSize:8,color:"rgba(255,255,255,.4)",marginLeft:6,marginRight:4,fontFamily:"system-ui",letterSpacing:".1em"}}>FREQUENCY</div>
+                    <div style={{fontSize:10}}>🏁</div>
+                  </div>
+                  {Array.from({length:Math.max(...Object.keys(numFreq).map(Number),1)},(_,i)=>i+1).map((n,idx)=>{
                     const freq=numFreq[n]||0;
-                    const intensity=freq/maxFreq;
-                    const bg=freq>0?`rgba(26,58,26,${0.08+intensity*0.78})`:"#f3f4f6";
-                    const textCol=freq>0?(intensity>0.45?"#fff":C.accent):C.muted;
+                    const barW=freq>0?Math.max(8,Math.round((freq/maxFreq)*100)):0;
+                    const isLucky=luckyBarrier&&n===parseInt(luckyBarrier[0]);
+                    const col=isLucky?"#fbbf24":freq>0?"#4ade80":"rgba(255,255,255,.1)";
+                    const laneCol=idx%2===0?"rgba(0,60,0,.3)":"rgba(0,50,0,.2)";
                     return(
-                      <div key={n} style={{width:36,height:36,borderRadius:8,background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}} title={`#${n}: picked ${freq}x`}>
-                        <span style={{fontSize:13,fontWeight:700,color:textCol}}>{n}</span>
-                        {freq>0&&<span style={{fontSize:7,color:textCol,opacity:.8}}>{freq}x</span>}
+                      <div key={n} style={{display:"flex",alignItems:"center",height:26,background:laneCol,borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                        {/* Barrier gate */}
+                        <div style={{width:28,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"2px solid rgba(255,255,255,.08)"}}>
+                          <span style={{fontSize:10,fontWeight:800,color:isLucky?"#fbbf24":"rgba(255,255,255,.6)",fontFamily:"system-ui"}}>{n}</span>
+                        </div>
+                        {/* Lane */}
+                        <div style={{flex:1,position:"relative",height:"100%",display:"flex",alignItems:"center",paddingLeft:4}}>
+                          {freq>0&&(
+                            <>
+                              <div style={{
+                                width:`${barW}%`,height:10,
+                                background:`linear-gradient(to right,${col}66,${col})`,
+                                borderRadius:"0 4px 4px 0",
+                                flexShrink:0,
+                              }}/>
+                              <span style={{fontSize:11,marginLeft:4,filter:isLucky?"drop-shadow(0 0 4px #fbbf24)":"none"}}>🐎</span>
+                              <span style={{fontSize:8,marginLeft:3,color:"rgba(255,255,255,.5)",fontFamily:"system-ui"}}>{freq}×</span>
+                              {isLucky&&<span style={{fontSize:8,marginLeft:4,color:"#fbbf24",fontWeight:700,fontFamily:"system-ui"}}>⭐ fav</span>}
+                            </>
+                          )}
+                          {freq===0&&<span style={{fontSize:9,color:"rgba(255,255,255,.15)",marginLeft:6,fontFamily:"system-ui"}}>—</span>}
+                        </div>
                       </div>
                     );
                   })}
-                </div>
-                <div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
-                  <div style={{display:"flex",gap:3}}>
-                    {[.08,.3,.55,.78].map((o,i)=><div key={i} style={{width:14,height:14,borderRadius:3,background:`rgba(26,58,26,${o})`}}/>)}
+                  {/* Track footer */}
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"4px 10px 2px 36px"}}>
+                    <span style={{fontSize:8,color:"rgba(255,255,255,.25)",fontFamily:"system-ui",letterSpacing:".08em"}}>BARRIER</span>
+                    <span style={{fontSize:8,color:"rgba(255,255,255,.25)",fontFamily:"system-ui",letterSpacing:".06em"}}>TIMES BACKED →</span>
                   </div>
-                  <span className="sy" style={{fontSize:11,color:C.muted}}>Rarely → Always</span>
                 </div>
+                {luckyBarrier&&(
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:10}}>
+                    <span style={{fontSize:16}}>⭐</span>
+                    <span className="sy" style={{fontSize:13,color:C.accent,fontWeight:700}}>Barrier #{luckyBarrier[0]} backed {luckyBarrier[1]}× — your go-to gate</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -3597,24 +3630,27 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 <div className="sy" style={{fontSize:12,color:C.soft,marginBottom:14}}>Do your bigger bets pay off?</div>
                 {(()=>{
                   const profits2=bucketData.map(b=>parseFloat((b.payout-b.staked).toFixed(2)));
+                  const totalProfit=parseFloat(profits2.reduce((s,p)=>s+p,0).toFixed(2));
+                  const cCol=totalProfit>0?C.green:totalProfit<0?C.red:"#9ca3af";
+                  const cW=isMobile?Math.min(window.innerWidth-56,340):480;
+                  // Extra padding so labels don't clip
+                  const cPadL=8,cPadR=8,cPadT=28,cPadB=36;
+                  const cH=cPadT+80+cPadB;
+                  const chartH=80;
                   const cumulativePts=[];let cum=0;
-                  bucketData.forEach((b,i)=>{cum=parseFloat((cum+profits2[i]).toFixed(2));cumulativePts.push({x:b.label,y:cum,profit:profits2[i],b});});
-                  const cW=isMobile?Math.min(window.innerWidth-56,360):520;
-                  const cH=100;const cPad=36;
+                  bucketData.forEach((b,i)=>{cum=parseFloat((cum+profits2[i]).toFixed(2));cumulativePts.push({x:b.label,y:cum,profit:profits2[i]});});
                   const cVals=cumulativePts.map(p=>p.y);
                   const cMin=Math.min(...cVals,0),cMax=Math.max(...cVals,.01),cRng=cMax-cMin||1;
                   const cPts=cumulativePts.map((p,i)=>{
-                    const x=cPad+(i/(cumulativePts.length-1||1))*(cW-cPad*2);
-                    const y=12+((cMax-p.y)/cRng)*(cH-24);
+                    const x=cPadL+(i/(cumulativePts.length-1||1))*(cW-cPadL-cPadR);
+                    const y=cPadT+((cMax-p.y)/cRng)*chartH;
                     return[x,y,p];
                   });
                   const cPath=cPts.length>1?"M"+cPts.map(p=>p[0]+","+p[1]).join(" L"):"";
-                  const cFill=cPts.length>1?`M${cPts[0][0]},${cH-12} L`+cPts.map(p=>p[0]+","+p[1]).join(" L")+` L${cPts[cPts.length-1][0]},${cH-12} Z`:"";
-                  const totalProfit=parseFloat(profits2.reduce((s,p)=>s+p,0).toFixed(2));
-                  const cCol=totalProfit>0?C.green:totalProfit<0?C.red:"#9ca3af";
+                  const cFill=cPts.length>1?`M${cPts[0][0]},${cPadT+chartH} L`+cPts.map(p=>p[0]+","+p[1]).join(" L")+` L${cPts[cPts.length-1][0]},${cPadT+chartH} Z`:"";
                   return(<>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:10}}>
-                      <div className="cg" style={{fontSize:isMobile?24:28,fontWeight:900,color:cCol}}>{totalProfit>0?"+":""}{fmt(totalProfit)}</div>
+                      <div className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:cCol}}>{totalProfit>0?"+":""}{fmt(totalProfit)}</div>
                       <div className="sy" style={{fontSize:12,color:C.muted}}>cumulative return</div>
                     </div>
                     <div style={{overflowX:"auto"}}>
@@ -3625,26 +3661,35 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                             <stop offset="100%" stopColor={cCol} stopOpacity="0.02"/>
                           </linearGradient>
                         </defs>
+                        {/* grid */}
+                        {[0,.5,1].map((t,i)=><line key={i} x1={cPadL} y1={cPadT+t*chartH} x2={cW-cPadR} y2={cPadT+t*chartH} stroke="rgba(0,0,0,.06)" strokeWidth="1" strokeDasharray="3,4"/>)}
                         {cFill&&<path d={cFill} fill="url(#cg2)"/>}
                         {cPath&&<path d={cPath} fill="none" stroke={cCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
-                        {cPts.map(([x,y,p],i)=>(
-                          <g key={i}>
-                            <circle cx={x} cy={y} r={5} fill={p.profit>0?C.green:p.profit<0?C.red:"#9ca3af"} stroke="#fff" strokeWidth="2"/>
-                            <text x={x} y={cH-2} textAnchor="middle" fontSize="9" fill="#555" fontFamily="system-ui">{p.x}</text>
-                            <text x={x} y={y-9} textAnchor="middle" fontSize="8" fill={p.profit>0?C.green:p.profit<0?C.red:"#999"} fontFamily="system-ui" fontWeight="700">{p.profit>0?"+":""}{Math.round(p.profit)}</text>
-                          </g>
-                        ))}
+                        {cPts.map(([x,y,p],i)=>{
+                          const dotCol=p.profit>0?C.green:p.profit<0?C.red:"#9ca3af";
+                          const label=`${p.profit>0?"+":""}$${Math.abs(Math.round(p.profit))}`;
+                          // Alternate label above/below to avoid collisions
+                          const labelY=i%2===0?y-11:y+18;
+                          return(
+                            <g key={i}>
+                              <circle cx={x} cy={y} r={5} fill={dotCol} stroke="#fff" strokeWidth="2"/>
+                              <text x={x} y={labelY} textAnchor="middle" fontSize="9" fill={dotCol} fontFamily="system-ui" fontWeight="700">{label}</text>
+                              <text x={x} y={cPadT+chartH+14} textAnchor="middle" fontSize="9" fill="#555" fontFamily="system-ui">{p.x}</text>
+                            </g>
+                          );
+                        })}
                       </svg>
                     </div>
+                    {/* Summary pills */}
                     <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
                       {bucketData.map((b,i)=>{
                         const col2=profits2[i]>0?C.green:profits2[i]<0?C.red:"#9ca3af";
                         const hitRate2=b.total?Math.round((b.wins/b.total)*100):0;
                         return(
-                          <div key={b.label} style={{flex:1,minWidth:isMobile?60:80,background:"#f8f9fa",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
+                          <div key={b.label} style={{flex:1,minWidth:isMobile?58:72,background:"#f8f9fa",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
                             <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{b.label}</div>
-                            <div className="sy" style={{fontSize:11,color:col2,fontWeight:700}}>{profits2[i]>0?"+":""}{fmt(profits2[i])}</div>
-                            <div className="sy" style={{fontSize:10,color:C.muted}}>{hitRate2}% hit</div>
+                            <div className="sy" style={{fontSize:12,color:col2,fontWeight:700}}>{profits2[i]>0?"+":""}{fmt(profits2[i])}</div>
+                            <div className="sy" style={{fontSize:11,color:C.muted}}>{hitRate2}% hit</div>
                           </div>
                         );
                       })}
