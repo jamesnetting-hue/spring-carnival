@@ -322,6 +322,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
 @keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes barFill{from{width:0%}to{width:100%}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -2554,13 +2555,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <div style={{background:"#1a3a1a",borderRadius:16,padding:isMobile?"16px":"20px 24px",marginBottom:14,position:"relative",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
         <div style={{position:"absolute",top:0,right:0,bottom:0,width:6,background:"repeating-linear-gradient(180deg,#fff 0,#fff 8px,#1a3a1a 8px,#1a3a1a 16px)",opacity:.12}}/>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-          <div>
-            <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:900,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
-            <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.7)",margin:0}}>Ranked by total winnings · {accounts.length} players</p>
-          </div>
-          <button className="sy" style={{fontSize:12,padding:"8px 16px",background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.3)",borderRadius:10,color:"#fff",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}}
-            onClick={copyStandings}>{copied?"✓ Copied!":"📋 Copy standings"}</button>
+        <div>
+          <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:900,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
+          <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.7)",margin:0}}>Ranked by total winnings · {accounts.length} players</p>
         </div>
       </div>
 
@@ -2594,7 +2591,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
       {/* ── MAIN TABLE — compact for 70-80 players ─────────────────── */}
       {filtered.length===0
         ?<div className="card" style={{textAlign:"center",padding:32,color:C.muted}}>No players match "{search}"</div>
-        :(
+        :(()=>{
+          const maxProfit=Math.max(...accounts.map(a=>parseFloat(a.totalWon.toFixed(2))),0.01);
+          return(
           <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.05)",marginBottom:16}}>
             {/* Table header */}
             <div style={{display:"grid",gridTemplateColumns:"50px 1fr auto",background:"#1a3a1a",padding:"10px 14px"}}>
@@ -2606,6 +2605,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
             {filtered.map((a,fi)=>{
               const i=accounts.indexOf(a);
               const profit=parseFloat(a.totalWon.toFixed(2));
+              const barW=profit>0?Math.max(3,Math.round((profit/maxProfit)*100)):0;
               const pb=bets.filter(b=>b.playerId===a.id);
               const won=pb.filter(b=>b.won===true).length;
               const lost=pb.filter(b=>b.won===false).length;
@@ -2616,6 +2616,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               const rowBg=isMe?"rgba(26,58,26,.06)":fi%2===0?"#fff":"#fafbfa";
               const mc2=["#ffd700","#c0c0c0","#cd7f32"];
               const leftBorderCol=i<3?mc2[i]:isMe?C.accent:C.border;
+              const barCol=i===0?"#ffd700":i===1?"#a0a0a0":i===2?"#cd7f32":isMe?"#1a3a1a":C.green;
 
               // Form dots for expanded view
               const settledRaces=finishedRaces.map(r=>{
@@ -2633,12 +2634,12 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                   {/* Main row */}
                   <div
                     onClick={()=>setExpanded(isExp?null:a.id)}
-                    style={{display:"grid",gridTemplateColumns:"50px 1fr auto",padding:"11px 14px",background:rowBg,borderBottom:`1px solid ${C.border}`,borderLeft:`3px solid ${leftBorderCol}`,cursor:"pointer",transition:"background .1s"}}
+                    style={{display:"grid",gridTemplateColumns:"50px 1fr auto",padding:"10px 14px 8px",background:rowBg,borderBottom:`1px solid ${C.border}`,borderLeft:`3px solid ${leftBorderCol}`,cursor:"pointer",transition:"background .1s"}}
                     onMouseEnter={e=>e.currentTarget.style.background=isMe?"rgba(26,58,26,.1)":"#f0f7f0"}
                     onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
 
                     {/* Rank */}
-                    <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <div style={{display:"flex",alignItems:"center",gap:4,paddingTop:2}}>
                       {i<3
                         ?<span style={{fontSize:18}}>{medals[i]}</span>
                         :<span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>#{i+1}</span>}
@@ -2649,13 +2650,27 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       )}
                     </div>
 
-                    {/* Name + W/L */}
-                    <div style={{minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                    {/* Name + speed bar + W/L */}
+                    <div style={{minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
                         <span className="sy" style={{fontSize:isMobile?13:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
                         {isMe&&<span style={{fontSize:9,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>YOU</span>}
                       </div>
-                      <div className="sy" style={{fontSize:11,color:C.muted,marginTop:1}}>
+                      {/* Racing speed bar */}
+                      <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
+                        <span style={{fontSize:10,flexShrink:0}}>🐎</span>
+                        <div style={{flex:1,height:5,background:"#f0f0f0",borderRadius:3,overflow:"hidden",position:"relative"}}>
+                          <div style={{
+                            position:"absolute",top:0,left:0,height:"100%",
+                            width:`${barW}%`,
+                            background:i<3?`linear-gradient(to right,${barCol}88,${barCol})`:isMe?`linear-gradient(to right,#1a3a1a88,#1a3a1a)`:`linear-gradient(to right,${C.green}66,${C.green})`,
+                            borderRadius:3,
+                            animation:"barFill .8s ease-out",
+                          }}/>
+                        </div>
+                        <span style={{fontSize:10,flexShrink:0}}>🏁</span>
+                      </div>
+                      <div className="sy" style={{fontSize:11,color:C.muted}}>
                         <span style={{color:C.green,fontWeight:700}}>{won}W</span>
                         <span style={{margin:"0 3px",color:C.border}}>·</span>
                         <span style={{color:C.red,fontWeight:700}}>{lost}L</span>
@@ -2721,7 +2736,8 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               );
             })}
           </div>
-        )}
+          );
+        })()}
 
       {/* ── H2H MODAL ──────────────────────────────────────────────── */}
       {h2h&&(()=>{
