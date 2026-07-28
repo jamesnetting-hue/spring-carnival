@@ -2564,70 +2564,22 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       </div>
 
-      {/* ── TOP 3 RACING SPEED LANES ───────────────────────────────── */}
-      {!search&&accounts.length>=3&&(()=>{
-        const top3=accounts.slice(0,3);
-        const profits=top3.map(a=>parseFloat(a.totalWon.toFixed(2)));
-        const maxP=Math.max(...profits,0.01);
-        const mc=["#ffd700","#c0c0c0","#cd7f32"];
-        return(
-          <div style={{background:"linear-gradient(180deg,#0f2010 0%,#1a3a1a 100%)",borderRadius:16,overflow:"hidden",marginBottom:14,boxShadow:"0 4px 20px rgba(0,0,0,.25)"}}>
-            {/* Track header */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
-              <span className="sy" style={{fontSize:10,fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"rgba(255,255,255,.5)"}}>🏁 Season Leaders</span>
-              <span className="sy" style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>← winnings →</span>
-            </div>
-
-            {/* Three racing lanes */}
-            <div style={{padding:"10px 0 6px"}}>
-              {top3.map((a,rank)=>{
-                const profit=profits[rank];
-                const barW=Math.max(6,Math.round((profit/maxP)*100));
-                const col=mc[rank];
-                const pb=bets.filter(b=>b.playerId===a.id);
-                const won=pb.filter(b=>b.won===true).length;
-                const lost=pb.filter(b=>b.won===false).length;
-                const isMe=a.id===myAccount?.id;
-                const laneCol=rank===0?"rgba(255,215,0,.06)":rank===1?"rgba(192,192,192,.04)":"rgba(205,127,50,.04)";
-                return(
-                  <div key={rank} style={{background:laneCol,borderBottom:rank<2?"1px solid rgba(255,255,255,.05)":"none",padding:"10px 0"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 14px",marginBottom:7}}>
-                      {/* Medal circle */}
-                      <div style={{width:isMobile?32:36,height:isMobile?32:36,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 10px ${col}55`,fontSize:isMobile?15:18}}>
-                        {medals[rank]}
-                      </div>
-                      {/* Name */}
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          <span className="sy" style={{fontSize:isMobile?14:16,fontWeight:800,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
-                          {isMe&&<span style={{fontSize:10,padding:"1px 7px",background:"rgba(255,255,255,.15)",color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0,border:"1px solid rgba(255,255,255,.3)"}}>YOU</span>}
-                        </div>
-                        <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>{won}W · {lost}L</span>
-                      </div>
-                      {/* Profit */}
-                      <span className="cg" style={{fontSize:isMobile?16:20,fontWeight:900,color:profit>0?col:profit===0?"#9ca3af":"#f87171",flexShrink:0}}>{profit>0?"+":""}{fmt(profit)}</span>
-                    </div>
-                    {/* Speed bar */}
-                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 14px"}}>
-                      <span style={{fontSize:12,flexShrink:0}}>🐎</span>
-                      <div style={{flex:1,height:7,background:"rgba(255,255,255,.07)",borderRadius:4,overflow:"hidden"}}>
-                        <div style={{
-                          height:"100%",
-                          width:`${barW}%`,
-                          background:`linear-gradient(to right,${col}66,${col})`,
-                          borderRadius:4,
-                          transition:"width .6s ease",
-                        }}/>
-                      </div>
-                      <span style={{fontSize:11,flexShrink:0}}>🏁</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* ── SEASON AWARDS ──────────────────────────────────────────── */}
+      {!search&&finishedRaces.length>0&&settled.length>0&&(
+        <div style={{marginBottom:16}}>
+          <h3 className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,marginBottom:10}}>🎖️ Season Awards</h3>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:8}}>
+            {awards.map(a=>(
+              <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"14px 12px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)",opacity:a.active?1:0.55}}>
+                <div style={{fontSize:24,marginBottom:6}}>{a.emoji}</div>
+                <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:4,fontWeight:700}}>{a.label}</div>
+                <div className="sy" style={{fontSize:isMobile?13:14,fontWeight:800,color:"#111",marginBottom:3}}>{a.name}</div>
+                <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>{a.detail}</div>
+              </div>
+            ))}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* ── SEARCH ─────────────────────────────────────────────────── */}
       {accounts.length>10&&(
@@ -2770,23 +2722,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
             })}
           </div>
         )}
-
-      {/* ── SEASON AWARDS ──────────────────────────────────────────── */}
-      {!search&&finishedRaces.length>0&&settled.length>0&&(
-        <div style={{marginBottom:16}}>
-          <h3 className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,marginBottom:10}}>🎖️ Season Awards</h3>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:8}}>
-            {awards.map(a=>(
-              <div key={a.label} style={{background:"#fff",borderRadius:12,padding:"14px 12px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)",opacity:a.active?1:0.55}}>
-                <div style={{fontSize:24,marginBottom:6}}>{a.emoji}</div>
-                <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:4,fontWeight:700}}>{a.label}</div>
-                <div className="sy" style={{fontSize:isMobile?13:14,fontWeight:800,color:"#111",marginBottom:3}}>{a.name}</div>
-                <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>{a.detail}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── H2H MODAL ──────────────────────────────────────────────── */}
       {h2h&&(()=>{
