@@ -323,6 +323,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 @keyframes barFill{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+@keyframes subtleGlow{0%,100%{box-shadow:0 1px 4px rgba(0,0,0,.05)}50%{box-shadow:0 4px 20px rgba(26,58,26,.15)}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -1449,6 +1450,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   cursor:race.status==="upcoming"?"pointer":"default",
                   transition:"all .18s",
                   overflow:"hidden",
+                  animation:race.status==="upcoming"&&raceBal===STARTING_BALANCE?"subtleGlow 3s ease-in-out infinite":"none",
                 }}
                   onMouseEnter={e=>{if(!isMobile&&race.status==="upcoming"){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 32px rgba(0,0,0,.1)";}}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.05)";}}
@@ -1503,7 +1505,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3}}>
                               {accounts.map(a=>{
                                 const has=bets.some(b=>b.raceId===race.id&&b.playerId===a.id&&b.won===null);
-                                return <div key={a.id} style={{width:7,height:7,borderRadius:"50%",background:has?"#1a3a1a":"#d1d5db"}}/>;
+                                return <div key={a.id} title={a.name} style={{width:isMobile?8:10,height:isMobile?8:10,borderRadius:"50%",background:has?"#1a3a1a":"#d1d5db",transition:"background .3s"}}/>;
                               })}
                               <span className="sy" style={{fontSize:12,color:allIn?C.green:C.muted,fontWeight:allIn?700:400}}>{playersWithBets}/{accounts.length} {allIn?"✓ All in":"bet"}</span>
                             </div>
@@ -1619,40 +1621,66 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
       {/* Right sidebar */}
       {!isMobile&&(
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {/* Mini leaderboard */}
-          {leaderboard.length>0&&(
-            <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
-              <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
-                <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>🏆 Standings</h3>
-              </div>
-              <div style={{padding:"8px 0"}}>
-                {leaderboard.slice(0,5).map((a,i)=>(
-                  <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 16px",background:a.id===account?.id?"rgba(26,58,26,.04)":"transparent",borderLeft:a.id===account?.id?"3px solid #1a3a1a":"3px solid transparent"}}>
-                    <span className="sy" style={{fontSize:13,fontWeight:700,color:i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`}</span>
-                    <span className="sy" style={{flex:1,fontSize:13,fontWeight:a.id===account?.id?700:500,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</span>
-                    <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon>0?C.green:a.totalWon<0?C.red:"#9ca3af"}}>{a.totalWon>0?"+":""}{fmt(a.totalWon)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* How to play */}
-          <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,padding:"14px 16px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
-            <h3 className="cg" style={{fontSize:13,fontWeight:700,marginBottom:10,color:"#111"}}>How it works</h3>
-            {[
-              ["💰","$24 per race","Each race has its own $24 budget - you must spend it all"],
-              ["🎯","Pick your bet","Win, Place, Exotics - choose wisely"],
-              ["🏆","Most profit wins","Leaderboard ranked by net profit across all races"],
-            ].map(([icon,title,desc])=>(
-              <div key={title} style={{display:"flex",gap:10,marginBottom:10}}>
-                <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
-                <div>
-                  <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{title}</div>
-                  <div className="sy" style={{fontSize:12,color:C.soft,marginTop:1}}>{desc}</div>
+          {/* Mini leaderboard with speed bars */}
+          {leaderboard.length>0&&(()=>{
+            const maxW=Math.max(...leaderboard.slice(0,8).map(a=>a.totalWon),0.01);
+            return(
+              <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+                <div style={{background:"#1a3a1a",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>🏆 Standings</h3>
+                  <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.6)"}}>{leaderboard.length} players</span>
+                </div>
+                <div style={{padding:"6px 0"}}>
+                  {leaderboard.slice(0,8).map((a,i)=>{
+                    const barW=a.totalWon>0?Math.max(4,Math.round((a.totalWon/maxW)*100)):0;
+                    const isMe=a.id===account?.id;
+                    const mc=["#ffd700","#c0c0c0","#cd7f32"];
+                    return(
+                      <div key={a.id} style={{padding:"7px 14px",background:isMe?"rgba(26,58,26,.05)":"transparent",borderLeft:`3px solid ${i<3?mc[i]:isMe?"#1a3a1a":"transparent"}`}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                          <span style={{fontSize:i<3?14:12,width:20,flexShrink:0,textAlign:"center"}}>{i<3?["🥇","🥈","🥉"][i]:`${i+1}.`}</span>
+                          <span className="sy" style={{flex:1,fontSize:13,fontWeight:isMe?700:500,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}{isMe?" 👈":""}</span>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:a.totalWon>0?C.green:a.totalWon===0?"#9ca3af":C.red,flexShrink:0}}>{a.totalWon>0?"+":""}{fmt(a.totalWon)}</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:28}}>
+                          <div style={{flex:1,height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${barW}%`,background:i<3?mc[i]:isMe?"#1a3a1a":C.green,borderRadius:2,transformOrigin:"left",animation:"barFill .6s cubic-bezier(0.16,1,0.3,1) both",animationDelay:`${i*60}ms`}}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {leaderboard.length>8&&(
+                    <div style={{padding:"6px 14px",textAlign:"center"}}>
+                      <span className="sy" style={{fontSize:11,color:C.muted}}>+{leaderboard.length-8} more players</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+            );
+          })()}
+
+          {/* How to play */}
+          <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+            <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
+              <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>📖 How it works</h3>
+            </div>
+            <div style={{padding:"12px 16px"}}>
+              {[
+                ["💰","$24 per race","Each race has its own $24 budget — you must spend it all"],
+                ["🎯","Pick your bet","Win, Place, Each Way, Quinella, Exacta, Trifecta, First Four"],
+                ["🔒","Bets lock at race time","Once the race starts, no more changes"],
+                ["🏆","Most returns wins","Leaderboard ranked by total winnings"],
+              ].map(([icon,title,desc])=>(
+                <div key={title} style={{display:"flex",gap:10,marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{icon}</span>
+                  <div>
+                    <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:2}}>{title}</div>
+                    <div className="sy" style={{fontSize:11,color:C.soft,lineHeight:1.4}}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1822,23 +1850,27 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               <h2 className="cg" style={{fontSize:isMobile?18:26,fontWeight:800,lineHeight:1.2,marginBottom:2}}>{race.name}</h2>
               <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft}}>{race.venue} · {race.distance} · {race.horses.filter(h=>!h.scratched).length} runners</p>
             </div>
-            <div style={{textAlign:"right",flexShrink:0,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"transparent",borderRadius:10,padding:isMobile?"6px 10px":"6px 12px"}}>
+            <div style={{textAlign:"right",flexShrink:0}}>
               <div className="cg" style={{fontSize:isMobile?20:26,fontWeight:900,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent,lineHeight:1}}>{fmt(raceBalance)}</div>
-              <div className="sy" style={{fontSize:12,color:C.muted}}>of $24 left</div>
+              <div className="sy" style={{fontSize:10,color:C.muted}}>of $24 left</div>
             </div>
           </div>
-          {/* Odds disclaimer */}
-          {race.oddsAsOf&&race.status==="upcoming"&&(
-            <div style={{marginTop:6,padding:"5px 10px",borderRadius:6,background:"rgba(184,134,11,.06)",border:"1px solid rgba(184,134,11,.2)",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:12}}>ℹ️</span>
-              <span className="sy" style={{fontSize:isMobile?10:11,color:"#92400e"}}>These are indicative odds - actual dividends are confirmed once the race is settled</span>
-            </div>
-          )}
-          <div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:raceBalance===0?"rgba(21,128,61,.08)":raceBalance===STARTING_BALANCE?"rgba(185,28,28,.06)":"rgba(21,128,61,.04)",border:`1.5px solid ${raceBalance===0?C.greenBd:raceBalance===STARTING_BALANCE?C.redBd:C.greenBd}`}}>
-            <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent}}>
-              {raceBalance===0?"✅ Full $24 bet - you're locked in!":raceBalance===STARTING_BALANCE?"⚠️ No bets placed yet - you must bet your full $24":` ${fmt(raceBalance)} still to allocate`}
-            </span>
-          </div>
+          {/* Budget progress bar */}
+          {race.status==="upcoming"&&(()=>{
+            const pct=Math.round(((STARTING_BALANCE-raceBalance)/STARTING_BALANCE)*100);
+            const barCol=raceBalance===0?C.green:pct>50?C.accent:C.red;
+            return(
+              <div style={{marginTop:8}}>
+                <div style={{height:7,background:"#f0f0f0",borderRadius:4,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(to right,${barCol}88,${barCol})`,borderRadius:4,transition:"width .4s ease"}}/>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                  <span className="sy" style={{fontSize:10,color:C.muted}}>{pct}% allocated</span>
+                  {raceBalance===0?<span className="sy" style={{fontSize:10,color:C.green,fontWeight:700}}>✓ Fully bet!</span>:raceBalance===STARTING_BALANCE?<span className="sy" style={{fontSize:10,color:C.red,fontWeight:700}}>⚠ No bets yet</span>:<span className="sy" style={{fontSize:10,color:C.accent,fontWeight:600}}>{fmt(raceBalance)} to go</span>}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Your bets - right in the header so always visible */}
           {myBets.length>0&&(
