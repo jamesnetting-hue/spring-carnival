@@ -322,7 +322,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
 @keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
-@keyframes barFill{from{width:0%}to{width:100%}}
+@keyframes barFill{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -2665,7 +2665,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                             width:`${barW}%`,
                             background:i<3?`linear-gradient(to right,${barCol}88,${barCol})`:isMe?`linear-gradient(to right,#1a3a1a88,#1a3a1a)`:`linear-gradient(to right,${C.green}66,${C.green})`,
                             borderRadius:3,
-                            animation:"barFill .8s ease-out",
+                            transformOrigin:"left center",
+                            animation:`barFill 1s cubic-bezier(0.16,1,0.3,1) both`,
+                            animationDelay:`${Math.min(fi*25,500)}ms`,
                           }}/>
                         </div>
                         <span style={{fontSize:10,flexShrink:0}}>🏁</span>
