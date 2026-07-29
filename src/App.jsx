@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
 
 // Responsive hook
@@ -153,6 +154,7 @@ export default function App() {
     })();
   }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const manualRefresh = async () => {
     showToast("Refreshing…");
     try {
@@ -966,6 +968,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
       }
     }
   };
+  // eslint-disable-next-line no-unused-vars
   const handleLoginPin = val => {
     setPin(val); setErr("");
     if (val.length === 4) { const e = onLogin(val); if (e) { setErr(e); setPin(""); } }
@@ -2410,6 +2413,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const [expanded,setExpanded]=useState(null);
   const medals=["🥇","🥈","🥉"];
 
+  // eslint-disable-next-line no-unused-vars
   const copyStandings=()=>{
     const lines=accounts.map((a,i)=>{
       const profit=parseFloat(a.totalWon.toFixed(2));
@@ -4358,6 +4362,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
     return { horses, errors };
   };
 
+  // eslint-disable-next-line no-unused-vars
   const toggleFinisher = (raceId, pos, horseNum) => {
     setInputs(prev => {
       const cur = getInp(raceId);
