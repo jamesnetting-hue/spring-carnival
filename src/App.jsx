@@ -195,16 +195,6 @@ function raceStaked(bets, playerId, raceId) {
 }
 
 // Race countdown component
-function RaceCountdown({date, time}) {
-  const r = useCountdown(date, time);
-  if (!r || r.expired) return null;
-  const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
-  return (
-    <span className="sy" style={{fontSize:14,fontWeight:800,color:r.urgent?C.red:C.accent,background:r.urgent?C.redBg:C.accentGlow,padding:"4px 12px",borderRadius:20,border:`2px solid ${r.urgent?C.redBd:C.accent}`,display:"inline-flex",alignItems:"center",gap:4,marginTop:3,animation:r.urgent?"pulse 1s infinite":"none"}}>
-      {r.urgent?"⚡ Closes in ":"🕐 "}{label}
-    </span>
-  );
-}
 function RaceCountdown({date, time, raceName}) {
   const r = useCountdown(date, time);
   const notif30Ref = useRef(false);
