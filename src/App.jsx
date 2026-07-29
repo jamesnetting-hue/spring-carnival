@@ -3423,9 +3423,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           background:revealed
                             ?isActive?`linear-gradient(160deg,${t.col}22,${t.col}0e)`:t.bg
                             :"#f1f5f9",
-                          border:`2px solid ${revealed
-                            ?isActive?t.col+"88":t.col+"30"
-                            :"#e2e8f0"}`,
+                          border:`2px solid ${revealed?(isActive?t.col+"88":t.col+"30"):"#e2e8f0"}`,
                           opacity:revealed?(isActive?1:0.6):0.5,
                           display:"flex",flexDirection:"column",alignItems:"center",
                           textAlign:"center",gap:5,
