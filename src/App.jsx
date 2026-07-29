@@ -1138,6 +1138,32 @@ export default function App() {
         </div>
       )}
 
+      {/* Player scratch alert banner - shows when their horse is scratched in open race */}
+      {!isOffline&&screen!=="auth"&&liveAccount&&(()=>{
+        const myScratchedBets=bets.filter(b=>{
+          if(b.playerId!==liveAccount.id||b.won!==null)return false;
+          const race=races.find(r=>r.id===b.raceId);
+          if(!race||race.status!=="upcoming")return false;
+          return b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched);
+        });
+        if(!myScratchedBets.length)return null;
+        const affectedRaces=[...new Set(myScratchedBets.map(b=>b.raceId))].map(id=>races.find(r=>r.id===id)?.name).filter(Boolean);
+        return(
+          <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9998,background:"linear-gradient(135deg,#b45309,#d97706)",color:"#fff",padding:"0",boxShadow:"0 2px 12px rgba(0,0,0,.3)"}}>
+            <div style={{maxWidth:1100,margin:"0 auto",padding:"11px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <span style={{fontSize:20,flexShrink:0}}>🚨</span>
+              <div style={{flex:1,minWidth:0}}>
+                <span style={{fontSize:13,fontWeight:800}}>One of your horses has been scratched! </span>
+                <span style={{fontSize:12,opacity:.9}}>{affectedRaces.join(", ")} — tap to update your bets before betting closes</span>
+              </div>
+              <button style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,fontFamily:"inherit"}}
+                onClick={()=>{const r=myScratchedBets[0];if(r){setRaceId(r.raceId);setScreen("race");}}}
+              >Fix now →</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
       {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:18}px ${window.innerWidth<641?"12px":"20px"} 120px`}}>
