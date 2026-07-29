@@ -3420,8 +3420,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const bestBigPayout=bigExoticWins.length?Math.max(...bigExoticWins.map(b=>b.payout||0)):0;
               const ewBets=settled.filter(b=>b.type==="eachway");
               const ewPct=settled.length?Math.round((ewBets.length/settled.length)*100):0;
-              const winStreak=longestWinStreak;
-              const lossStreak=longestLossStreak;
 
               const allTypes=[
                 {
@@ -3449,8 +3447,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   key:"hothand",hint:"Win 3 or more races in a row",icon:"🔥",name:"The Hot Hand",
                   desc:"On a winning run and can't be stopped — you're in the zone and you know it",
                   col:"#ea580c",bg:"#fff7ed",
-                  active:hasEnough&&winStreak>=3,
-                  stats:[`${winStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`],
+                  active:hasEnough&&longestWinStreak>=3,
+                  stats:[`${longestWinStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`],
                 },
                 {
                   key:"sniper",hint:"Hit rate of 60%+ without chasing longshots or big stakes",icon:"🔬",name:"The Analyst",
@@ -3463,8 +3461,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   key:"machine",hint:"45%+ win rate, never lose more than 1 race in a row",icon:"🤖",name:"The Machine",
                   desc:"Same stake, same process, same result — methodical and immune to tilt",
                   col:"#475569",bg:"#f8fafc",
-                  active:hasEnough&&raceWinRate>=45&&lossStreak<=1&&avgStakeP>=8&&avgStakeP<=16&&exoticPct<40,
-                  stats:[`${raceWinRate}% win rate`,`Max ${lossStreak} race loss run`,"No emotion"],
+                  active:hasEnough&&raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16&&exoticPct<40,
+                  stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"],
                 },
                 {
                   key:"highroller",hint:"55%+ of your bets are $15 or more",icon:"💎",name:"The High Roller",
@@ -3484,8 +3482,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   key:"comeback",hint:"Lose 3 in a row then bounce back with 2+ wins",icon:"🃏",name:"The Wild Card",
                   desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",
                   col:"#b45309",bg:"#fef9c3",
-                  active:hasEnough&&lossStreak>=3&&winStreak>=2,
-                  stats:[`${winStreak}🔥 best win run`,`${lossStreak}❄️ worst loss run`,"Never give up"],
+                  active:hasEnough&&longestLossStreak>=3&&longestWinStreak>=2,
+                  stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"],
                 },
                 {
                   key:"punter",hint:"Just keep betting — everyone earns this one",icon:"🏇",name:"The Punter",
