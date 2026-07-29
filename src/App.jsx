@@ -3414,90 +3414,40 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const hasEnough=settled.length>=3;
 
               // Score each type — highest score wins (fully exclusive)
-              const scores={
-                exotic:  (exoticPct>=55?exoticPct:0) + (bigExoticBets>=2?bigExoticBets*15:0),
-                roughie: (highOddsBets>=3?highOddsBets*20:0),
-                eachway: (ewPct>=40?ewPct:0),
-                hothand: (longestWinStreak>=3?longestWinStreak*20:0),
-                analyst: (raceWinRate>=60?raceWinRate:0),
-                machine: (raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16?raceWinRate+30:0),
-                highroller:(bigBetPct>=55?bigBetPct:0),
-                tactician:(avgStakeP<=5&&settled.length>=3?80:0),
-                wildcard: (longestLossStreak>=3&&longestWinStreak>=2?longestWinStreak*15+longestLossStreak*10:0),
-                punter:  hasEnough?1:0,
+              const getScore=(key)=>{
+                if(key==="exotic")  return (exoticPct>=55?exoticPct:0)+(bigExoticBets>=2?bigExoticBets*15:0);
+                if(key==="roughie") return highOddsBets>=3?highOddsBets*20:0;
+                if(key==="eachway") return ewPct>=40?ewPct:0;
+                if(key==="hothand") return longestWinStreak>=3?longestWinStreak*20:0;
+                if(key==="analyst") return raceWinRate>=60?raceWinRate:0;
+                if(key==="machine") return (raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16)?raceWinRate+30:0;
+                if(key==="highroller") return bigBetPct>=55?bigBetPct:0;
+                if(key==="tactician") return avgStakeP<=5&&settled.length>=3?80:0;
+                if(key==="wildcard") return (longestLossStreak>=3&&longestWinStreak>=2)?longestWinStreak*15+longestLossStreak*10:0;
+                return 1; // punter fallback
               };
 
               const allTypes=[
-                {
-                  key:"exotic",hint:"55%+ of your bets are exotics, or 2+ trifectas/first fours",icon:"🎰",name:"The Exotic Punter",
-                  desc:"Trifectas, First Fours, Quinellas — always building the dream ticket and chasing the big one",
-                  col:"#be185d",bg:"#fdf2f8",
-                  stats:[`${exoticPct}% exotics`,bigExoticBets>0?`${bigExoticBets} tri/FF bets`:"-",bestBigPayout>0?`Best +${fmt(bestBigPayout)}`:"Still hunting"],
-                },
-                {
-                  key:"roughie",hint:"Back 3+ horses at $10 odds or higher",icon:"🐎",name:"The Roughie Hunter",
-                  desc:"Longshots only — $10 odds minimum, $100 payout in the dream. One day it'll come",
-                  col:"#7c3aed",bg:"#f5f3ff",
-                  stats:[`${highOddsBets} longshots backed`,`$10+ odds`,`${raceWinRate}% hit rate`],
-                },
-                {
-                  key:"eachway",hint:"40%+ of your bets are Each Way",icon:"🤝",name:"The Safety Net",
-                  desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",
-                  col:"#0369a1",bg:"#f0f9ff",
-                  stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`],
-                },
-                {
-                  key:"hothand",hint:"Win 3 or more races in a row",icon:"🔥",name:"The Hot Hand",
-                  desc:"On a winning run and can't be stopped — you're in the zone and you know it",
-                  col:"#ea580c",bg:"#fff7ed",
-                  stats:[`${longestWinStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`],
-                },
-                {
-                  key:"analyst",hint:"Hit rate of 60%+ without chasing longshots or big stakes",icon:"🔬",name:"The Analyst",
-                  desc:"You study the form, weigh up the odds, and only bet when you're certain — cold, precise, and rarely wrong",
-                  col:"#16a34a",bg:"#f0fdf4",
-                  stats:[`${raceWinRate}% win rate`,`${racesWon} wins from ${raceStats.length}`,"Picks winners"],
-                },
-                {
-                  key:"machine",hint:"45%+ win rate, never lose more than 1 race in a row",icon:"🤖",name:"The Machine",
-                  desc:"Same stake, same process, same result — methodical and immune to tilt",
-                  col:"#475569",bg:"#f8fafc",
-                  stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"],
-                },
-                {
-                  key:"highroller",hint:"55%+ of your bets are $15 or more",icon:"💎",name:"The High Roller",
-                  desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",
-                  col:"#d97706",bg:"#fffbeb",
-                  stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"],
-                },
-                {
-                  key:"tactician",hint:"Keep your average bet under $5",icon:"♟️",name:"The Tactician",
-                  desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",
-                  col:"#0e7490",bg:"#ecfeff",
-                  stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"],
-                },
-                {
-                  key:"wildcard",hint:"Lose 3 in a row then bounce back with 2+ wins",icon:"🃏",name:"The Wild Card",
-                  desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",
-                  col:"#b45309",bg:"#fef9c3",
-                  stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"],
-                },
-                {
-                  key:"punter",hint:"Just keep betting — everyone earns this one",icon:"🏇",name:"The Punter",
-                  desc:"Here for the races, here for the fun — you love the sport and that's all that matters",
-                  col:"#1a3a1a",bg:"#f0fdf4",
-                  stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"],
-                },
-              ].map(t=>({...t,score:scores[t.key]||0,active:false}));
+                {key:"exotic",icon:"🎰",name:"The Exotic Punter",hint:"55%+ of your bets are exotics, or 2+ trifectas/first fours",desc:"Trifectas, First Fours, Quinellas — always building the dream ticket and chasing the big one",col:"#be185d",bg:"#fdf2f8",stats:[`${exoticPct}% exotics`,bigExoticBets>0?`${bigExoticBets} tri/FF bets`:"-",bestBigPayout>0?`Best +${fmt(bestBigPayout)}`:"Still hunting"]},
+                {key:"roughie",icon:"🐎",name:"The Roughie Hunter",hint:"Back 3+ horses at $10 odds or higher",desc:"Longshots only — $10 odds minimum, $100 payout in the dream. One day it'll come",col:"#7c3aed",bg:"#f5f3ff",stats:[`${highOddsBets} longshots backed`,`$10+ odds`,`${raceWinRate}% hit rate`]},
+                {key:"eachway",icon:"🤝",name:"The Safety Net",hint:"40%+ of your bets are Each Way",desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",col:"#0369a1",bg:"#f0f9ff",stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`]},
+                {key:"hothand",icon:"🔥",name:"The Hot Hand",hint:"Win 3 or more races in a row",desc:"On a winning run and can't be stopped — you're in the zone and you know it",col:"#ea580c",bg:"#fff7ed",stats:[`${longestWinStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`]},
+                {key:"analyst",icon:"🔬",name:"The Analyst",hint:"Hit rate of 60%+ without chasing longshots or big stakes",desc:"You study the form, weigh up the odds, and only bet when you're certain — cold, precise, and rarely wrong",col:"#16a34a",bg:"#f0fdf4",stats:[`${raceWinRate}% win rate`,`${racesWon} wins from ${raceStats.length}`,"Picks winners"]},
+                {key:"machine",icon:"🤖",name:"The Machine",hint:"45%+ win rate, never lose more than 1 race in a row",desc:"Same stake, same process, same result — methodical and immune to tilt",col:"#475569",bg:"#f8fafc",stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"]},
+                {key:"highroller",icon:"💎",name:"The High Roller",hint:"55%+ of your bets are $15 or more",desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",col:"#d97706",bg:"#fffbeb",stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"]},
+                {key:"tactician",icon:"♟️",name:"The Tactician",hint:"Keep your average bet under $5",desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",col:"#0e7490",bg:"#ecfeff",stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"]},
+                {key:"wildcard",icon:"🃏",name:"The Wild Card",hint:"Lose 3 in a row then bounce back with 2+ wins",desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",col:"#b45309",bg:"#fef9c3",stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"]},
+                {key:"punter",icon:"🏇",name:"The Punter",hint:"Just keep betting — everyone earns this one",desc:"Here for the races, here for the fun — you love the sport and that's all that matters",col:"#1a3a1a",bg:"#f0fdf4",stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"]},
+              ].map(t=>({...t,score:getScore(t.key),active:false}));
 
-              // Assign ONLY the single highest-scoring type
+              // Pick single highest scoring type
+              let current=null;
               if(hasEnough){
-                const best=allTypes.reduce((a,b)=>b.score>a.score?b:a,allTypes[allTypes.length-1]);
+                let best=allTypes[allTypes.length-1];
+                for(const t of allTypes){if(t.score>best.score)best=t;}
                 best.active=true;
+                current=best;
               }
-
-              // Find active type
-              const current=allTypes.find(t=>t.active);
 
               return(
                 <div className="card" style={{marginBottom:12}}>
