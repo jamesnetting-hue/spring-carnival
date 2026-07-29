@@ -3347,6 +3347,127 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           )}
         </div>
       )}
+
+            {/* ⑨ PUNTER PERSONALITY ───────────────────────────────── */}
+            {settled.length>=3&&(()=>{
+              const exoticBets=settled.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(b.type));
+              const exoticPct=Math.round((exoticBets.length/settled.length)*100);
+              const avgStakeP=parseFloat((settled.reduce((s,b)=>s+b.stake,0)/settled.length).toFixed(1));
+              const bigBets=settled.filter(b=>b.stake>=15).length;
+              const bigBetPct=Math.round((bigBets/settled.length)*100);
+              const highOddsBets=settled.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
+
+              const allTypes=[
+                {key:"exotic",icon:"🎰",name:"The Exotic Punter",desc:"Loves trifectas and first fours — always chasing the big payout",col:"#be185d",active:exoticPct>=60},
+                {key:"roller",icon:"💎",name:"The High Roller",desc:"Bets big and bold — maximum stake, maximum thrill",col:"#d97706",active:exoticPct<60&&bigBetPct>=50},
+                {key:"roughie",icon:"🐎",name:"The Roughie Hunter",desc:"Always backing the longshot — one day it'll come off huge",col:"#7c3aed",active:exoticPct<60&&bigBetPct<50&&highOddsBets>=3},
+                {key:"sharp",icon:"🎯",name:"The Sharp",desc:"Consistent, calculated, clinical — finds winners others miss",col:"#16a34a",active:exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate>=60},
+                {key:"tact",icon:"♟️",name:"The Tactician",desc:"Small stakes, spread wide — plays the long game",col:"#0e7490",active:exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate<60&&avgStakeP<=5},
+                {key:"punter",icon:"🏇",name:"The Punter",desc:"In the game and loving every race — keep going!",col:"#1a3a1a",active:exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate<60&&avgStakeP>5},
+              ];
+              const current=allTypes.find(t=>t.active)||allTypes[allTypes.length-1];
+
+              return(
+                <div className="card" style={{marginBottom:12}}>
+                  <div className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:C.muted,marginBottom:12}}>🧠 Your Punter Personality</div>
+
+                  {/* Active personality - big display */}
+                  <div style={{background:`linear-gradient(135deg,${current.col}10,${current.col}04)`,border:`1.5px solid ${current.col}33`,borderRadius:12,padding:"16px",marginBottom:14,position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:-8,right:-8,fontSize:64,opacity:.06}}>{current.icon}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:14}}>
+                      <div style={{fontSize:isMobile?42:50,lineHeight:1,flexShrink:0,filter:`drop-shadow(0 2px 8px ${current.col}66)`}}>{current.icon}</div>
+                      <div>
+                        <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:900,color:current.col,marginBottom:4}}>{current.name}</div>
+                        <div className="sy" style={{fontSize:12,color:C.soft,lineHeight:1.4}}>{current.desc}</div>
+                        <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                          <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Exotic bets: {exoticPct}%</span>
+                          <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Avg stake: ${avgStakeP}</span>
+                          <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Longshots: {highOddsBets}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* All types - locked ones greyed out */}
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>All personality types</div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
+                    {allTypes.map(t=>(
+                      <div key={t.key} style={{borderRadius:10,padding:"10px",border:`1.5px solid ${t.active?t.col+"44":C.border}`,background:t.active?`${t.col}08`:"#f9f9f9",opacity:t.active?1:0.4,display:"flex",gap:8,alignItems:"center"}}>
+                        <span style={{fontSize:20,flexShrink:0,filter:t.active?"none":"grayscale(1)"}}>{t.icon}</span>
+                        <div style={{minWidth:0}}>
+                          <div className="sy" style={{fontSize:11,fontWeight:700,color:t.active?t.col:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</div>
+                          {t.active&&<div className="sy" style={{fontSize:9,color:C.green,fontWeight:700}}>✓ Your type</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+
+            {/* ⑪ TROPHY CABINET ──────────────────────────────────── */}
+            {settled.length>0&&(()=>{
+              const achievements=[
+                {icon:"🎯",name:"First Bet",desc:"Placed your first bet",unlocked:settled.length>=1},
+                {icon:"✅",name:"Winner!",desc:"Won your first bet",unlocked:won.length>=1},
+                {icon:"🔥",name:"On a Roll",desc:"Won 2 races in a row",unlocked:longestWinStreak>=2},
+                {icon:"🏆",name:"Hat Trick",desc:"Won 3 races in a row",unlocked:longestWinStreak>=3},
+                {icon:"💰",name:"Ton Up",desc:"Returned over $100",unlocked:account.totalWon>=100},
+                {icon:"💎",name:"High Roller",desc:"Bet $20+ in one hit",unlocked:settled.some(b=>b.stake>=20)},
+                {icon:"🐎",name:"Roughie King",desc:"Won at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
+                {icon:"🎰",name:"Exotic Lover",desc:"Won a trifecta or FF",unlocked:won.some(b=>b.type==="trifecta"||b.type==="firstfour")},
+                {icon:"🌟",name:"Big Winner",desc:"Won $50+ in one bet",unlocked:won.some(b=>(b.payout||0)>=50)},
+                {icon:"📈",name:"Consistent",desc:"Profitable in 5+ races",unlocked:racesWon>=5},
+              ];
+              const unlocked=achievements.filter(a=>a.unlocked);
+              const locked=achievements.filter(a=>!a.unlocked);
+              return(
+                <div className="card" style={{marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <div className="sy" style={{fontSize:13,fontWeight:700}}>🏅 Trophy Cabinet</div>
+                    <div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>{unlocked.length}/{achievements.length} unlocked</div>
+                  </div>
+                  <div style={{height:6,background:"#f0f0f0",borderRadius:3,overflow:"hidden",marginBottom:12}}>
+                    <div style={{height:"100%",width:`${Math.round((unlocked.length/achievements.length)*100)}%`,background:`linear-gradient(to right,${C.accent}66,${C.accent})`,borderRadius:3}}/>
+                  </div>
+                  {unlocked.length>0&&(
+                    <div style={{marginBottom:10}}>
+                      <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>✅ Unlocked</div>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
+                        {unlocked.map(a=>(
+                          <div key={a.name} style={{background:"#f0fdf4",borderRadius:10,padding:"10px",border:`1px solid ${C.greenBd}`,display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:22,flexShrink:0}}>{a.icon}</span>
+                            <div style={{minWidth:0}}>
+                              <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                              <div className="sy" style={{fontSize:10,color:C.soft,lineHeight:1.3}}>{a.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {locked.length>0&&(
+                    <div>
+                      <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>🔒 Locked</div>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
+                        {locked.map(a=>(
+                          <div key={a.name} style={{background:"#f8f9fa",borderRadius:10,padding:"10px",border:`1px solid ${C.border}`,display:"flex",gap:8,alignItems:"center",opacity:.5}}>
+                            <span style={{fontSize:22,flexShrink:0,filter:"grayscale(1)"}}>{a.icon}</span>
+                            <div style={{minWidth:0}}>
+                              <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                              <div className="sy" style={{fontSize:10,color:C.soft,lineHeight:1.3}}>{a.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+
       {/* -- VISUAL STATS SECTION -- */}
       {totalSettledRaces===0?(
         <div style={{marginBottom:20,textAlign:"center",padding:"40px 20px",borderRadius:14,background:"#f8fffe",border:`1px solid ${C.greenBd}`}}>
@@ -3738,44 +3859,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             )}
 
-            {/* ⑨ PUNTER PERSONALITY ───────────────────────────────── */}
-            {settled.length>=3&&(()=>{
-              const exoticBets=settled.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(b.type));
-              const exoticPct=Math.round((exoticBets.length/settled.length)*100);
-              const avgStakeP=parseFloat((settled.reduce((s,b)=>s+b.stake,0)/settled.length).toFixed(1));
-              const bigBets=settled.filter(b=>b.stake>=15).length;
-              const bigBetPct=Math.round((bigBets/settled.length)*100);
-              const highOddsBets=settled.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
-              let pName,pIcon,pDesc,pCol;
-              if(exoticPct>=60){pName="The Exotic Punter";pIcon="🎰";pDesc="You love trifectas and first fours — always chasing the big payout";pCol="#be185d";}
-              else if(bigBetPct>=50){pName="The High Roller";pIcon="💎";pDesc="You bet big and bold — maximum stake, maximum thrill";pCol="#d97706";}
-              else if(highOddsBets>=3){pName="The Roughie Hunter";pIcon="🐎";pDesc="Always backing the longshot — one day it'll come off huge";pCol="#7c3aed";}
-              else if(raceWinRate>=60){pName="The Sharp";pIcon="🎯";pDesc="Consistent, calculated, clinical — you find winners others miss";pCol="#16a34a";}
-              else if(avgStakeP<=5){pName="The Tactician";pIcon="♟️";pDesc="Small stakes, spread wide — you play the long game";pCol="#0e7490";}
-              else{pName="The Punter";pIcon="🏇";pDesc="You're in the game and loving every race — keep going!";pCol="#1a3a1a";}
-              return(
-                <div className="card" style={{marginBottom:12,background:`linear-gradient(135deg,${pCol}08,${pCol}03)`,border:`1px solid ${pCol}22`,position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",top:-10,right:-10,fontSize:80,opacity:.05}}>{pIcon}</div>
-                  <div className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:pCol,marginBottom:8}}>🧠 Your Punter Personality</div>
-                  <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
-                    <div style={{fontSize:isMobile?44:52,lineHeight:1,flexShrink:0}}>{pIcon}</div>
-                    <div>
-                      <div className="cg" style={{fontSize:isMobile?19:22,fontWeight:900,color:pCol,marginBottom:4}}>{pName}</div>
-                      <div className="sy" style={{fontSize:12,color:C.soft,lineHeight:1.4}}>{pDesc}</div>
-                    </div>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-                    {[["Exotic bets",`${exoticPct}%`],["Avg stake",`$${avgStakeP}`],["Longshots",highOddsBets]].map(([l,v])=>(
-                      <div key={l} style={{background:"rgba(255,255,255,.7)",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${pCol}18`}}>
-                        <div className="sy" style={{fontSize:9,color:"#555",fontWeight:600,marginBottom:2}}>{l}</div>
-                        <div className="cg" style={{fontSize:15,fontWeight:800,color:pCol}}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
             {/* ⑩ MOMENTUM & EFFICIENCY ───────────────────────────────── */}
             {raceStats.length>=3&&(()=>{
               const last3=[...raceStats].slice(-3);
@@ -3827,67 +3910,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })()}
-
-            {/* ⑪ TROPHY CABINET ──────────────────────────────────── */}
-            {settled.length>0&&(()=>{
-              const achievements=[
-                {icon:"🎯",name:"First Bet",desc:"Placed your first bet",unlocked:settled.length>=1},
-                {icon:"✅",name:"Winner!",desc:"Won your first bet",unlocked:won.length>=1},
-                {icon:"🔥",name:"On a Roll",desc:"Won 2 races in a row",unlocked:longestWinStreak>=2},
-                {icon:"🏆",name:"Hat Trick",desc:"Won 3 races in a row",unlocked:longestWinStreak>=3},
-                {icon:"💰",name:"Ton Up",desc:"Returned over $100",unlocked:account.totalWon>=100},
-                {icon:"💎",name:"High Roller",desc:"Bet $20+ in one hit",unlocked:settled.some(b=>b.stake>=20)},
-                {icon:"🐎",name:"Roughie King",desc:"Won at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
-                {icon:"🎰",name:"Exotic Lover",desc:"Won a trifecta or FF",unlocked:won.some(b=>b.type==="trifecta"||b.type==="firstfour")},
-                {icon:"🌟",name:"Big Winner",desc:"Won $50+ in one bet",unlocked:won.some(b=>(b.payout||0)>=50)},
-                {icon:"📈",name:"Consistent",desc:"Profitable in 5+ races",unlocked:racesWon>=5},
-              ];
-              const unlocked=achievements.filter(a=>a.unlocked);
-              const locked=achievements.filter(a=>!a.unlocked);
-              return(
-                <div className="card" style={{marginBottom:12}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                    <div className="sy" style={{fontSize:13,fontWeight:700}}>🏅 Trophy Cabinet</div>
-                    <div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>{unlocked.length}/{achievements.length} unlocked</div>
-                  </div>
-                  <div style={{height:6,background:"#f0f0f0",borderRadius:3,overflow:"hidden",marginBottom:12}}>
-                    <div style={{height:"100%",width:`${Math.round((unlocked.length/achievements.length)*100)}%`,background:`linear-gradient(to right,${C.accent}66,${C.accent})`,borderRadius:3}}/>
-                  </div>
-                  {unlocked.length>0&&(
-                    <div style={{marginBottom:10}}>
-                      <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>✅ Unlocked</div>
-                      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
-                        {unlocked.map(a=>(
-                          <div key={a.name} style={{background:"#f0fdf4",borderRadius:10,padding:"10px",border:`1px solid ${C.greenBd}`,display:"flex",gap:8,alignItems:"center"}}>
-                            <span style={{fontSize:22,flexShrink:0}}>{a.icon}</span>
-                            <div style={{minWidth:0}}>
-                              <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
-                              <div className="sy" style={{fontSize:10,color:C.soft,lineHeight:1.3}}>{a.desc}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {locked.length>0&&(
-                    <div>
-                      <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>🔒 Locked</div>
-                      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
-                        {locked.map(a=>(
-                          <div key={a.name} style={{background:"#f8f9fa",borderRadius:10,padding:"10px",border:`1px solid ${C.border}`,display:"flex",gap:8,alignItems:"center",opacity:.5}}>
-                            <span style={{fontSize:22,flexShrink:0,filter:"grayscale(1)"}}>{a.icon}</span>
-                            <div style={{minWidth:0}}>
-                              <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
-                              <div className="sy" style={{fontSize:10,color:C.soft,lineHeight:1.3}}>{a.desc}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })()}
