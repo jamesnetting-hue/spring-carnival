@@ -2752,7 +2752,6 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           </div>
                         );
                       })()}
-                      </div>
                       {/* Racing speed bar */}
                       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
                         <span style={{fontSize:10,flexShrink:0}}>🐎</span>
@@ -2771,9 +2770,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       </div>
                       <div className="sy" style={{fontSize:11,color:C.muted}}>
                         <span style={{color:C.green,fontWeight:700}}>{won}W</span>
-                        <span style={{margin:"0 3px",color:C.border}}>·</span>
+                        <span style={{margin:"0 3px",color:C.border}}> · </span>
                         <span style={{color:C.red,fontWeight:700}}>{lost}L</span>
-                        {pend>0&&<><span style={{margin:"0 3px",color:C.border}}>·</span><span>{pend} pending</span></>}
+                        {pend>0&&<><span style={{margin:"0 3px",color:C.border}}> · </span><span>{pend} pending</span></>}
                       </div>
                     </div>
 
