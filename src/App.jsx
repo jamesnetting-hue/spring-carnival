@@ -3835,63 +3835,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               );
             })()}
 
-            {/* ① PROFIT JOURNEY ─────────────────────────────────── */}
-            <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#f0fff8,#f8fffe)",padding:isMobile?"14px":"20px 22px"}}>
-              <div style={{marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #f0f7f0"}}><div className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>📈 Profit Journey</div></div>
-                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                  <div className="cg" style={{fontSize:isMobile?22:32,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af",lineHeight:1}}>{profit>0?"+":""}{fmt(profit)}</div>
-                  <div style={{display:"flex",gap:8}}>
-                    <div style={{textAlign:"center",background:"#f0fdf4",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.greenBd}`}}>
-                      <div className="sy" style={{fontSize:10,color:C.muted}}>Peak</div>
-                      <div className="cg" style={{fontSize:13,fontWeight:800,color:C.green}}>+{fmt(peakBal)}</div>
-                    </div>
-                    <div style={{textAlign:"center",background:"#fef2f2",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.redBd}`}}>
-                      <div className="sy" style={{fontSize:10,color:C.muted}}>Low</div>
-                      <div className="cg" style={{fontSize:13,fontWeight:800,color:C.red}}>{fmt(troughBal)}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:4}}>{raceStats.length} races settled</div>
-              </div>
-              <div style={{overflowX:"auto"}}>
-                <svg width={svgW} height={svgH} style={{display:"block"}}>
-                  <defs>
-                    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={lineCol} stopOpacity="0.3"/>
-                      <stop offset="100%" stopColor={lineCol} stopOpacity="0.02"/>
-                    </linearGradient>
-                  </defs>
-                  {[.25,.5,.75].map((t,i)=><line key={i} x1={pad} y1={pad+t*(svgH-pad*2)} x2={svgW-pad} y2={pad+t*(svgH-pad*2)} stroke="rgba(0,0,0,.06)" strokeWidth="1"/>)}
-                  {fillD&&<path d={fillD} fill="url(#pg)"/>}
-                  {pathD&&<path d={pathD} fill="none" stroke={lineCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
-                  {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={i===pts.length-1?5:3} fill={profitCurve[i].profit>0?C.green:profitCurve[i].profit===0?"#9ca3af":C.red} stroke="#fff" strokeWidth={i===pts.length-1?2:0}/>)}
-                </svg>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                <span className="sy" style={{fontSize:11,color:C.muted}}>Race 1</span>
-                <span className="sy" style={{fontSize:11,color:C.muted}}>Race {profitCurve.length}</span>
-              </div>
-            </div>
-
-            {/* ② KEY NUMBERS ─────────────────────────────────────── */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:12}}>
-              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
-                <div style={{fontSize:32,marginBottom:4}}>🏆</div>
-                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Best Race</div>
-                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(bestRaceStat2?.profit||0)}</div>
-                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{bestRaceStat2?.race?.name||"-"}</div>
-                {bestHorse&&<div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>🐎 {bestHorse.name}</div>}
-              </div>
-              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
-                <div style={{fontSize:32,marginBottom:4}}>💰</div>
-                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Biggest Win</div>
-                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(biggestPayout?.payout||0)}</div>
-                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{biggestPayoutRace?.name||"-"}</div>
-                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>{BET_TYPES.find(t=>t.id===biggestPayout?.type)?.label||""}</div>
-              </div>
-            </div>
-
             {/* ② JOCKEY & TRAINER ─────────────────────────────── */}
             {(()=>{
               const js2={};const ts2={};
@@ -4177,6 +4120,63 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               );
             })()}
 
+
+            {/* ① PROFIT JOURNEY ─────────────────────────────────── */}
+            <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#f0fff8,#f8fffe)",padding:isMobile?"14px":"20px 22px"}}>
+              <div style={{marginBottom:10}}>
+                <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #f0f7f0"}}><div className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>📈 Profit Journey</div></div>
+                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                  <div className="cg" style={{fontSize:isMobile?22:32,fontWeight:900,color:profit>0?C.green:profit<0?C.red:"#9ca3af",lineHeight:1}}>{profit>0?"+":""}{fmt(profit)}</div>
+                  <div style={{display:"flex",gap:8}}>
+                    <div style={{textAlign:"center",background:"#f0fdf4",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.greenBd}`}}>
+                      <div className="sy" style={{fontSize:10,color:C.muted}}>Peak</div>
+                      <div className="cg" style={{fontSize:13,fontWeight:800,color:C.green}}>+{fmt(peakBal)}</div>
+                    </div>
+                    <div style={{textAlign:"center",background:"#fef2f2",borderRadius:8,padding:"5px 10px",border:`1px solid ${C.redBd}`}}>
+                      <div className="sy" style={{fontSize:10,color:C.muted}}>Low</div>
+                      <div className="cg" style={{fontSize:13,fontWeight:800,color:C.red}}>{fmt(troughBal)}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:4}}>{raceStats.length} races settled</div>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <svg width={svgW} height={svgH} style={{display:"block"}}>
+                  <defs>
+                    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={lineCol} stopOpacity="0.3"/>
+                      <stop offset="100%" stopColor={lineCol} stopOpacity="0.02"/>
+                    </linearGradient>
+                  </defs>
+                  {[.25,.5,.75].map((t,i)=><line key={i} x1={pad} y1={pad+t*(svgH-pad*2)} x2={svgW-pad} y2={pad+t*(svgH-pad*2)} stroke="rgba(0,0,0,.06)" strokeWidth="1"/>)}
+                  {fillD&&<path d={fillD} fill="url(#pg)"/>}
+                  {pathD&&<path d={pathD} fill="none" stroke={lineCol} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
+                  {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={i===pts.length-1?5:3} fill={profitCurve[i].profit>0?C.green:profitCurve[i].profit===0?"#9ca3af":C.red} stroke="#fff" strokeWidth={i===pts.length-1?2:0}/>)}
+                </svg>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                <span className="sy" style={{fontSize:11,color:C.muted}}>Race 1</span>
+                <span className="sy" style={{fontSize:11,color:C.muted}}>Race {profitCurve.length}</span>
+              </div>
+            </div>
+
+            {/* ② KEY NUMBERS ─────────────────────────────────────── */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:12}}>
+              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                <div style={{fontSize:32,marginBottom:4}}>🏆</div>
+                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Best Race</div>
+                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(bestRaceStat2?.profit||0)}</div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{bestRaceStat2?.race?.name||"-"}</div>
+                {bestHorse&&<div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>🐎 {bestHorse.name}</div>}
+              </div>
+              <div className="card" style={{textAlign:"center",padding:"16px 12px"}}>
+                <div style={{fontSize:32,marginBottom:4}}>💰</div>
+                <div className="sy" style={{fontSize:11,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Biggest Win</div>
+                <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(biggestPayout?.payout||0)}</div>
+                <div className="sy" style={{fontSize:12,color:C.soft,marginTop:2}}>{biggestPayoutRace?.name||"-"}</div>
+                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>{BET_TYPES.find(t=>t.id===biggestPayout?.type)?.label||""}</div>
+              </div>
+            </div>
 
             {/* ③ WIN RATE RING + STREAK ────────────────────────────── */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
