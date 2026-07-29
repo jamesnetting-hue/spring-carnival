@@ -49,6 +49,8 @@ function AnimatedMoney({value, delay=0}) {
 
 // ── Avatar system ──────────────────────────────────────────────────────────
 
+const SUPA_URL = "https://yhohlsqiedzpxumqhppb.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlob2hsc3FpZWR6cHh1bXFocHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNTA3OTMsImV4cCI6MjA5MjcyNjc5M30.Yvf-ooW0Ti0TCcmZg-VtPzrsbQVlpc_YeBzf07_qfv0";
 const sb = {
   h: {
     "Content-Type": "application/json",
