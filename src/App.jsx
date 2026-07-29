@@ -2722,12 +2722,12 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           const hitRate=Math.round((ab.filter(b=>b.won===true).length/ab.length)*100);
                           const avgStake=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
                           const types=[
-                            {icon:"🎰",label:"Exotic",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=60},
+                            {icon:"🎰",label:"Exotic Punter",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=60},
                             {icon:"💎",label:"High Roller",col:"#d97706",bg:"#fffbeb",active:exoticPct<60&&bigBetPct>=50},
-                            {icon:"🐎",label:"Roughie",col:"#7c3aed",bg:"#f5f3ff",active:exoticPct<60&&bigBetPct<50&&longshots>=3},
-                            {icon:"🎯",label:"Sharp",col:"#16a34a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate>=60},
-                            {icon:"♟️",label:"Tactician",col:"#0e7490",bg:"#ecfeff",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake<=5},
-                            {icon:"🏇",label:"Punter",col:"#1a3a1a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake>5},
+                            {icon:"🐎",label:"Roughie Hunter",col:"#7c3aed",bg:"#f5f3ff",active:exoticPct<60&&bigBetPct<50&&longshots>=3},
+                            {icon:"🎯",label:"The Sharp",col:"#16a34a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate>=60},
+                            {icon:"♟️",label:"The Tactician",col:"#0e7490",bg:"#ecfeff",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake<=5},
+                            {icon:"🏇",label:"The Punter",col:"#1a3a1a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake>5},
                           ];
                           const t=types.find(x=>x.active);
                           if(!t) return null;
@@ -2745,7 +2745,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                               boxShadow:`0 1px 4px ${t.col}22`,
                             }}>
                               <span style={{fontSize:11}}>{t.icon}</span>
-                              {!isMobile&&<span>{t.label}</span>}
+                              <span>{t.label}</span>
                             </span>
                           );
                         })()}
