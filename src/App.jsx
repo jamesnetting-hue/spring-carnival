@@ -50,6 +50,310 @@ function AnimatedMoney({value, delay=0}) {
 
 // ── Avatar system ──────────────────────────────────────────────────────────
 
+const sb = {
+  h: {
+    "Content-Type": "application/json",
+    "apikey": SUPA_KEY,
+    "Authorization": `Bearer ${SUPA_KEY}`,
+    "Prefer": "return=representation",
+  },
+
+  async select(table, query = "") {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, { headers: this.h });
+      if (!res.ok) { console.error("SB select error", table, await res.text()); return []; }
+      return await res.json();
+    } catch(e) { console.error("SB select failed", e); return []; }
+  },
+
+  async insert(table, row) {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+        method: "POST",
+        headers: this.h,
+        body: JSON.stringify(row),
+      });
+      if (!res.ok) { console.error("SB insert error", table, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error("SB insert failed", e); return null; }
+  },
+
+  async update(table, id, data) {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+        method: "PATCH",
+        headers: this.h,
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) { console.error("SB update error", table, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error("SB update failed", e); return null; }
+  },
+
+  async upsert(table, row) {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+        method: "POST",
+        headers: { ...this.h, "Prefer": "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(row),
+      });
+      if (!res.ok) { console.error("SB upsert error", table, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error("SB upsert failed", e); return null; }
+  },
+};
+
+// --- CONSTANTS ----------------------------------------------------------------
+const STARTING_BALANCE = 24.00;
+const ADMIN_PIN = "7379";
+
+// Each individual Group 1 race gets its own $24 budget per player.
+
+// --- RACE DATA ----------------------------------------------------------------
+// Races are added via the Admin panel
+const INITIAL_RACES = [];
+
+// --- BET TYPES: Win, Place, Trifecta, First Four only ------------------------
+const BET_TYPES = [
+  {
+    id:"win", label:"Win", desc:"Pick the winner",
+    positions:[{label:"Horse",key:"horse"}],
+    check:(horses,res) => horses[0]===res.first,
+    multiplier:(horses,om) => om[horses[0]]?.winOdds || 0,
+  },
+  {
+    id:"place", label:"Place", desc:"Finish 1st, 2nd or 3rd",
+    positions:[{label:"Horse",key:"horse"}],
+    check:(horses,res) => [res.first,res.second,res.third].includes(horses[0]),
+    multiplier:(horses,om) => om[horses[0]]?.placeOdds || 0,
+  },
+  {
+    id:"eachway", label:"Each Way", desc:"Win + Place - costs 2× your stake",
+    positions:[{label:"Horse",key:"horse"}],
+    check:(horses,res) => horses[0]===res.first || [res.first,res.second,res.third].includes(horses[0]),
+    multiplier:(horses,om) => (om[horses[0]]?.winOdds||0) + (om[horses[0]]?.placeOdds||0),
+    eachway: true,
+  },
+  {
+    id:"quinella", label:"Quinella", desc:"Pick 2 horses to finish 1st & 2nd - any order",
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
+    check:(horses,res) => {
+      const top2=[res.first,res.second];
+      return horses.length===2 && top2.includes(horses[0]) && top2.includes(horses[1]);
+    },
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])/2).toFixed(2));
+    },
+  },
+  {
+    id:"exacta", label:"Exacta", desc:"Pick 1st & 2nd in exact order",
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"}],
+    check:(horses,res) => horses[0]===res.first && horses[1]===res.second,
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])).toFixed(2));
+    },
+  },
+  {
+    id:"trifecta", label:"Trifecta", desc:"Pick 1st, 2nd & 3rd in exact order",
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"},{label:"3rd",key:"p3"}],
+    check:(horses,res) => horses[0]===res.first && horses[1]===res.second && horses[2]===res.third,
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])*o(horses[2])/6).toFixed(2));
+    },
+  },
+  {
+    id:"firstfour", label:"First Four", desc:"Pick 1st, 2nd, 3rd & 4th in exact order",
+    positions:[{label:"1st",key:"p1"},{label:"2nd",key:"p2"},{label:"3rd",key:"p3"},{label:"4th",key:"p4"}],
+    check:(horses,res) => horses[0]===res.first && horses[1]===res.second && horses[2]===res.third && horses[3]===res.fourth,
+    multiplier:(horses,om) => {
+      const o = n => om[n]?.winOdds||1;
+      return parseFloat((o(horses[0])*o(horses[1])*o(horses[2])*o(horses[3])/24).toFixed(2));
+    },
+  },
+];
+
+// --- HELPERS ------------------------------------------------------------------
+const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
+const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
+const formColor = f => {
+  const v = String(f).toLowerCase();
+  if(v==="1") return "#16803a";
+  if(v==="2") return "#ca8a04";
+  if(v==="3") return "#dc2626";
+  if(v==="x") return "#6b7280"; // scratched/fell
+  if(v==="f") return "#7c3aed"; // fell
+  if(v==="0") return "#ef4444"; // unplaced
+  return "#9ca3af";
+};
+
+// Get how much a player has already staked on a specific race
+function raceStaked(bets, playerId, raceId) {
+  return bets
+    .filter(b => b.playerId === playerId && b.raceId === raceId)
+    .reduce((s, b) => s + b.stake, 0);
+}
+
+// Race countdown component
+function RaceCountdown({date, time, raceName}) {
+  const r = useCountdown(date, time);
+  const notif30Ref = useRef(false);
+  const notif5Ref = useRef(false);
+  useEffect(()=>{
+    if(!r||r.expired) return;
+    if(r.h===0&&r.m===30&&r.s===0&&!notif30Ref.current){
+      notif30Ref.current=true;
+      sendNotif(`🏇 ${raceName||"Race"} in 30 minutes`,`Get your $24 in before betting closes.`);
+    }
+    if(r.h===0&&r.m===5&&r.s===0&&!notif5Ref.current){
+      notif5Ref.current=true;
+      sendNotif(`⚡ ${raceName||"Race"} closes in 5 minutes!`,`Last chance — place your bets now.`);
+    }
+  },[r?.h,r?.m,r?.s]);
+  if (!r || r.expired) return null;
+  const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
+  return (
+    <span className="sy" style={{fontSize:14,fontWeight:800,color:r.urgent?C.red:C.accent,background:r.urgent?C.redBg:C.accentGlow,padding:"4px 12px",borderRadius:20,border:`2px solid ${r.urgent?C.redBd:C.accent}`,display:"inline-flex",alignItems:"center",gap:4,marginTop:3,animation:r.urgent?"pulse 1s infinite":"none"}}>
+      {r.urgent?"⚡ Closes in ":"🕐 "}{label}
+    </span>
+  );
+}
+const C = {
+  // Backgrounds
+  bg:"#f0f2f0",        // soft off-white with a hint of green
+  card:"#ffffff",
+  surface:"#f7f8f7",
+  header:"#1a3a1a",   // deep racing green for header
+
+  // Borders
+  border:"#d4dbd4",
+  borderMid:"#b8c4b8",
+
+  // Primary accent - racing green
+  accent:"#1e5c1e",
+  accentL:"#2d7a2d",
+  accentGlow:"rgba(30,92,30,0.08)",
+  accentSoft:"rgba(30,92,30,0.05)",
+
+  // Gold - for winners, highlights
+  gold:"#b8860b",
+  goldL:"#d4a017",
+  goldBg:"rgba(184,134,11,0.08)",
+  goldBd:"rgba(184,134,11,0.3)",
+
+  // Status colours
+  green:"#15803d",  greenBg:"rgba(21,128,61,0.08)",  greenBd:"rgba(21,128,61,0.3)",
+  red:"#b91c1c",    redBg:"rgba(185,28,28,0.07)",    redBd:"rgba(185,28,28,0.3)",
+  blue:"#1d4ed8",   blueBg:"rgba(29,78,216,0.07)",   blueBd:"rgba(29,78,216,0.25)",
+
+  // Text
+  text:"#111111",    // near-black - maximum readability
+  soft:"#333333",    // dark grey - still clearly readable
+  muted:"#666666",   // medium grey - for placeholders only
+};
+
+const silkCol = n => ["#dc2626","#1d4ed8","#15803d","#92400e","#7c3aed","#0e7490","#be185d","#d97706","#065f46","#1e3a8a","#9f1239","#0f766e","#b45309","#374151"][(n-1)%14];
+
+const CSS = `
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:${C.bg};-webkit-font-smoothing:antialiased;font-size:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.cg{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:700}
+.sy{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}
+
+/* Cards & surfaces */
+.card{background:${C.card};border:1px solid ${C.border};border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.surface{background:${C.surface};border:1px solid ${C.border};border-radius:10px;padding:16px}
+
+/* Inputs - large and clear */
+.inp{background:#fff;border:2px solid ${C.border};color:${C.text};padding:13px 16px;border-radius:10px;font-size:16px;width:100%;outline:none;transition:border-color .18s,box-shadow .18s;line-height:1.4}
+.inp:focus{border-color:${C.accent};box-shadow:0 0 0 3px rgba(30,92,30,0.12)}
+.inp::placeholder{color:${C.muted}}
+.inp-sm{background:#fff;border:2px solid ${C.border};color:${C.text};padding:9px 12px;border-radius:8px;font-size:15px;width:100%;outline:none;transition:border-color .18s}
+.inp-sm:focus{border-color:${C.accent};box-shadow:0 0 0 3px rgba(30,92,30,0.1)}
+.inp-sm::placeholder{color:${C.muted}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.02em;transition:all .15s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.btn-gold{background:${C.accent};color:#fff;box-shadow:0 2px 6px rgba(30,92,30,.25)}
+.btn-gold:hover:not(:disabled){background:${C.accentL};transform:translateY(-1px);box-shadow:0 4px 14px rgba(30,92,30,.35)}
+.btn-gold:disabled{opacity:.35;cursor:not-allowed}
+.btn-ghost{background:#fff;color:${C.soft};border:2px solid ${C.border}}
+.btn-ghost:hover{color:${C.text};border-color:${C.muted};background:${C.surface}}
+.btn-danger{background:${C.redBg};color:${C.red};border:2px solid ${C.redBd}}
+.btn-danger:hover{background:#fef2f2}
+
+/* Nav tabs */
+.tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;border:none;background:transparent;color:rgba(255,255,255,.65);transition:all .15s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.tab.on{background:rgba(255,255,255,.18);color:#fff;font-weight:700}
+.tab:hover:not(.on){background:rgba(255,255,255,.1);color:rgba(255,255,255,.9)}
+
+/* Badges */
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+
+/* Divider */
+.divider{height:1px;background:${C.border};margin:14px 0}
+
+/* Utility */
+.gold{color:${C.goldL}} .soft{color:${C.soft}} .green{color:${C.green}} .red{color:${C.red}} .blue{color:${C.blue}}
+
+/* Horse rows */
+.hrow{display:grid;align-items:center;gap:8px;padding:12px 14px;border-radius:10px;border:2px solid transparent;transition:all .13s}
+.hrow.clickable{cursor:pointer}
+.hrow.clickable:hover{background:#f0f5f0;border-color:${C.border}}
+.hrow.sel{background:#e8f5e8;border-color:${C.accent}}
+.hrow.scr{opacity:.38}
+
+/* Toggle */
+.tog{display:flex;border:2px solid ${C.border};border-radius:10px;overflow:hidden;background:#fff}
+.topt{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;border:none;background:transparent;color:${C.muted};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.topt.on{background:${C.accent};color:#fff}
+.topt:hover:not(.on){background:${C.surface}}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:2000;backdrop-filter:blur(4px);padding:0}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;width:100%;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
+
+/* -- RESPONSIVE -- */
+@media(max-width:640px){
+  .desktop-nav{display:none!important}
+  .mobile-nav{display:flex!important}
+  .mobile-hide{display:none!important}
+  .card{padding:14px;border-radius:10px}
+  .surface{padding:10px}
+  .modal{border-radius:20px 20px 0 0;padding:20px 16px 40px;max-height:92vh}
+  .btn{font-size:15px;padding:13px 18px}
+  .inp{font-size:16px;padding:12px 14px}
+  .inp-sm{font-size:14px;padding:8px 10px}
+  h2.cg{font-size:20px!important}
+  h3.cg{font-size:17px!important}
+  h4.cg{font-size:15px!important}
+  .badge{font-size:11px;padding:4px 9px}
+  .hrow{padding:8px 10px!important}
+}
+@media(min-width:641px){
+  .desktop-nav{display:flex!important}
+  .mobile-nav{display:none!important}
+  .modal-bg{align-items:center;padding:16px}
+  .modal{border-radius:16px;padding:28px;max-width:540px;max-height:90vh}
+}
+@media(min-width:641px) and (max-width:900px){
+  .card{padding:16px}
+}
+`;
+
+// --- APP ----------------------------------------------------------------------
+
 export default function App() {
   const [accounts, setAccounts] = useState([]);
   const [session, setSession] = useState(null);
