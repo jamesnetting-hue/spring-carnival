@@ -1302,6 +1302,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
           <div style={{fontSize:"clamp(40px,10vw,60px)",marginBottom:8}}>🏇</div>
           <h1 className="cg" style={{fontSize:"clamp(28px, 7vw, 48px)",fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
           <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.7)",letterSpacing:".16em",textTransform:"uppercase"}}>GROUP 1 COMPETITION</p>
+          <p className="sy" style={{fontSize:12,marginTop:6,color:"rgba(255,255,255,.55)"}}>$24 per race · PIN login · Live leaderboard</p>
         </div>
         <div className="card fu">
           <div className="tog" style={{marginBottom:20}}>
@@ -1452,8 +1453,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                 {label:racesLeft>0?"Races Left":"All Done!",value:racesLeft>0?`${racesNoBet} to bet`:finished>0?"🏆 Season complete":"—",col:racesNoBet>0?C.accent:C.green},
               ].map(({label,value,col})=>(
                 <div key={label} style={{background:"#fff",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.border}`,textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                  <div className="sy" style={{fontSize:10,color:C.muted,fontWeight:600,marginBottom:3}}>{label}</div>
-                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:800,color:col}}>{value}</div>
+                  <div className="sy" style={{fontSize:11,color:"#555",fontWeight:600,marginBottom:3}}>{label}</div>
+                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:900,color:col}}>{value}</div>
                 </div>
               ))}
             </div>
@@ -1534,7 +1535,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         <h3 className="cg" style={{fontSize:isMobile?15:21,fontWeight:700,marginBottom:3,lineHeight:1.2,color:"#111"}}>{race.name}</h3>
 
                         {/* Info row */}
-                        <p className="sy" style={{fontSize:isMobile?11:13,color:C.soft,marginBottom:isMobile?3:5}}>
+                        <p className="sy" style={{fontSize:isMobile?12:14,color:"#444",marginBottom:isMobile?4:6}}>
                           {race.distance} · {active} runners{active<race.horses.length?` (${race.horses.length-active} scr)`:""}
                           {fav?<span> · <span style={{color:C.gold}}>⭐</span> <strong style={{color:"#111"}}>{fav.name}</strong> <span style={{color:C.gold,fontWeight:700}}>${fav.winOdds.toFixed(1)}</span></span>:null}
                         </p>
@@ -1726,7 +1727,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   <span style={{fontSize:18,flexShrink:0}}>{icon}</span>
                   <div>
                     <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:2}}>{title}</div>
-                    <div className="sy" style={{fontSize:11,color:C.soft,lineHeight:1.4}}>{desc}</div>
+                    <div className="sy" style={{fontSize:12,color:"#444",lineHeight:1.5}}>{desc}</div>
                   </div>
                 </div>
               ))}
@@ -1902,7 +1903,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
               <div className="cg" style={{fontSize:isMobile?20:26,fontWeight:900,color:raceBalance===0?C.green:raceBalance===STARTING_BALANCE?C.red:C.accent,lineHeight:1}}>{fmt(raceBalance)}</div>
-              <div className="sy" style={{fontSize:10,color:C.muted}}>of $24 left</div>
+              <div className="sy" style={{fontSize:12,color:"#374151",fontWeight:600}}>of $24 left</div>
             </div>
           </div>
           {/* Budget progress bar */}
@@ -2653,7 +2654,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                 <div style={{fontSize:24,marginBottom:6}}>{a.emoji}</div>
                 <div className="sy" style={{fontSize:9,textTransform:"uppercase",letterSpacing:".08em",color:C.muted,marginBottom:4,fontWeight:700}}>{a.label}</div>
                 <div className="sy" style={{fontSize:isMobile?13:14,fontWeight:800,color:"#111",marginBottom:3}}>{a.name}</div>
-                <div className="sy" style={{fontSize:isMobile?11:12,color:C.soft,lineHeight:1.3}}>{a.detail}</div>
+                <div className="sy" style={{fontSize:isMobile?11:12,color:"#444",lineHeight:1.4}}>{a.detail}</div>
               </div>
             ))}
           </div>
@@ -2855,7 +2856,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
                         {[["Bets",pb.length],["Won",won],["Staked",fmt(a.totalStaked)],["Returned",fmt(a.totalWon)]].map(([l,v])=>(
                           <div key={l} style={{background:"#fff",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
-                            <div className="sy" style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:2}}>{l}</div>
+                            <div className="sy" style={{fontSize:10,color:"#555",fontWeight:600,marginBottom:2}}>{l}</div>
                             <div className="sy" style={{fontSize:13,fontWeight:700,color:"#111"}}>{v}</div>
                           </div>
                         ))}
@@ -3369,7 +3370,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           </button>
         </div>
         <div style={{background:"rgba(255,255,255,.08)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span className="sy" style={{fontSize:12,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:600}}>Season Returns</span>
+          <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:".1em",fontWeight:700}}>Season Returns</span>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:profit>0?"#4ade80":profit<0?"#f87171":"rgba(255,255,255,.5)"}}>{profit>0?"+":""}{fmt(profit)}</span>
             <button onClick={()=>{
@@ -3544,7 +3545,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   {!current&&(
                     <div style={{background:"linear-gradient(135deg,#0f2010,#1a3a1a)",border:"2px solid rgba(255,255,255,.1)",borderRadius:16,padding:"24px 20px",marginBottom:16,textAlign:"center",position:"relative",overflow:"hidden"}}>
                       <div style={{position:"absolute",top:-20,right:-20,fontSize:120,opacity:.05,lineHeight:1}}>🏇</div>
-                      <div style={{fontSize:36,marginBottom:10}}>🚦</div>
+                      <div style={{fontSize:40,marginBottom:10}}>🏇</div>
                       <div className="cg" style={{fontSize:18,fontWeight:800,color:"#fff",marginBottom:6}}>Still in the barriers...</div>
                       <div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.6,marginBottom:12}}>
                         Your punter personality reveals itself once you've had a few races settled. The gates are about to open.
@@ -3673,7 +3674,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const bestMultiplier=won.length>0?Math.max(...won.map(b=>b.potential&&b.stake>0?b.potential/b.stake:0)):0;
               return(
                 <div className="card" style={{marginBottom:12}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>⚡ Form & Momentum</div>
+                  <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:14}}>⚡ Form & Momentum</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr",gap:10}}>
                     <div>
                       <div className="sy" style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:600}}>Last 3 races</div>
@@ -3699,10 +3700,10 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                       <div className="sy" style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:600}}>Betting efficiency</div>
                       <div style={{display:"flex",flexDirection:"column",gap:7}}>
                         {[
-                          ["Avg win return",`$${avgWinReturn.toFixed(2)}`,C.green],
-                          ["Avg bet size",`$${avgStakeAll}`,C.accent],
-                          ["Best multiplier",bestMultiplier>0?`${bestMultiplier.toFixed(1)}×`:"—",C.gold],
-                          ["Total bets placed",settled.length,"#111"],
+                          ["Avg Win Return",`$${avgWinReturn.toFixed(2)}`,C.green],
+                          ["Avg Bet Size",`$${avgStakeAll}`,C.accent],
+                          ["Best Multiplier",bestMultiplier>0?`${bestMultiplier.toFixed(1)}×`:"—",C.gold],
+                          ["Total Bets",settled.length,"#111"],
                         ].map(([l,v,col])=>(
                           <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:`1px solid ${C.border}`}}>
                             <span className="sy" style={{fontSize:12,color:C.soft}}>{l}</span>
@@ -3851,7 +3852,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* ③ WIN RATE RING + STREAK ────────────────────────────── */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
               <div className="card" style={{textAlign:"center",padding:"18px 12px"}}>
-                <div className="sy" style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:12,textTransform:"uppercase",letterSpacing:".08em"}}>Race Win Rate</div>
+                <div className="sy" style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:12,textTransform:"uppercase",letterSpacing:".08em"}}>Race Win Rate</div>
                 {(()=>{
                   const ringCol=raceWinRate>=50?C.green:raceWinRate>=30?C.gold:C.red;
                   const sz=isMobile?88:112; const r=34; const cx=sz/2; const cy=sz/2;
@@ -3877,7 +3878,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 </div>
               </div>
               <div className="card" style={{textAlign:"center",padding:"18px 12px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                <div className="sy" style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Current Streak</div>
+                <div className="sy" style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Current Streak</div>
                 {streak&&streak.count>0?(<>
                   <div style={{fontSize:28,lineHeight:1,marginBottom:4}}>{streak.type==="win"?"🔥":"❄️"}</div>
                   <div className="cg" style={{fontSize:32,fontWeight:900,color:streak.type==="win"?C.green:C.red,lineHeight:1}}>{streak.count}</div>
@@ -3915,7 +3916,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* ⑤ RACE BY RACE BARS ────────────────────────────────── */}
             {raceStats.length>0&&(
               <div className="card" style={{marginBottom:12}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>🐎 Race by Race</div>
+                <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:14}}>🐎 Race by Race</div>
                 <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
                   {(()=>{
                     const maxAbs=Math.max(...raceStats.map(x=>Math.abs(x.profit)),.01);
@@ -3947,7 +3948,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* ⑥ BET TYPE PERFORMANCE ─────────────────────────────── */}
             {typeData.length>0&&(
               <div className="card" style={{marginBottom:12}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:14}}>🎯 Bet Type Performance</div>
+                <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:14}}>🎯 Bet Type Performance</div>
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
                   {typeData.map(t=>(
                     <div key={t.id}>
@@ -3975,7 +3976,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {Object.keys(numFreq).length>0&&(
               <div className="card" style={{marginBottom:12,overflow:"hidden"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <div className="sy" style={{fontSize:13,fontWeight:700}}>🏇 Barrier Speed Map</div>
+                  <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111"}}>🏇 Barrier Speed Map</div>
                   {luckyBarrier&&<div className="sy" style={{fontSize:12,color:C.accent,fontWeight:700}}>#{luckyBarrier[0]} most backed</div>}
                 </div>
                 {/* Racing lanes - light theme */}
@@ -4033,7 +4034,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* ⑧ STAKE SIZE RESULTS ────────────────────────────────── */}
             {bucketData.length>0&&(
               <div className="card" style={{marginBottom:12}}>
-                <div className="sy" style={{fontSize:13,fontWeight:700,marginBottom:4}}>💰 Results by Stake Size</div>
+                <div className="sy" style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:4}}>💰 Results by Stake Size</div>
                 <div className="sy" style={{fontSize:12,color:C.soft,marginBottom:14}}>Do your bigger bets pay off?</div>
                 {(()=>{
                   const profits2=bucketData.map(b=>parseFloat((b.payout-b.staked).toFixed(2)));
