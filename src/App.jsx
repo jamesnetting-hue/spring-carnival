@@ -3564,31 +3564,59 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   )}
 
                   {/* ── Grid of all 9 types ── */}
-                  <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>All personality types</div>
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>
+                    {current ? "All 9 Personality Types" : "🔒 9 Types to Unlock"}
+                  </div>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(3,1fr)",gap:8}}>
-                    {allTypes.map(t=>(
-                      <div key={t.key} style={{
-                        borderRadius:14,padding:"14px 8px",
-                        background:t.active?`linear-gradient(160deg,${t.col}22,${t.col}0e)`:t.bg,
-                        border:`2px solid ${t.active?t.col+"88":t.col+"30"}`,
-                        opacity:t.active?1:0.75,
-                        display:"flex",flexDirection:"column",alignItems:"center",
-                        textAlign:"center",gap:5,
-                        boxShadow:t.active?`0 4px 20px ${t.col}44`:"none",
-                      }}>
-                        <div style={{
-                          width:40,height:40,borderRadius:12,
-                          background:t.active?`linear-gradient(135deg,${t.col},${t.col}bb)`:`${t.col}30`,
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          fontSize:20,
-                          boxShadow:t.active?`0 4px 12px ${t.col}55`:"none",
-                        }}>{t.icon}</div>
-                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:800,color:t.active?t.col:"#1f2937",lineHeight:1.2}}>{t.name.replace("The ","")}</div>
-                        {t.active
-                          ?<span style={{fontSize:9,padding:"2px 8px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
-                          :<div className="sy" style={{fontSize:9,color:"#4b5563",lineHeight:1.3}}>{t.hint}</div>}
-                      </div>
-                    ))}
+                    {allTypes.map((t,idx)=>{
+                      const isActive=t.active;
+                      const isLocked=!isActive&&!current;
+                      return(
+                        <div key={t.key} style={{
+                          borderRadius:14,padding:"14px 8px",
+                          background:isActive
+                            ?`linear-gradient(160deg,${t.col}22,${t.col}0e)`
+                            :isLocked
+                              ?"linear-gradient(160deg,#f1f5f9,#e8edf2)"
+                              :t.bg,
+                          border:`2px solid ${isActive?t.col+"88":isLocked?"#cbd5e1":t.col+"30"}`,
+                          opacity:isActive?1:isLocked?0.7:0.6,
+                          display:"flex",flexDirection:"column",alignItems:"center",
+                          textAlign:"center",gap:5,
+                          boxShadow:isActive?`0 4px 20px ${t.col}44`:"none",
+                          position:"relative",
+                          overflow:"hidden",
+                        }}>
+                          {/* Locked overlay shimmer */}
+                          {isLocked&&(
+                            <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.4) 0%,transparent 60%)",pointerEvents:"none"}}/>
+                          )}
+                          <div style={{
+                            width:40,height:40,borderRadius:12,
+                            background:isActive
+                              ?`linear-gradient(135deg,${t.col},${t.col}bb)`
+                              :isLocked
+                                ?"linear-gradient(135deg,#94a3b8,#64748b)"
+                                :`${t.col}30`,
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:20,
+                            filter:isLocked?"grayscale(1)":"none",
+                            boxShadow:isActive?`0 4px 12px ${t.col}55`:"none",
+                          }}>{isLocked?"🔒":t.icon}</div>
+                          <div className="sy" style={{
+                            fontSize:isMobile?10:11,fontWeight:800,
+                            color:isActive?t.col:isLocked?"#94a3b8":"#1f2937",
+                            lineHeight:1.2,
+                          }}>{isLocked?"??????????":t.name.replace("The ","")}</div>
+                          {isActive
+                            ?<span style={{fontSize:9,padding:"2px 8px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
+                            :isLocked
+                              ?<div className="sy" style={{fontSize:9,color:"#94a3b8",lineHeight:1.3,fontStyle:"italic"}}>Bet in {3-settled.length} more race{3-settled.length===1?"":"s"}</div>
+                              :<div className="sy" style={{fontSize:9,color:"#4b5563",lineHeight:1.3}}>{t.hint}</div>
+                          }
+                        </div>
+                      );
+                    })}
                   </div>
 
                   </div>
