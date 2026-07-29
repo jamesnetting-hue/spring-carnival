@@ -354,6 +354,8 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 
 // --- APP ----------------------------------------------------------------------
 
+const INITIAL_RACES = [];
+
 export default function App() {
   const [accounts, setAccounts] = useState([]);
   const [session, setSession] = useState(null);
