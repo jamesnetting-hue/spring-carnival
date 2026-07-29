@@ -3527,22 +3527,22 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                         borderRadius:14,padding:"14px 8px",
                         background:t.active?`linear-gradient(160deg,${t.col}22,${t.col}0e)`:t.bg,
                         border:`2px solid ${t.active?t.col+"88":t.col+"30"}`,
-                        opacity:t.active?1:0.55,
+                        opacity:t.active?1:0.75,
                         display:"flex",flexDirection:"column",alignItems:"center",
                         textAlign:"center",gap:5,
                         boxShadow:t.active?`0 4px 20px ${t.col}44`:"none",
                       }}>
                         <div style={{
                           width:40,height:40,borderRadius:12,
-                          background:t.active?`linear-gradient(135deg,${t.col},${t.col}bb)`:`${t.col}18`,
+                          background:t.active?`linear-gradient(135deg,${t.col},${t.col}bb)`:`${t.col}30`,
                           display:"flex",alignItems:"center",justifyContent:"center",
                           fontSize:20,
                           boxShadow:t.active?`0 4px 12px ${t.col}55`:"none",
                         }}>{t.icon}</div>
-                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:800,color:t.active?t.col:"#374151",lineHeight:1.2}}>{t.name.replace("The ","")}</div>
+                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:800,color:t.active?t.col:"#1f2937",lineHeight:1.2}}>{t.name.replace("The ","")}</div>
                         {t.active
                           ?<span style={{fontSize:9,padding:"2px 8px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
-                          :<div className="sy" style={{fontSize:9,color:"#6b7280",lineHeight:1.3}}>{t.hint}</div>}
+                          :<div className="sy" style={{fontSize:9,color:"#4b5563",lineHeight:1.3}}>{t.hint}</div>}
                       </div>
                     ))}
                   </div>
@@ -3556,16 +3556,16 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {/* ⑪ TROPHY CABINET ──────────────────────────────────── */}
             {settled.length>0&&(()=>{
               const achievements=[
-                {icon:"🎯",name:"First Bet",desc:"Placed your first bet",unlocked:settled.length>=1},
-                {icon:"✅",name:"Winner!",desc:"Won your first bet",unlocked:won.length>=1},
-                {icon:"🔥",name:"On a Roll",desc:"Won 2 races in a row",unlocked:longestWinStreak>=2},
-                {icon:"🏆",name:"Hat Trick",desc:"Won 3 races in a row",unlocked:longestWinStreak>=3},
-                {icon:"💰",name:"Ton Up",desc:"Returned over $100",unlocked:account.totalWon>=100},
-                {icon:"💎",name:"High Roller",desc:"Bet $20+ in one hit",unlocked:settled.some(b=>b.stake>=20)},
-                {icon:"🐎",name:"Roughie King",desc:"Won at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
-                {icon:"🎰",name:"Exotic Lover",desc:"Won a trifecta or FF",unlocked:won.some(b=>b.type==="trifecta"||b.type==="firstfour")},
-                {icon:"🌟",name:"Big Winner",desc:"Won $50+ in one bet",unlocked:won.some(b=>(b.payout||0)>=50)},
-                {icon:"📈",name:"Consistent",desc:"Profitable in 5+ races",unlocked:racesWon>=5},
+                {icon:"🎯",name:"First Bet",desc:"You're on the board!",hint:"Place your first bet",unlocked:settled.length>=1},
+                {icon:"✅",name:"Winner!",desc:"First winning bet!",hint:"Win your first bet",unlocked:won.length>=1},
+                {icon:"🔥",name:"On a Roll",desc:"2 wins in a row!",hint:"Win 2 races in a row",unlocked:longestWinStreak>=2},
+                {icon:"🏆",name:"Hat Trick",desc:"3 wins in a row!",hint:"Win 3 races in a row",unlocked:longestWinStreak>=3},
+                {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
+                {icon:"💎",name:"High Roller",desc:"Living large!",hint:"Place a single bet of $20+",unlocked:settled.some(b=>b.stake>=20)},
+                {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
+                {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>b.type==="trifecta"||b.type==="firstfour")},
+                {icon:"🌟",name:"Big Winner",desc:"Massive payout!",hint:"Win $50+ in a single bet",unlocked:won.some(b=>(b.payout||0)>=50)},
+                {icon:"📈",name:"Consistent",desc:"5 profitable races!",hint:"Be profitable in 5+ races",unlocked:racesWon>=5},
               ];
               const unlocked=achievements.filter(a=>a.unlocked);
               const pct=Math.round((unlocked.length/achievements.length)*100);
@@ -3604,11 +3604,11 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           overflow:"hidden",
                         }}>
                           {a.unlocked&&<div style={{position:"absolute",top:4,right:4,width:8,height:8,borderRadius:"50%",background:"#fbbf24",boxShadow:"0 0 6px #fbbf24"}}/>}
-                          <div style={{fontSize:a.unlocked?28:22,filter:a.unlocked?"none":"grayscale(1)",opacity:a.unlocked?1:0.3,marginBottom:5,lineHeight:1}}>{a.icon}</div>
-                          <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:a.unlocked?"#92400e":"#9ca3af",lineHeight:1.2,marginBottom:a.unlocked?2:0}}>{a.name}</div>
+                          <div style={{fontSize:a.unlocked?28:22,filter:a.unlocked?"none":"grayscale(1)",opacity:a.unlocked?1:0.35,marginBottom:5,lineHeight:1}}>{a.icon}</div>
+                          <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:a.unlocked?"#92400e":"#374151",lineHeight:1.2,marginBottom:3}}>{a.name}</div>
                           {a.unlocked
-                            ?<div className="sy" style={{fontSize:9,color:"#b45309",lineHeight:1.3}}>{a.desc}</div>
-                            :<div style={{fontSize:10,marginTop:2}}>🔒</div>}
+                            ?<div className="sy" style={{fontSize:9,color:"#b45309",lineHeight:1.3,fontWeight:600}}>{a.desc}</div>
+                            :<div className="sy" style={{fontSize:9,color:"#6b7280",lineHeight:1.3}}>🔒 {a.hint}</div>}
                         </div>
                       ))}
                     </div>
