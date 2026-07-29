@@ -1,6 +1,8 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
 
+const INITIAL_RACES = [];
+
 // Responsive hook
 function useWindowWidth() {
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 980);
