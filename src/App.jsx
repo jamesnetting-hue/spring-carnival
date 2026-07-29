@@ -1,18 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
 
-
-// Responsive hook
-function useWindowWidth() {
-  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 980);
-  useEffect(() => {
-    const handler = () => setW(window.innerWidth);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
-  return w;
-}
-
 // Animated counter hook
 function useAnimatedCounter(target, duration=1200) {
   const [val, setVal] = useState(0);
@@ -47,10 +35,80 @@ function AnimatedMoney({value, delay=0}) {
   );
 }
 
-// ── Avatar system ──────────────────────────────────────────────────────────
 
+// Request browser notification permission
+const requestNotifPerms = () => { if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); };
+const sendNotif = (title, body) => { if('Notification' in window && Notification.permission==='granted') new Notification(title,{body,icon:'/favicon.ico'}); };
+
+import { useState, useCallback, useEffect } from "react";
+
+// Responsive hook
+function useWindowWidth() {
+  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 980);
+  useEffect(() => {
+    const handler = () => setW(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return w;
+}
+
+// Countdown hook - returns {h, m, s, urgent, expired}
+function useCountdown(targetDateStr, targetTimeStr) {
+  const getRemaining = () => {
+    if (!targetDateStr || !targetTimeStr) return null;
+    const target = new Date(`${targetDateStr}T${targetTimeStr}:00`);
+    const diff = target - Date.now();
+    if (diff <= 0) return { h:0, m:0, s:0, expired:true, urgent:false };
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return { h, m, s, expired:false, urgent: diff < 7200000 }; // urgent if < 2hrs
+  };
+  const [remaining, setRemaining] = useState(getRemaining);
+  useEffect(() => {
+    const t = setInterval(() => setRemaining(getRemaining()), 1000);
+    return () => clearInterval(t);
+  }, [targetDateStr, targetTimeStr]);
+  return remaining;
+}
+
+// Confetti component
+function Confetti() {
+  const pieces = Array.from({length:60}, (_,i) => ({
+    id:i,
+    x: Math.random()*100,
+    delay: Math.random()*3,
+    dur: 2 + Math.random()*2,
+    color: ["#1e5c1e","#d4a017","#dc2626","#2563eb","#16803a","#b8860b"][i%6],
+    size: 6 + Math.random()*8,
+    spin: Math.random()*360,
+  }));
+  return (
+    <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9998,overflow:"hidden"}}>
+      {pieces.map(p=>(
+        <div key={p.id} style={{
+          position:"absolute",
+          left:`${p.x}%`,
+          top:-20,
+          width:p.size,
+          height:p.size,
+          background:p.color,
+          borderRadius:p.size>10?'50%':2,
+          animation:`confettiFall ${p.dur}s ${p.delay}s ease-in forwards`,
+          transform:`rotate(${p.spin}deg)`,
+        }}/>
+      ))}
+      <style>{`@keyframes confettiFall{from{top:-20px;opacity:1}to{top:110vh;opacity:0;transform:rotate(720deg);}}`}</style>
+    </div>
+  );
+}
+
+// --- SUPABASE -----------------------------------------------------------------
 const SUPA_URL = "https://yhohlsqiedzpxumqhppb.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlob2hsc3FpZWR6cHh1bXFocHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNTA3OTMsImV4cCI6MjA5MjcyNjc5M30.Yvf-ooW0Ti0TCcmZg-VtPzrsbQVlpc_YeBzf07_qfv0";
+
+// Lightweight Supabase REST client
 const sb = {
   h: {
     "Content-Type": "application/json",
@@ -203,14 +261,8 @@ function RaceCountdown({date, time, raceName}) {
   const notif5Ref = useRef(false);
   useEffect(()=>{
     if(!r||r.expired) return;
-    if(r.h===0&&r.m===30&&r.s===0&&!notif30Ref.current){
-      notif30Ref.current=true;
-      sendNotif(`🏇 ${raceName||"Race"} in 30 minutes`,`Get your $24 in before betting closes.`);
-    }
-    if(r.h===0&&r.m===5&&r.s===0&&!notif5Ref.current){
-      notif5Ref.current=true;
-      sendNotif(`⚡ ${raceName||"Race"} closes in 5 minutes!`,`Last chance — place your bets now.`);
-    }
+    if(r.h===0&&r.m===30&&r.s===0&&!notif30Ref.current){notif30Ref.current=true;sendNotif(`🏇 ${raceName||"Race"} in 30 minutes`,`Get your $24 in before betting closes.`);}
+    if(r.h===0&&r.m===5&&r.s===0&&!notif5Ref.current){notif5Ref.current=true;sendNotif(`⚡ ${raceName||"Race"} closes in 5 minutes!`,`Last chance — place your bets now.`);}
   },[r?.h,r?.m,r?.s]);
   if (!r || r.expired) return null;
   const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
