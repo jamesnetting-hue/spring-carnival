@@ -2747,11 +2747,11 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                               display:"inline-flex",alignItems:"center",gap:3,
                               fontSize:isMobile?9:10,fontWeight:700,
                               color:t.col,background:t.bg,
-                              border:,
+                              border:`1px solid ${t.col}44`,
                               borderRadius:20,
                               padding:isMobile?"1px 7px":"2px 8px",
                               whiteSpace:"nowrap",
-                              boxShadow:,
+                              boxShadow:`0 1px 4px ${t.col}22`,
                             }}>
                               <span style={{fontSize:isMobile?10:11}}>{t.icon}</span>
                               <span>{t.label}</span>
