@@ -2769,13 +2769,13 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         const types=[
                           {key:'exotic',icon:'🎰',label:'Exotic Punter',col:'#be185d',bg:'#fdf2f8'},
                           {key:'roughie',icon:'🐎',label:'Roughie Hunter',col:'#7c3aed',bg:'#f5f3ff'},
-                          {key:'eachway',icon:'🤝',label:'The Safety Net',col:'#0369a1',bg:'#f0f9ff'},
+                          {key:'eachway',icon:'🤝',label:'The Safety Net',col:'#0891b2',bg:'#ecfeff'},
                           {key:'hothand',icon:'🔥',label:'The Hot Hand',col:'#ea580c',bg:'#fff7ed'},
                           {key:'analyst',icon:'🔬',label:'The Analyst',col:'#16a34a',bg:'#f0fdf4'},
                           {key:'machine',icon:'🤖',label:'The Machine',col:'#475569',bg:'#f1f5f9'},
                           {key:'highroller',icon:'💎',label:'High Roller',col:'#d97706',bg:'#fffbeb'},
-                          {key:'tactician',icon:'♟️',label:'The Tactician',col:'#0e7490',bg:'#ecfeff'},
-                          {key:'cold',icon:'📉',label:'The Drifter',col:'#0284c7',bg:'#f0f9ff'},
+                          {key:'tactician',icon:'♟️',label:'The Tactician',col:'#6d28d9',bg:'#f5f3ff'},
+                          {key:'cold',icon:'📉',label:'The Drifter',col:'#1e40af',bg:'#eff6ff'},
                         ];
                         const t=types.reduce((a,b)=>(sc[b.key]||0)>(sc[a.key]||0)?b:a,types[0]);
                         if(!t) return null;
@@ -3466,13 +3466,13 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const allTypes=[
                 {key:"exotic",icon:"🎰",name:"The Exotic Punter",hint:"55%+ of your bets are exotics, or 2+ trifectas/first fours",desc:"Trifectas, First Fours, Quinellas — always building the dream ticket and chasing the big one",col:"#be185d",bg:"#fdf2f8",stats:[`${exoticPct}% exotics`,bigExoticBets>0?`${bigExoticBets} tri/FF bets`:"-",bestBigPayout>0?`Best +${fmt(bestBigPayout)}`:"Still hunting"]},
                 {key:"roughie",icon:"🐎",name:"The Roughie Hunter",hint:"Back 3+ horses at $10 odds or higher",desc:"Longshots only — $10 odds minimum, $100 payout in the dream. One day it'll come",col:"#7c3aed",bg:"#f5f3ff",stats:[`${highOddsBets} longshots backed`,`$10+ odds`,`${raceWinRate}% hit rate`]},
-                {key:"eachway",icon:"🤝",name:"The Safety Net",hint:"40%+ of your bets are Each Way",desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",col:"#0369a1",bg:"#f0f9ff",stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`]},
+                {key:"eachway",icon:"🤝",name:"The Safety Net",hint:"40%+ of your bets are Each Way",desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",col:"#0891b2",bg:"#ecfeff",stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`]},
                 {key:"hothand",icon:"🔥",name:"The Hot Hand",hint:"Win 3 or more races in a row",desc:"On a winning run and can't be stopped — you're in the zone and you know it",col:"#ea580c",bg:"#fff7ed",stats:[`${longestWinStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`]},
                 {key:"analyst",icon:"🔬",name:"The Analyst",hint:"Hit rate of 60%+ without chasing longshots or big stakes",desc:"You study the form, weigh up the odds, and only bet when you're certain — cold, precise, and rarely wrong",col:"#16a34a",bg:"#f0fdf4",stats:[`${raceWinRate}% win rate`,`${racesWon} wins from ${raceStats.length}`,"Picks winners"]},
                 {key:"machine",icon:"🤖",name:"The Machine",hint:"45%+ win rate, never lose more than 1 race in a row",desc:"Same stake, same process, same result — methodical and immune to tilt",col:"#475569",bg:"#f8fafc",stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"]},
                 {key:"highroller",icon:"💎",name:"The High Roller",hint:"55%+ of your bets are $15 or more",desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",col:"#d97706",bg:"#fffbeb",stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"]},
-                {key:"tactician",icon:"♟️",name:"The Tactician",hint:"Keep your average bet under $5",desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",col:"#0e7490",bg:"#ecfeff",stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"]},
-                {key:"cold",icon:"📉",name:"The Drifter",hint:"Currently on a 3+ race losing streak",desc:"The runs just aren't coming — but every cold streak ends. Keep showing up and the winner will land",col:"#0284c7",bg:"#f0f9ff",stats:[`${longestLossStreak} race cold run`,`${raceWinRate}% overall hit rate`,"Due for one"]},
+                {key:"tactician",icon:"♟️",name:"The Tactician",hint:"Keep your average bet under $5",desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",col:"#6d28d9",bg:"#f5f3ff",stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"]},
+                {key:"cold",icon:"📉",name:"The Drifter",hint:"Currently on a 3+ race losing streak",desc:"The runs just aren't coming — but every cold streak ends. Keep showing up and the winner will land",col:"#1e40af",bg:"#eff6ff",stats:[`${longestLossStreak} race cold run`,`${raceWinRate}% overall hit rate`,"Due for one"]},
               ].map(t=>({...t,score:getScore(t.key),active:false}));
 
               // Pick single highest scoring type
@@ -3542,11 +3542,22 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
                   {/* ── Locked state ── */}
                   {!current&&(
-                    <div style={{background:"linear-gradient(135deg,#f8f0ff,#f0f4ff)",border:"2px dashed #c084fc",borderRadius:16,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
-                      <div style={{fontSize:48,marginBottom:10}}>🔮</div>
-                      <div className="cg" style={{fontSize:18,fontWeight:800,color:"#7c3aed",marginBottom:6}}>Your personality is forming...</div>
-                      <div className="sy" style={{fontSize:13,color:"#6b7280",lineHeight:1.5}}>
-                        {settled.length===0?"Place your first bets to get started!":`${3-settled.length} more settled race${3-settled.length===1?"":"s"} to reveal your type`}
+                    <div style={{background:"linear-gradient(135deg,#0f2010,#1a3a1a)",border:"2px solid rgba(255,255,255,.1)",borderRadius:16,padding:"24px 20px",marginBottom:16,textAlign:"center",position:"relative",overflow:"hidden"}}>
+                      <div style={{position:"absolute",top:-20,right:-20,fontSize:120,opacity:.05,lineHeight:1}}>🏇</div>
+                      <div style={{fontSize:36,marginBottom:10}}>🚦</div>
+                      <div className="cg" style={{fontSize:18,fontWeight:800,color:"#fff",marginBottom:6}}>Still in the barriers...</div>
+                      <div className="sy" style={{fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.6,marginBottom:12}}>
+                        Your punter personality reveals itself once you've had a few races settled. The gates are about to open.
+                      </div>
+                      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.1)",borderRadius:20,padding:"6px 16px",border:"1px solid rgba(255,255,255,.2)"}}>
+                        <div style={{display:"flex",gap:4}}>
+                          {[0,1,2].map(i=>(
+                            <div key={i} style={{width:8,height:8,borderRadius:"50%",background:i<settled.length?"#4ade80":"rgba(255,255,255,.2)",transition:"all .3s"}}/>
+                          ))}
+                        </div>
+                        <span className="sy" style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,.8)"}}>
+                          {settled.length===0?"Place your first bets to begin":settled.length<3?`${3-settled.length} more settled race${3-settled.length===1?"":"s"} to go`:""}
+                        </span>
                       </div>
                     </div>
                   )}
