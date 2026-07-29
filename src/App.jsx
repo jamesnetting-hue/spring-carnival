@@ -3555,15 +3555,15 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
           const badges=[];
           if(streak.type==="win"&&streak.count>=3) badges.push({icon:"🔥",label:`${streak.count} race hot streak`,col:"#ea580c",bg:"rgba(234,88,12,.2)"});
           if(streak.type==="win"&&streak.count>=2&&streak.count<3) badges.push({icon:"📈",label:"Building momentum",col:"#16a34a",bg:"rgba(22,163,74,.2)"});
-          if(streak.type==="loss"&&streak.count>=3) badges.push({icon:"🧊",label:`${streak.count} race cold run`,col:"#60a5fa",bg:"rgba(96,165,250,.2)"});
+          if(streak.type==="loss"&&streak.count>=3) badges.push({icon:"🧊",label:`${streak.count} race cold run`,col:"#93c5fd",bg:"rgba(147,197,253,.2)"});
           if(longestWinStreak>=3) badges.push({icon:"💯",label:`Best: ${longestWinStreak} in a row`,col:"#fbbf24",bg:"rgba(251,191,36,.2)"});
-          if(raceWinRate>=60&&totalSettledRaces>=3) badges.push({icon:"🎯",label:`${raceWinRate}% win rate`,col:"#a78bfa",bg:"rgba(167,139,250,.2)"});
+          if(raceWinRate>=60&&totalSettledRaces>=3) badges.push({icon:"🎯",label:`${raceWinRate}% win rate`,col:"#c4b5fd",bg:"rgba(196,181,253,.2)"});
           if(!badges.length) return null;
           return(
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
               {badges.map((b,i)=>(
-                <span key={i} className="sy" style={{fontSize:11,fontWeight:700,color:b.col,background:b.bg,padding:"4px 10px",borderRadius:20,border:`1px solid ${b.col}55`}}>
-                  {b.icon} {b.label}
+                <span key={i} className="sy" style={{fontSize:12,fontWeight:700,color:"#fff",background:b.bg,padding:"5px 12px",borderRadius:20,border:`1px solid rgba(255,255,255,.25)`,display:"inline-flex",alignItems:"center",gap:5}}>
+                  <span>{b.icon}</span><span style={{color:"rgba(255,255,255,.9)"}}>{b.label}</span>
                 </span>
               ))}
             </div>
@@ -3572,15 +3572,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
         <div style={{background:"rgba(255,255,255,.08)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:".1em",fontWeight:700}}>Season Returns</span>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:profit>0?"#4ade80":profit<0?"#f87171":"rgba(255,255,255,.5)"}}>{profit>0?"+":""}{fmt(profit)}</span>
-            <button onClick={()=>{
-              const txt=`🏇 Spring Carnival Group 1\n${account.name}: ${profit>0?"+":""}${fmt(profit)} returns\n${racesWon}W · ${racesLost}L · ${raceWinRate}% hit rate`;
-              navigator.share?navigator.share({title:"My Spring Carnival Stats",text:txt}).catch(()=>{}):navigator.clipboard.writeText(txt).then(()=>alert("Copied to clipboard!"));
-            }} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"inherit"}}>
-              📤 Share
-            </button>
-          </div>
+          <span className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:profit>0?"#4ade80":profit<0?"#f87171":"rgba(255,255,255,.5)"}}>{profit>0?"+":""}{fmt(profit)}</span>
         </div>
         {pinOk&&<div className="sy" style={{fontSize:12,color:"#4ade80",marginTop:8,textAlign:"center"}}>✓ PIN updated successfully!</div>}
       </div>
