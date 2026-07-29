@@ -3459,9 +3459,43 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 <div className="card" style={{marginBottom:12}}>
                   <div className="sy" style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:C.muted,marginBottom:12}}>🧠 Your Punter Personality</div>
 
-                  {/* Active personality or locked state */}
-                  {current?(
-                    <div style={{background:`linear-gradient(135deg,${current.col}12,${current.col}05)`,border:`1.5px solid ${current.col}44`,borderRadius:14,padding:isMobile?"14px":"18px",marginBottom:14,position:"relative",overflow:"hidden"}}>
+                  {/* Locked state */}
+                  {!current&&(
+                    <div style={{background:"linear-gradient(135deg,#f8f0ff,#f0f4ff)",border:`1.5px dashed #c084fc`,borderRadius:12,padding:"20px 16px",marginBottom:14,textAlign:"center"}}>
+                      <div style={{fontSize:40,marginBottom:8}}>🔮</div>
+                      <div className="sy" style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:4}}>Your personality is forming...</div>
+                      <div className="sy" style={{fontSize:12,color:"#9ca3af",lineHeight:1.5}}>{settled.length===0?"Place your first bets to get started!":settled.length<3?`${3-settled.length} more settled race${3-settled.length===1?"":"s"} to reveal your type`:""}</div>
+                    </div>
+                  )}
+
+                  {/* All 10 types grid */}
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>All personality types</div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:8}}>
+                    {allTypes.map(t=>(
+                      <div key={t.key} style={{
+                        borderRadius:14,padding:"14px 10px",
+                        background:t.active
+                          ?`linear-gradient(135deg,${t.col}18,${t.col}08)`
+                          :`linear-gradient(135deg,${t.col}10,${t.col}05)`,
+                        border:`2px solid ${t.active?t.col+"66":t.col+"30"}`,
+                        opacity:t.active?1:0.6,
+                        display:"flex",flexDirection:"column",alignItems:"center",
+                        textAlign:"center",gap:4,
+                        boxShadow:t.active?`0 4px 16px ${t.col}30`:`0 1px 4px ${t.col}15`,
+                        transition:"all .2s",
+                      }}>
+                        <span style={{fontSize:26,lineHeight:1,filter:t.active?"none":"grayscale(.4)",marginBottom:2}}>{t.icon}</span>
+                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:t.active?t.col:`${t.col}cc`,lineHeight:1.2}}>{t.name}</div>
+                        {t.active
+                          ?<span style={{fontSize:9,padding:"2px 8px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700,marginTop:2}}>✓ You</span>
+                          :<div className="sy" style={{fontSize:9,color:`${t.col}99`,lineHeight:1.3,marginTop:1}}>{t.hint}</div>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Active personality big card */}
+                  {current&&(
+                    <div style={{background:`linear-gradient(135deg,${current.col}12,${current.col}05)`,border:`1.5px solid ${current.col}44`,borderRadius:14,padding:isMobile?"14px":"18px",marginTop:12,position:"relative",overflow:"hidden"}}>
                       <div style={{position:"absolute",top:-10,right:-10,fontSize:80,opacity:.06,lineHeight:1}}>{current.icon}</div>
                       <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
                         <div style={{fontSize:isMobile?48:56,lineHeight:1,flexShrink:0,filter:`drop-shadow(0 2px 10px ${current.col}88)`}}>{current.icon}</div>
@@ -3476,35 +3510,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                         ))}
                       </div>
                     </div>
-                  ):(
-                    <div style={{background:"#f8f9fa",border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"20px 16px",marginBottom:14,textAlign:"center"}}>
-                      <div style={{fontSize:40,marginBottom:8,filter:"grayscale(1)",opacity:.4}}>🔒</div>
-                      <div className="sy" style={{fontSize:14,fontWeight:700,color:"#9ca3af",marginBottom:4}}>Personality not yet unlocked</div>
-                      <div className="sy" style={{fontSize:12,color:C.muted,lineHeight:1.5}}>{settled.length===0?"Place your first bets to get started!":settled.length<3?`Bet in ${3-settled.length} more settled race${3-settled.length===1?"":"s"} to unlock`:"Keep betting to unlock!"}</div>
-                    </div>
                   )}
-
-                  {/* All 10 types grid */}
-                  <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>All {allTypes.length} personality types</div>
-                  <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
-                    {allTypes.map(t=>(
-                      <div key={t.key} style={{
-                        borderRadius:12,padding:"10px",
-                        background:t.active?`linear-gradient(135deg,${t.col}12,${t.col}05)`:t.bg,
-                        border:`1.5px solid ${t.active?t.col+"44":t.col+"22"}`,
-                        opacity:t.active?1:0.45,
-                        display:"flex",flexDirection:"column",alignItems:"center",
-                        textAlign:"center",gap:3,
-                        boxShadow:t.active?`0 2px 12px ${t.col}22`:"none",
-                      }}>
-                        <span style={{fontSize:22,filter:t.active?"none":"grayscale(1)",lineHeight:1,marginBottom:2}}>{t.icon}</span>
-                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:t.active?t.col:"#666",lineHeight:1.2,marginBottom:2}}>{t.name}</div>
-                        {t.active
-                          ?<span style={{fontSize:9,padding:"1px 7px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
-                          :<div className="sy" style={{fontSize:9,color:"#888",lineHeight:1.3,marginTop:1}}>{t.hint}</div>}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               );
             })()}
