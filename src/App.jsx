@@ -33,9 +33,54 @@ function useAnimatedCounter(target, duration=1200) {
 function AnimatedMoney({value, delay=0}) {
   const [show, setShow] = useState(false);
   useEffect(()=>{ const t=setTimeout(()=>setShow(true),delay); return()=>clearTimeout(t); },[delay]);
-  const animated=useAnimatedCounter(show?Math.abs(value):0, 1000);
-  if(value===0) return <span style={{color:"#9ca3af"}}>$0.00</span>;
-  return <span>{value>0?"+":"-"}${animated.toFixed(2)}</span>;
+  const abs = Math.abs(value);
+  const animated = useAnimatedCounter(show ? abs : 0, 900);
+  const dollars = Math.floor(animated);
+  const cents = Math.round((animated - dollars) * 100).toString().padStart(2,'0');
+  if(value === 0) return <span style={{color:"#9ca3af"}}>$0.00</span>;
+  return (
+    <span style={{fontVariantNumeric:"tabular-nums"}}>
+      {value > 0 ? "+" : "-"}${dollars}<span style={{fontSize:"0.75em",opacity:.7}}>.{cents}</span>
+    </span>
+  );
+}
+
+// ── Avatar system ──────────────────────────────────────────────────────────
+const AVATAR_EMOJIS=["🏇","🐎","🏆","🎯","🎲","💎","🔥","🌟","🤠","🦅","🃏","♟️","🎰","🌊","⚡","🧊","💪","🏅","🎪","🎠"];
+const AVATAR_COLORS=["#1a3a1a","#7c3aed","#be185d","#d97706","#1d4ed8","#0e7490","#dc2626","#ea580c","#16a34a","#475569"];
+const getAvatar=(id)=>{try{return JSON.parse(localStorage.getItem(`sc_av_${id}`)||"null")||{emoji:"🏇",color:"#1a3a1a"};}catch{return{emoji:"🏇",color:"#1a3a1a"};}};
+const saveAvatar=(id,av)=>{localStorage.setItem(`sc_av_${id}`,JSON.stringify(av));};
+
+function AvatarBubble({accountId,size=32,style={}}){
+  const av=getAvatar(accountId);
+  return <div style={{width:size,height:size,borderRadius:"50%",background:av.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.48,flexShrink:0,boxShadow:`0 2px 8px ${av.color}55`,...style}}>{av.emoji}</div>;
+}
+
+function AvatarPicker({accountId,onSave}){
+  const [av,setAv]=useState(()=>getAvatar(accountId));
+  return(
+    <div style={{background:"#fff",borderRadius:16,padding:16,boxShadow:"0 8px 40px rgba(0,0,0,.18)",maxWidth:300,width:"100%"}}>
+      <div className="cg" style={{fontSize:15,fontWeight:800,marginBottom:12,color:"#111"}}>Your Avatar</div>
+      <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+        <div style={{width:64,height:64,borderRadius:"50%",background:av.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,boxShadow:`0 4px 20px ${av.color}66`}}>{av.emoji}</div>
+      </div>
+      <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Emoji</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginBottom:12}}>
+        {AVATAR_EMOJIS.map(e=>(
+          <button key={e} onClick={()=>setAv(p=>({...p,emoji:e}))} style={{padding:"7px 0",borderRadius:8,border:`2px solid ${av.emoji===e?av.color:"#e5e7eb"}`,background:av.emoji===e?`${av.color}15`:"#f9fafb",fontSize:18,cursor:"pointer"}}>
+            {e}
+          </button>
+        ))}
+      </div>
+      <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Colour</div>
+      <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
+        {AVATAR_COLORS.map(c=>(
+          <button key={c} onClick={()=>setAv(p=>({...p,color:c}))} style={{width:30,height:30,borderRadius:"50%",background:c,border:`3px solid ${av.color===c?"#111":"transparent"}`,cursor:"pointer"}}/>
+        ))}
+      </div>
+      <button onClick={()=>{saveAvatar(accountId,av);onSave(av);}} style={{width:"100%",padding:"11px",borderRadius:10,background:av.color,color:"#fff",fontWeight:700,fontSize:14,border:"none",cursor:"pointer",fontFamily:"inherit"}}>Save Avatar</button>
+    </div>
+  );
 }
 
 
@@ -246,16 +291,22 @@ function raceStaked(bets, playerId, raceId) {
     .reduce((s, b) => s + b.stake, 0);
 }
 
-// Race countdown component — fires notification at 5 min mark
+// Race countdown component — fires notifications at 30 min and 5 min marks
 function RaceCountdown({date, time, raceName}) {
   const r = useCountdown(date, time);
-  const notifiedRef = useRef(false);
+  const notif30Ref = useRef(false);
+  const notif5Ref = useRef(false);
   useEffect(()=>{
-    if(r&&!r.expired&&r.h===0&&r.m===5&&r.s===0&&!notifiedRef.current){
-      notifiedRef.current=true;
-      sendNotif(`⏰ ${raceName||"Race"} closes in 5 minutes!`,"Get your bets in now before betting closes.");
+    if(!r||r.expired) return;
+    if(r.h===0&&r.m===30&&r.s===0&&!notif30Ref.current){
+      notif30Ref.current=true;
+      sendNotif(`🏇 ${raceName||"Race"} in 30 minutes`,`Get your $24 in before betting closes.`);
     }
-  },[r?.m,r?.s]);
+    if(r.h===0&&r.m===5&&r.s===0&&!notif5Ref.current){
+      notif5Ref.current=true;
+      sendNotif(`⚡ ${raceName||"Race"} closes in 5 minutes!`,"Last chance — place your bets now.");
+    }
+  },[r?.h,r?.m,r?.s]);
   if (!r || r.expired) return null;
   const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
   return (
@@ -364,6 +415,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 @keyframes barFill{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
 @keyframes subtleGlow{0%,100%{box-shadow:0 1px 4px rgba(0,0,0,.05)}50%{box-shadow:0 4px 20px rgba(26,58,26,.15)}}
+@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.6}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -923,14 +975,16 @@ export default function App() {
     const myWins = settled.filter(b => b.playerId === session && b.won === true);
     const myPayout = myWins.reduce((s,b)=>s+(b.payout||0),0);
     const raceName = races.find(r=>r.id===raceId)?.name;
-    setResultsBanner({ raceName, myWins: myWins.length, myPayout });
-    setTimeout(()=>setResultsBanner(null), 6000);
+    // Build daily recap — how many races today, total returned
+    const today=new Date().toISOString().split("T")[0];
+    const todayRaces=races.filter(r=>r.date===today&&r.status==="finished");
+    const myTodayBets=bets.filter(b=>todayRaces.some(r=>r.id===b.raceId)&&b.playerId===session&&b.won!==null);
+    const myTodayReturn=myTodayBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+    setResultsBanner({ raceName, myWins: myWins.length, myPayout, todayRaces: todayRaces.length, myTodayReturn });
+    setTimeout(()=>setResultsBanner(null), 7000);
     if (myWins.length > 0) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
-      sendNotif(`🎉 You won in ${raceName}!`, `+${fmt(myPayout)} returned from ${myWins.length} winning bet${myWins.length!==1?"s":""}!`);
-    } else {
-      sendNotif(`${raceName} settled`, `No wins this race — better luck next time!`);
     }
   };
 
@@ -1122,19 +1176,30 @@ export default function App() {
 
       {/* Results banner */}
       {resultsBanner&&(
-        <div style={{position:"fixed",top:72,left:16,right:16,zIndex:9990,maxWidth:520,margin:"0 auto",background:resultsBanner.myWins>0?"#15803d":"#1a3a1a",borderRadius:14,padding:"14px 18px",boxShadow:"0 8px 40px rgba(0,0,0,.3)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,animation:"notif .3s ease"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <span style={{fontSize:24,flexShrink:0}}>{resultsBanner.myWins>0?"🎉":"🏁"}</span>
-            <div>
-              <div className="sy" style={{fontSize:14,fontWeight:800,color:"#fff",lineHeight:1.3}}>
-                {resultsBanner.myWins>0?`You won on ${resultsBanner.raceName}!`:`${resultsBanner.raceName} settled`}
-              </div>
-              <div className="sy" style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:3}}>
-                {resultsBanner.myWins>0?`+${fmt(resultsBanner.myPayout)} returned`:`No wins this time — check My Bets`}
+        <div style={{position:"fixed",top:72,left:16,right:16,zIndex:9990,maxWidth:520,margin:"0 auto",background:resultsBanner.myWins>0?"#15803d":"#1a3a1a",borderRadius:14,padding:"14px 18px",boxShadow:"0 8px 40px rgba(0,0,0,.3)",animation:"notif .3s ease"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <span style={{fontSize:24,flexShrink:0}}>{resultsBanner.myWins>0?"🎉":"🏁"}</span>
+              <div>
+                <div className="sy" style={{fontSize:14,fontWeight:800,color:"#fff",lineHeight:1.3}}>
+                  {resultsBanner.myWins>0?`You won on ${resultsBanner.raceName}!`:`${resultsBanner.raceName} settled`}
+                </div>
+                <div className="sy" style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:2}}>
+                  {resultsBanner.myWins>0?`+${fmt(resultsBanner.myPayout)} returned`:`No wins this time`}
+                </div>
               </div>
             </div>
+            <button onClick={()=>setResultsBanner(null)} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",flexShrink:0,width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
-          <button onClick={()=>setResultsBanner(null)} style={{background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:16,cursor:"pointer",flexShrink:0,lineHeight:1,width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          {/* Daily recap row */}
+          {resultsBanner.todayRaces>0&&(
+            <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.55)"}}>📊 Today: {resultsBanner.todayRaces} race{resultsBanner.todayRaces!==1?"s":""} settled</span>
+              <span className="sy" style={{fontSize:12,fontWeight:700,color:resultsBanner.myTodayReturn>0?"#4ade80":"rgba(255,255,255,.4)"}}>
+                {resultsBanner.myTodayReturn>0?`+${fmt(resultsBanner.myTodayReturn)} today`:"No wins today yet"}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -2836,6 +2901,59 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       )}
 
+      {/* ── RIVAL SYSTEM ─────────────────────────────────────────────── */}
+      {myAccount&&(()=>{
+        const myPos=accounts.findIndex(a=>a.id===myAccount.id);
+        if(myPos<0) return null;
+        // Rival = nearest player (above or below, pick whoever is closest in $ terms)
+        const myProfit=accounts[myPos].totalWon;
+        const candidates=[accounts[myPos-1],accounts[myPos+1]].filter(Boolean);
+        if(!candidates.length) return null;
+        const rival=candidates.sort((a,b)=>Math.abs(a.totalWon-myProfit)-Math.abs(b.totalWon-myProfit))[0];
+        const rivalPos=accounts.findIndex(a=>a.id===rival.id);
+        const gap=parseFloat((rival.totalWon-myProfit).toFixed(2));
+        const iAhead=myProfit>=rival.totalWon;
+        // H2H record vs rival
+        const myRaceWins=finishedRaces.filter(r=>{
+          const myReturn=bets.filter(b=>b.raceId===r.id&&b.playerId===myAccount.id&&b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+          const rivReturn=bets.filter(b=>b.raceId===r.id&&b.playerId===rival.id&&b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+          return myReturn>rivReturn;
+        }).length;
+        const rivRaceWins=finishedRaces.length-myRaceWins;
+        return(
+          <div style={{marginBottom:14,borderRadius:14,overflow:"hidden",border:`1px solid ${C.border}`,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+            <div style={{background:"linear-gradient(135deg,#1a3a1a,#0f2010)",padding:"12px 16px",display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:16}}>⚔️</span>
+              <span className="cg" style={{fontSize:13,fontWeight:800,color:"#fff"}}>Your Rival</span>
+              <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.5)",marginLeft:"auto"}}>Closest player to you</span>
+            </div>
+            <div style={{background:"#fff",padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
+              <AvatarBubble accountId={rival.id} size={44}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                  <span className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>{rival.name}</span>
+                  <span className="sy" style={{fontSize:11,color:C.muted}}>#{rivalPos+1}</span>
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                  <span className="sy" style={{fontSize:12,fontWeight:700,color:iAhead?C.green:C.red}}>
+                    {iAhead?`You're ahead by ${fmt(Math.abs(gap))}`:`${fmt(Math.abs(gap))} behind`}
+                  </span>
+                  {finishedRaces.length>0&&(
+                    <span className="sy" style={{fontSize:11,color:C.muted}}>H2H: {myRaceWins}W–{rivRaceWins}L</span>
+                  )}
+                </div>
+              </div>
+              <button onClick={()=>{
+                const me=accounts.find(a=>a.id===myAccount.id);
+                if(me&&rival)setH2h({a:me,b:rival});
+              }} style={{background:C.accentGlow,border:`1px solid ${C.accent}`,color:C.accent,borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+                Compare
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── SEARCH ─────────────────────────────────────────────────── */}
       {accounts.length>10&&(
         <div style={{position:"relative",marginBottom:12}}>
@@ -2896,13 +3014,14 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     onMouseEnter={e=>e.currentTarget.style.background=isMe?"rgba(26,58,26,.1)":"#f0f7f0"}
                     onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
 
-                    {/* Rank */}
-                    <div style={{display:"flex",alignItems:"center",gap:4,paddingTop:2}}>
+                    {/* Rank + Avatar */}
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,paddingTop:2}}>
+                      <AvatarBubble accountId={a.id} size={isMobile?28:32}/>
                       {i<3
-                        ?<span style={{fontSize:18}}>{medals[i]}</span>
-                        :<span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>#{i+1}</span>}
+                        ?<span style={{fontSize:12}}>{medals[i]}</span>
+                        :<span className="sy" style={{fontSize:11,fontWeight:700,color:C.muted}}>#{i+1}</span>}
                       {movement!==null&&movement!==0&&(
-                        <span style={{fontSize:9,padding:"1px 4px",borderRadius:10,background:movement>0?"#f0fdf4":"#fef2f2",color:movement>0?C.green:C.red,fontWeight:700,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
+                        <span style={{fontSize:9,padding:"1px 3px",borderRadius:8,background:movement>0?"#f0fdf4":"#fef2f2",color:movement>0?C.green:C.red,fontWeight:700}}>
                           {movement>0?"↑":"↓"}{Math.abs(movement)}
                         </span>
                       )}
@@ -3528,22 +3647,57 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
     }
   };
 
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarVersion, setAvatarVersion] = useState(0); // force re-render on save
+
   return (
     <div className="fu">
+      {/* Avatar picker modal */}
+      {showAvatarPicker&&(
+        <div style={{position:"fixed",inset:0,zIndex:9000,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowAvatarPicker(false)}>
+          <div onClick={e=>e.stopPropagation()}>
+            <AvatarPicker accountId={account.id} onSave={()=>{setAvatarVersion(v=>v+1);setShowAvatarPicker(false);}}/>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"14px 16px":"18px 24px",marginBottom:16,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-          <div style={{width:44,height:44,borderRadius:"50%",background:"rgba(255,255,255,.15)",border:"2px solid rgba(255,255,255,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,color:"#fff",flexShrink:0}}>
-            {account.name[0].toUpperCase()}
-          </div>
+          {/* Avatar — tap to change */}
+          <button onClick={()=>setShowAvatarPicker(true)} style={{background:"none",border:"none",cursor:"pointer",padding:0,flexShrink:0,position:"relative"}} title="Change avatar">
+            <AvatarBubble key={avatarVersion} accountId={account.id} size={48}/>
+            <div style={{position:"absolute",bottom:-2,right:-2,width:16,height:16,borderRadius:"50%",background:"rgba(255,255,255,.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9}}>✏️</div>
+          </button>
           <div style={{flex:1,minWidth:0}}>
             <h2 className="cg" style={{fontSize:isMobile?17:22,fontWeight:800,color:"#fff",marginBottom:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{account.name}</h2>
             <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.8)",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{account.email}</p>
           </div>
           <button className="sy" style={{background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.25)",color:"#fff",cursor:"pointer",fontSize:11,fontWeight:600,padding:"6px 10px",borderRadius:8,fontFamily:"inherit",flexShrink:0}} onClick={()=>{setShowPinChange(true);setPinStep("new");setNewPin("");setNewPin2("");setPinErr("");setPinOk(false);}}>
-            Change PIN
+            🔑 PIN
           </button>
         </div>
+
+        {/* Streak badges */}
+        {(()=>{
+          const badges=[];
+          if(streak.type==="win"&&streak.count>=3) badges.push({icon:"🔥",label:`${streak.count} race hot streak`,col:"#ea580c",bg:"rgba(234,88,12,.2)"});
+          if(streak.type==="win"&&streak.count>=2&&streak.count<3) badges.push({icon:"📈",label:"Building momentum",col:"#16a34a",bg:"rgba(22,163,74,.2)"});
+          if(streak.type==="loss"&&streak.count>=3) badges.push({icon:"🧊",label:`${streak.count} race cold run`,col:"#60a5fa",bg:"rgba(96,165,250,.2)"});
+          if(longestWinStreak>=3) badges.push({icon:"💯",label:`Best: ${longestWinStreak} in a row`,col:"#fbbf24",bg:"rgba(251,191,36,.2)"});
+          if(raceWinRate>=60&&totalSettledRaces>=3) badges.push({icon:"🎯",label:`${raceWinRate}% win rate`,col:"#a78bfa",bg:"rgba(167,139,250,.2)"});
+          if(!badges.length) return null;
+          return(
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+              {badges.map((b,i)=>(
+                <span key={i} className="sy" style={{fontSize:11,fontWeight:700,color:b.col,background:b.bg,padding:"4px 10px",borderRadius:20,border:`1px solid ${b.col}55`}}>
+                  {b.icon} {b.label}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+
         <div style={{background:"rgba(255,255,255,.08)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:".1em",fontWeight:700}}>Season Returns</span>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -3809,26 +3963,37 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               ];
               const unlocked=achievements.filter(a=>a.unlocked);
               const pct=Math.round((unlocked.length/achievements.length)*100);
+              const allUnlocked=unlocked.length===achievements.length;
               return(
-                <div style={{marginBottom:12,borderRadius:14,overflow:"hidden",border:`1px solid #e8d48b`,boxShadow:"0 4px 20px rgba(184,134,11,.1)"}}>
+                <div style={{marginBottom:12,borderRadius:14,overflow:"hidden",border:`1px solid ${allUnlocked?"#fbbf24":"#e8d48b"}`,boxShadow:allUnlocked?"0 4px 32px rgba(251,191,36,.35)":"0 4px 20px rgba(184,134,11,.1)"}}>
                   {/* Dark gold header */}
-                  <div style={{background:"linear-gradient(135deg,#1a1200,#2d2000)",padding:"16px 18px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:-20,right:-20,fontSize:100,opacity:.06,lineHeight:1}}>🏆</div>
+                  <div style={{background:allUnlocked?"linear-gradient(135deg,#78350f,#92400e,#b45309)":"linear-gradient(135deg,#1a1200,#2d2000)",padding:"16px 18px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:-20,right:-20,fontSize:100,opacity:.08,lineHeight:1}}>{allUnlocked?"🏆":"🏆"}</div>
+                    {allUnlocked&&<div style={{position:"absolute",top:-10,left:-10,fontSize:80,opacity:.06,lineHeight:1}}>⭐</div>}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                       <div>
-                        <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"rgba(251,191,36,.6)",marginBottom:3}}>Season Progress</div>
+                        <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"rgba(251,191,36,.6)",marginBottom:3}}>{allUnlocked?"🎉 Complete!":"Season Progress"}</div>
                         <div className="cg" style={{fontSize:18,fontWeight:900,color:"#fbbf24"}}>🏅 Trophy Cabinet</div>
                       </div>
                       <div style={{textAlign:"right"}}>
                         <div className="cg" style={{fontSize:28,fontWeight:900,color:"#fbbf24",lineHeight:1}}>{unlocked.length}<span style={{fontSize:14,color:"rgba(251,191,36,.5)"}}>/{achievements.length}</span></div>
-                        <div className="sy" style={{fontSize:10,color:"rgba(251,191,36,.5)"}}>unlocked</div>
+                        <div className="sy" style={{fontSize:10,color:"rgba(251,191,36,.5)"}}>{allUnlocked?"all unlocked! 🌟":"unlocked"}</div>
                       </div>
                     </div>
                     {/* Gold progress bar */}
                     <div style={{height:6,background:"rgba(255,255,255,.08)",borderRadius:3,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(to right,#b45309,#fbbf24,#fef08a)",borderRadius:3,boxShadow:"0 0 8px rgba(251,191,36,.4)"}}/>
+                      <div style={{height:"100%",width:`${pct}%`,background:allUnlocked?"linear-gradient(to right,#fef08a,#fbbf24,#fef08a)":"linear-gradient(to right,#b45309,#fbbf24,#fef08a)",borderRadius:3,boxShadow:`0 0 ${allUnlocked?16:8}px rgba(251,191,36,${allUnlocked?.8:.4})`,animation:allUnlocked?"shimmer 2s ease-in-out infinite":"none"}}/>
                     </div>
                   </div>
+
+                  {/* All unlocked celebration banner */}
+                  {allUnlocked&&(
+                    <div style={{background:"linear-gradient(135deg,#fffbeb,#fef3c7)",padding:"14px 18px",borderBottom:"1px solid #fbbf2444",textAlign:"center"}}>
+                      <div style={{fontSize:28,marginBottom:4}}>🏆🌟🏆</div>
+                      <div className="cg" style={{fontSize:15,fontWeight:900,color:"#92400e",marginBottom:2}}>Trophy Cabinet Complete!</div>
+                      <div className="sy" style={{fontSize:12,color:"#b45309"}}>You've unlocked every achievement this season. Legendary punter.</div>
+                    </div>
+                  )}
 
                   {/* Trophies grid */}
                   <div style={{background:"#fff",padding:"14px"}}>
@@ -3988,6 +4153,86 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         return(
           <div style={{marginBottom:24}}>
 
+            {/* ── INSIGHTS ROW ─────────────────────────────────────── */}
+            {(()=>{
+              // Best / worst track
+              const byVenue={};
+              raceStats.forEach(r=>{
+                const v=r.race.venue||"Unknown";
+                if(!byVenue[v])byVenue[v]={venue:v,races:0,wins:0,returned:0};
+                byVenue[v].races++;
+                if(r.profit>0)byVenue[v].wins++;
+                byVenue[v].returned+=r.returned;
+              });
+              const venues=Object.values(byVenue).filter(v=>v.races>=1);
+              const bestVenue=venues.sort((a,b)=>b.returned-a.returned)[0];
+              const worstVenue=[...venues].sort((a,b)=>a.returned-b.returned)[0];
+
+              // Lucky barrier
+              const barrierWins={};
+              won.forEach(b=>{
+                const race=races.find(r=>r.id===b.raceId);
+                b.horses.forEach(n=>{
+                  const h=race?.horses?.find(h=>h.number===n);
+                  if(h){barrierWins[n]=(barrierWins[n]||0)+1;}
+                });
+              });
+              const luckyNum=Object.entries(barrierWins).sort((a,b)=>b[1]-a[1])[0];
+
+              // Bet timing
+              const timingGroups={early:0,mid:0,late:0};
+              const timingWins={early:0,mid:0,late:0};
+              bets.filter(b=>b.won!==null&&b.placedAt).forEach(b=>{
+                const race=races.find(r=>r.id===b.raceId);
+                if(!race?.raceTime||!race?.date) return;
+                const raceMs=new Date(`${race.date}T${race.raceTime}:00`).getTime();
+                const betMs=new Date(b.placedAt).getTime();
+                const minsBeforeRace=(raceMs-betMs)/60000;
+                const group=minsBeforeRace>60?"early":minsBeforeRace>15?"mid":"late";
+                timingGroups[group]++;
+                if(b.won===true)timingWins[group]++;
+              });
+              const bestTiming=Object.entries(timingGroups).filter(([k,v])=>v>0).sort((a,b)=>(timingWins[b[0]]/b[1])-(timingWins[a[0]]/a[1]))[0];
+              const timingLabel={early:"Early 60min+",mid:"15-60 mins",late:"Last 15min"};
+              const timingIcon={early:"☀️",mid:"⏰",late:"⚡"};
+
+              if(!bestVenue&&!luckyNum&&!bestTiming) return null;
+              return(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:8,marginBottom:12}}>
+                  {/* Best Track */}
+                  {bestVenue&&(
+                    <div className="card" style={{textAlign:"center",padding:"12px 8px"}}>
+                      <div style={{fontSize:24,marginBottom:4}}>🏟️</div>
+                      <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Best Track</div>
+                      <div className="cg" style={{fontSize:13,fontWeight:800,color:"#111",marginBottom:2}}>{bestVenue.venue}</div>
+                      <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>{bestVenue.wins}/{bestVenue.races} wins</div>
+                      {worstVenue&&worstVenue.venue!==bestVenue.venue&&(
+                        <div className="sy" style={{fontSize:10,color:C.red,marginTop:2}}>📉 Avoid: {worstVenue.venue}</div>
+                      )}
+                    </div>
+                  )}
+                  {/* Lucky Barrier */}
+                  {luckyNum&&(
+                    <div className="card" style={{textAlign:"center",padding:"12px 8px"}}>
+                      <div style={{fontSize:24,marginBottom:4}}>🍀</div>
+                      <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Lucky Number</div>
+                      <div style={{width:36,height:36,borderRadius:10,background:"#1a3a1a",color:"#fff",fontSize:18,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 4px"}}>{luckyNum[0]}</div>
+                      <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>{luckyNum[1]} win{luckyNum[1]!==1?"s":""}</div>
+                    </div>
+                  )}
+                  {/* Bet Timing */}
+                  {bestTiming&&timingGroups[bestTiming[0]]>=2&&(
+                    <div className="card" style={{textAlign:"center",padding:"12px 8px"}}>
+                      <div style={{fontSize:24,marginBottom:4}}>{timingIcon[bestTiming[0]]||"⏱️"}</div>
+                      <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Best Bet Time</div>
+                      <div className="cg" style={{fontSize:12,fontWeight:800,color:"#111",marginBottom:2}}>{timingLabel[bestTiming[0]]||bestTiming[0]}</div>
+                      <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>{timingWins[bestTiming[0]]}/{timingGroups[bestTiming[0]]} wins</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* ① PROFIT JOURNEY ─────────────────────────────────── */}
             <div className="card" style={{marginBottom:12,background:"linear-gradient(135deg,#f0fff8,#f8fffe)",padding:isMobile?"14px":"20px 22px"}}>
               <div style={{marginBottom:10}}>
@@ -4094,20 +4339,59 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             </div>
 
             {/* ④ SNAPSHOT STATS ────────────────────────────────────── */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-              {[
+            {(()=>{
+              // Most backed jockey
+              const jockeyStats={};
+              settled.forEach(b=>{
+                const race=races.find(r=>r.id===b.raceId);
+                b.horses.forEach(n=>{
+                  const h=race?.horses?.find(h=>h.number===n);
+                  const j=h?.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"").trim();
+                  if(j&&j!=="TBA"){
+                    if(!jockeyStats[j])jockeyStats[j]={bets:0,wins:0};
+                    jockeyStats[j].bets++;
+                    if(b.won===true)jockeyStats[j].wins++;
+                  }
+                });
+              });
+              const topJockey=Object.entries(jockeyStats).filter(([,v])=>v.bets>=2).sort((a,b)=>b[1].wins-a[1].wins||b[1].bets-a[1].bets)[0];
+
+              // Most backed trainer
+              const trainerStats={};
+              settled.forEach(b=>{
+                const race=races.find(r=>r.id===b.raceId);
+                b.horses.forEach(n=>{
+                  const h=race?.horses?.find(h=>h.number===n);
+                  const t=h?.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"").trim();
+                  if(t&&t!=="TBA"){
+                    if(!trainerStats[t])trainerStats[t]={bets:0,wins:0};
+                    trainerStats[t].bets++;
+                    if(b.won===true)trainerStats[t].wins++;
+                  }
+                });
+              });
+              const topTrainer=Object.entries(trainerStats).filter(([,v])=>v.bets>=2).sort((a,b)=>b[1].wins-a[1].wins||b[1].bets-a[1].bets)[0];
+
+              const snapItems=[
                 {emoji:"🎯",label:"Avg Odds",value:`$${avgOdds}`,sub:"per bet"},
                 {emoji:"🍀",label:"Lucky Gate",value:luckyBarrier?`#${luckyBarrier[0]}`:"-",sub:luckyBarrier?`${luckyBarrier[1]}W`:"no wins"},
                 {emoji:"📊",label:"Best Type",value:bestTypeByHitRate?.label||mostUsedType?.label||"-",sub:bestTypeByHitRate?`${bestTypeByHitRate.hitRate}% hit`:"keep going!"},
-              ].map(({emoji,label,value,sub})=>(
-                <div key={label} className="card" style={{textAlign:"center",padding:"12px 6px"}}>
-                  <div style={{fontSize:20,marginBottom:4}}>{emoji}</div>
-                  <div className="sy" style={{fontSize:9,color:C.muted,marginBottom:2,fontWeight:700}}>{label}</div>
-                  <div className="cg" style={{fontSize:isMobile?13:15,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</div>
-                  <div className="sy" style={{fontSize:9,color:C.soft,marginTop:1}}>{sub}</div>
+                {emoji:"🧑‍✈️",label:"Top Jockey",value:topJockey?topJockey[0].split(" ").slice(-1)[0]:"-",sub:topJockey?`${topJockey[1].wins}W from ${topJockey[1].bets} bets`:"need more bets"},
+                {emoji:"🕵️",label:"Top Trainer",value:topTrainer?topTrainer[0].split(" ").slice(-1)[0]:"-",sub:topTrainer?`${topTrainer[1].wins}W from ${topTrainer[1].bets} bets`:"need more bets"},
+              ].filter(i=>i.value!=="-"||i.label==="Avg Odds");
+              return(
+                <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(snapItems.length,isMobile?2:3)},1fr)`,gap:6,marginBottom:12}}>
+                  {snapItems.map(({emoji,label,value,sub})=>(
+                    <div key={label} className="card" style={{textAlign:"center",padding:"12px 6px"}}>
+                      <div style={{fontSize:20,marginBottom:4}}>{emoji}</div>
+                      <div className="sy" style={{fontSize:9,color:C.muted,marginBottom:2,fontWeight:700,textTransform:"uppercase",letterSpacing:".04em"}}>{label}</div>
+                      <div className="cg" style={{fontSize:isMobile?12:14,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</div>
+                      <div className="sy" style={{fontSize:9,color:C.soft,marginTop:1}}>{sub}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* ⑤ RACE BY RACE BARS ────────────────────────────────── */}
             {raceStats.length>0&&(
