@@ -3857,88 +3857,56 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               </div>
             </div>
 
-            {/* ④ SNAPSHOT STATS ────────────────────────────────────── */}
+            {/* ④ SNAPSHOT + JOCKEY/TRAINER ─────────────────── */}
             {(()=>{
-              // Most backed jockey
               const jockeyStats={};
-              settled.forEach(b=>{
-                const race=races.find(r=>r.id===b.raceId);
-                b.horses.forEach(n=>{
-                  const h=race?.horses?.find(h=>h.number===n);
-                  const j=h?.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"").trim();
-                  if(j&&j!=="TBA"){
-                    if(!jockeyStats[j])jockeyStats[j]={bets:0,wins:0};
-                    jockeyStats[j].bets++;
-                    if(b.won===true)jockeyStats[j].wins++;
-                  }
-                });
-              });
+              settled.forEach(b=>{const race=races.find(r=>r.id===b.raceId);b.horses.forEach(n=>{const h=race?.horses?.find(h=>h.number===n);const j=h?.jockey?.replace(/^Js+/i,'').replace(/^J./i,'').trim();if(j&&j!=='TBA'&&j!==''){if(!jockeyStats[j])jockeyStats[j]={bets:0,wins:0};jockeyStats[j].bets++;if(b.won===true)jockeyStats[j].wins++;}});});
               const topJockey=Object.entries(jockeyStats).filter(([,v])=>v.bets>=2).sort((a,b)=>b[1].wins-a[1].wins||b[1].bets-a[1].bets)[0];
-
-              // Most backed trainer
               const trainerStats={};
-              settled.forEach(b=>{
-                const race=races.find(r=>r.id===b.raceId);
-                b.horses.forEach(n=>{
-                  const h=race?.horses?.find(h=>h.number===n);
-                  const t=h?.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"").trim();
-                  if(t&&t!=="TBA"){
-                    if(!trainerStats[t])trainerStats[t]={bets:0,wins:0};
-                    trainerStats[t].bets++;
-                    if(b.won===true)trainerStats[t].wins++;
-                  }
-                });
-              });
+              settled.forEach(b=>{const race=races.find(r=>r.id===b.raceId);b.horses.forEach(n=>{const h=race?.horses?.find(h=>h.number===n);const t=h?.trainer?.replace(/^Ts+/i,'').replace(/^T./i,'').trim();if(t&&t!=='TBA'&&t!==''){if(!trainerStats[t])trainerStats[t]={bets:0,wins:0};trainerStats[t].bets++;if(b.won===true)trainerStats[t].wins++;}});});
               const topTrainer=Object.entries(trainerStats).filter(([,v])=>v.bets>=2).sort((a,b)=>b[1].wins-a[1].wins||b[1].bets-a[1].bets)[0];
-
               const snapItems=[
-                {emoji:"🎯",label:"Avg Odds",value:`$${avgOdds}`,sub:"per bet"},
-                {emoji:"🍀",label:"Lucky Gate",value:luckyBarrier?`#${luckyBarrier[0]}`:"-",sub:luckyBarrier?`${luckyBarrier[1]}W`:"no wins"},
-                {emoji:"📊",label:"Best Type",value:bestTypeByHitRate?.label||mostUsedType?.label||"-",sub:bestTypeByHitRate?`${bestTypeByHitRate.hitRate}% hit`:"keep going!"},
-                {emoji:"🧑‍✈️",label:"Top Jockey",value:topJockey?topJockey[0].split(" ").slice(-1)[0]:"-",sub:topJockey?`${topJockey[1].wins}W from ${topJockey[1].bets} bets`:"need more bets"},
-                {emoji:"🕵️",label:"Top Trainer",value:topTrainer?topTrainer[0].split(" ").slice(-1)[0]:"-",sub:topTrainer?`${topTrainer[1].wins}W from ${topTrainer[1].bets} bets`:"need more bets"},
-              ].filter(i=>i.value!=="-"||i.label==="Avg Odds");
+                {emoji:'🎯',label:'Avg Odds',value:`$${avgOdds}`,sub:'per bet'},
+                {emoji:'🍀',label:'Lucky Gate',value:luckyBarrier?`#${luckyBarrier[0]}`:'-',sub:luckyBarrier?`${luckyBarrier[1]}W`:'no wins'},
+                {emoji:'📊',label:'Best Type',value:bestTypeByHitRate?.label||mostUsedType?.label||'-',sub:bestTypeByHitRate?`${bestTypeByHitRate.hitRate}% hit`:'keep going!'},
+              ].filter(i=>i.value!=='-'||i.label==='Avg Odds');
               return(
-                <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(snapItems.length,isMobile?2:3)},1fr)`,gap:6,marginBottom:12}}>
-                  {snapItems.map(({emoji,label,value,sub})=>(
-                    <div key={label} className="card" style={{textAlign:"center",padding:"12px 6px"}}>
-                      <div style={{fontSize:20,marginBottom:4}}>{emoji}</div>
-                      <div className="sy" style={{fontSize:9,color:C.muted,marginBottom:2,fontWeight:700,textTransform:"uppercase",letterSpacing:".04em"}}>{label}</div>
-                      <div className="cg" style={{fontSize:isMobile?12:14,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</div>
-                      <div className="sy" style={{fontSize:9,color:C.soft,marginTop:1}}>{sub}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            {/* ── JOCKEY & TRAINER ─────────────────────────────────── */}
-            {(()=>{
-              if(!topJockey&&!topTrainer) return null;
-              const items=[
-                topJockey&&{icon:"🧑‍✈️",label:"Your Top Jockey",name:topJockey[0],wins:topJockey[1].wins,bets:topJockey[1].bets,col:"#1d4ed8",bg:"#eff6ff"},
-                topTrainer&&{icon:"🕵️",label:"Your Top Trainer",name:topTrainer[0],wins:topTrainer[1].wins,bets:topTrainer[1].bets,col:"#7c3aed",bg:"#f5f3ff"},
-              ].filter(Boolean);
-              return(
-                <div style={{marginBottom:12}}>
-                  <div className="cg" style={{fontSize:15,fontWeight:800,color:"#111",marginBottom:8}}>🎽 In the Silks</div>
-                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:8}}>
-                    {items.map(item=>(
-                      <div key={item.label} style={{borderRadius:12,padding:"14px 16px",background:item.bg,border:`1.5px solid ${item.col}33`,display:"flex",alignItems:"center",gap:12}}>
-                        <div style={{width:46,height:46,borderRadius:12,background:item.col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
-                        <div style={{minWidth:0}}>
-                          <div className="sy" style={{fontSize:10,fontWeight:700,color:item.col,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{item.label}</div>
-                          <div className="cg" style={{fontSize:14,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{item.name}</div>
-                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                            <span className="sy" style={{fontSize:11,fontWeight:700,color:item.col}}>{item.wins} win{item.wins!==1?"s":""}</span>
-                            <span className="sy" style={{fontSize:11,color:C.muted}}>{item.bets} bet{item.bets!==1?"s":""}</span>
-                            <span style={{fontSize:11,fontWeight:700,color:item.wins>0?"#16a34a":"#9ca3af"}}>{item.bets>0?Math.round((item.wins/item.bets)*100):0}% hit</span>
-                          </div>
-                        </div>
+                <>
+                  <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(snapItems.length,isMobile?2:3)},1fr)`,gap:6,marginBottom:12}}>
+                    {snapItems.map(({emoji,label,value,sub})=>(
+                      <div key={label} className='card' style={{textAlign:'center',padding:'12px 6px'}}>
+                        <div style={{fontSize:20,marginBottom:4}}>{emoji}</div>
+                        <div className='sy' style={{fontSize:9,color:C.muted,marginBottom:2,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em'}}>{label}</div>
+                        <div className='cg' style={{fontSize:isMobile?14:16,fontWeight:900,color:'#111',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{value}</div>
+                        <div className='sy' style={{fontSize:9,color:C.soft,marginTop:1}}>{sub}</div>
                       </div>
                     ))}
                   </div>
-                </div>
+                  {(topJockey||topTrainer)&&(
+                    <div style={{marginBottom:12}}>
+                      <div className='cg' style={{fontSize:15,fontWeight:800,color:'#111',marginBottom:8}}>🎽 In the Silks</div>
+                      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(2,1fr)',gap:8}}>
+                        {[
+                          topJockey&&{icon:'🧑‍✈️',label:'Your Top Jockey',name:topJockey[0],wins:topJockey[1].wins,bets:topJockey[1].bets,col:'#1d4ed8',bg:'#eff6ff'},
+                          topTrainer&&{icon:'🕵️',label:'Your Top Trainer',name:topTrainer[0],wins:topTrainer[1].wins,bets:topTrainer[1].bets,col:'#7c3aed',bg:'#f5f3ff'},
+                        ].filter(Boolean).map(item=>(
+                          <div key={item.label} style={{borderRadius:12,padding:'14px 16px',background:item.bg,border:`1.5px solid ${item.col}33`,display:'flex',alignItems:'center',gap:12}}>
+                            <div style={{width:46,height:46,borderRadius:12,background:item.col,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>{item.icon}</div>
+                            <div style={{minWidth:0}}>
+                              <div className='sy' style={{fontSize:10,fontWeight:700,color:item.col,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:3}}>{item.label}</div>
+                              <div className='cg' style={{fontSize:14,fontWeight:800,color:'#111',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{item.name}</div>
+                              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                                <span className='sy' style={{fontSize:11,fontWeight:700,color:item.col}}>{item.wins} win{item.wins!==1?'s':''}</span>
+                                <span className='sy' style={{fontSize:11,color:C.muted}}>{item.bets} bet{item.bets!==1?'s':''}</span>
+                                <span className='sy' style={{fontSize:11,fontWeight:700,color:item.wins>0?'#16a34a':'#9ca3af'}}>{item.bets>0?Math.round((item.wins/item.bets)*100):0}% hit</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               );
             })()}
 
