@@ -2727,39 +2727,45 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         const as=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
                         const ew=Math.round((ab.filter(b=>b.type==='eachway').length/ab.length)*100);
                         const be=ab.filter(b=>b.type==='trifecta'||b.type==='firstfour').length;
-                        const sc={exotic:(ep>=55?ep:0)+(be>=2?be*15:0),roughie:(ls>=3?ls*20:0),eachway:(ew>=40?ew:0),hothand:(longestWinStreak>=3?longestWinStreak*20:0),analyst:(hr>=60?hr:0),machine:(hr>=45&&longestLossStreak<=1&&as>=8&&as<=16?hr+30:0),highroller:(bbp>=55?bbp:0),tactician:(as<=5?80:0),wildcard:(longestLossStreak>=3&&longestWinStreak>=2?longestWinStreak*15+longestLossStreak*10:0),punter:1};
+                        // Compute streaks locally for this player
+                        const abRaces=[...new Set(ab.map(b=>b.raceId))];
+                        let abWinStreak=0,abLossStreak=0,wCur=0,lCur=0;
+                        abRaces.forEach(rid=>{const rb=ab.filter(b=>b.raceId===rid);const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);if(p>0){wCur++;abWinStreak=Math.max(abWinStreak,wCur);lCur=0;}else{lCur++;abLossStreak=Math.max(abLossStreak,lCur);wCur=0;}});
+                        const sc={
+                          exotic:(ep>=55?ep:0)+(be>=2?be*15:0),
+                          roughie:ls>=3?ls*20:0,
+                          eachway:ew>=40?ew:0,
+                          hothand:abWinStreak>=3?abWinStreak*20:0,
+                          analyst:hr>=60?hr:0,
+                          machine:(hr>=45&&abLossStreak<=1&&as>=8&&as<=16)?hr+30:0,
+                          highroller:bbp>=55?bbp:0,
+                          tactician:as<=5?80:0,
+                          wildcard:(abLossStreak>=3&&abWinStreak>=2)?abWinStreak*15+abLossStreak*10:0,
+                          punter:1,
+                        };
                         const types=[
                           {key:'exotic',icon:'🎰',label:'Exotic Punter',col:'#be185d',bg:'#fdf2f8'},
                           {key:'roughie',icon:'🐎',label:'Roughie Hunter',col:'#7c3aed',bg:'#f5f3ff'},
                           {key:'eachway',icon:'🤝',label:'The Safety Net',col:'#0369a1',bg:'#f0f9ff'},
                           {key:'hothand',icon:'🔥',label:'The Hot Hand',col:'#ea580c',bg:'#fff7ed'},
                           {key:'analyst',icon:'🔬',label:'The Analyst',col:'#16a34a',bg:'#f0fdf4'},
-                          {key:'machine',icon:'🤖',label:'The Machine',col:'#475569',bg:'#f8fafc'},
+                          {key:'machine',icon:'🤖',label:'The Machine',col:'#475569',bg:'#f1f5f9'},
                           {key:'highroller',icon:'💎',label:'High Roller',col:'#d97706',bg:'#fffbeb'},
                           {key:'tactician',icon:'♟️',label:'The Tactician',col:'#0e7490',bg:'#ecfeff'},
                           {key:'wildcard',icon:'🃏',label:'The Wild Card',col:'#b45309',bg:'#fef9c3'},
-                          {key:'punter',icon:'🏇',label:'The Punter',col:'#1a3a1a',bg:'#f0fdf4'},
+                          {key:'punter',icon:'🏇',label:'The Punter',col:'#1a3a1a',bg:'#dcfce7'},
                         ];
                         const t=types.reduce((a,b)=>(sc[b.key]||0)>(sc[a.key]||0)?b:a,types[types.length-1]);
                         if(!t) return null;
                         return(
                           <div style={{marginBottom:3}}>
-                            <span style={{
-                              display:'inline-flex',alignItems:'center',gap:3,
-                              fontSize:isMobile?9:10,fontWeight:700,
-                              color:t.col,background:t.bg,
-                              border:`1px solid ${t.col}44`,
-                              borderRadius:20,
-                              padding:isMobile?'1px 7px':'2px 8px',
-                              whiteSpace:'nowrap',
-                              boxShadow:`0 1px 4px ${t.col}22`,
-                            }}>
+                            <span style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:isMobile?9:10,fontWeight:700,color:t.col,background:t.bg,border:`1px solid ${t.col}44`,borderRadius:20,padding:isMobile?'1px 7px':'2px 8px',whiteSpace:'nowrap',boxShadow:`0 1px 4px ${t.col}22`}}>
                               <span style={{fontSize:isMobile?10:11}}>{t.icon}</span>
                               <span>{t.label}</span>
                             </span>
                           </div>
                         );
-                      })()} 
+                      })()}
                       {/* Racing speed bar */}
                       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
                         <span style={{fontSize:10,flexShrink:0}}>🐎</span>
@@ -3437,7 +3443,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 {key:"highroller",icon:"💎",name:"The High Roller",hint:"55%+ of your bets are $15 or more",desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",col:"#d97706",bg:"#fffbeb",stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"]},
                 {key:"tactician",icon:"♟️",name:"The Tactician",hint:"Keep your average bet under $5",desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",col:"#0e7490",bg:"#ecfeff",stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"]},
                 {key:"wildcard",icon:"🃏",name:"The Wild Card",hint:"Lose 3 in a row then bounce back with 2+ wins",desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",col:"#b45309",bg:"#fef9c3",stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"]},
-                {key:"punter",icon:"🏇",name:"The Punter",hint:"Just keep betting — everyone earns this one",desc:"Here for the races, here for the fun — you love the sport and that's all that matters",col:"#1a3a1a",bg:"#f0fdf4",stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"]},
+                {key:"punter",icon:"🏇",name:"The Punter",hint:"Place bets in 3+ settled races to unlock a personality",desc:"Here for the races, here for the fun — you love the sport and that's all that matters",col:"#1a3a1a",bg:"#dcfce7",stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"]},
               ].map(t=>({...t,score:getScore(t.key),active:false}));
 
               // Pick single highest scoring type
@@ -3484,8 +3490,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     {allTypes.map(t=>(
                       <div key={t.key} style={{
                         borderRadius:12,padding:"10px",
-                        background:t.active?`linear-gradient(135deg,${t.col}12,${t.col}05)`:"#f5f5f5",
-                        border:`1.5px solid ${t.active?t.col+"44":C.border}`,
+                        background:t.active?`linear-gradient(135deg,${t.col}12,${t.col}05)`:t.bg,
+                        border:`1.5px solid ${t.active?t.col+"44":t.col+"22"}`,
                         opacity:t.active?1:0.45,
                         display:"flex",flexDirection:"column",alignItems:"center",
                         textAlign:"center",gap:3,
