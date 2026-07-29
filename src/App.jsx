@@ -2720,37 +2720,38 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         const ab=bets.filter(b=>b.playerId===a.id&&b.won!==null);
                         if(ab.length<3) return null;
                         const abWon=ab.filter(b=>b.won===true);
-                        const exoticPct=Math.round((ab.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(b.type)).length/ab.length)*100);
-                        const bigBetPct=Math.round((ab.filter(b=>b.stake>=15).length/ab.length)*100);
-                        const longshots=ab.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
-                        const hitRate=Math.round((abWon.length/ab.length)*100);
-                        const avgStake=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
-                        const ewPct=Math.round((ab.filter(b=>b.type==="eachway").length/ab.length)*100);
-                        const bigExotic=ab.filter(b=>b.type==="trifecta"||b.type==="firstfour").length;
+                        const ep=Math.round((ab.filter(b=>['trifecta','firstfour','exacta','quinella'].includes(b.type)).length/ab.length)*100);
+                        const bbp=Math.round((ab.filter(b=>b.stake>=15).length/ab.length)*100);
+                        const ls=ab.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
+                        const hr=Math.round((abWon.length/ab.length)*100);
+                        const as=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
+                        const ew=Math.round((ab.filter(b=>b.type==='eachway').length/ab.length)*100);
+                        const be=ab.filter(b=>b.type==='trifecta'||b.type==='firstfour').length;
+                        const sc={exotic:(ep>=55?ep:0)+(be>=2?be*15:0),roughie:(ls>=3?ls*20:0),eachway:(ew>=40?ew:0),hothand:(longestWinStreak>=3?longestWinStreak*20:0),analyst:(hr>=60?hr:0),machine:(hr>=45&&longestLossStreak<=1&&as>=8&&as<=16?hr+30:0),highroller:(bbp>=55?bbp:0),tactician:(as<=5?80:0),wildcard:(longestLossStreak>=3&&longestWinStreak>=2?longestWinStreak*15+longestLossStreak*10:0),punter:1};
                         const types=[
-                          {icon:"🎰",label:"Exotic Punter",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=55||bigExotic>=2},
-                          {icon:"🐎",label:"Roughie Hunter",col:"#7c3aed",bg:"#f5f3ff",active:longshots>=3&&exoticPct<55},
-                          {icon:"🤝",label:"The Safety Net",col:"#0369a1",bg:"#f0f9ff",active:ewPct>=40&&exoticPct<40},
-                          {icon:"🔥",label:"The Hot Hand",col:"#ea580c",bg:"#fff7ed",active:longestWinStreak>=3},
-                          {icon:"🔬",label:"The Analyst",col:"#16a34a",bg:"#f0fdf4",active:hitRate>=60&&bigBetPct<50&&longshots<3},
-                          {icon:"🤖",label:"The Machine",col:"#475569",bg:"#f8fafc",active:hitRate>=45&&longestLossStreak<=1&&avgStake>=8&&avgStake<=16&&exoticPct<40},
-                          {icon:"💎",label:"High Roller",col:"#d97706",bg:"#fffbeb",active:bigBetPct>=55&&exoticPct<55},
-                          {icon:"♟️",label:"The Tactician",col:"#0e7490",bg:"#ecfeff",active:avgStake<=5&&exoticPct<55&&bigBetPct<40},
-                          {icon:"🃏",label:"The Wild Card",col:"#b45309",bg:"#fef9c3",active:longestLossStreak>=3&&longestWinStreak>=2},
-                          {icon:"🏇",label:"The Punter",col:"#1a3a1a",bg:"#f0fdf4",active:true},
+                          {key:'exotic',icon:'🎰',label:'Exotic Punter',col:'#be185d',bg:'#fdf2f8'},
+                          {key:'roughie',icon:'🐎',label:'Roughie Hunter',col:'#7c3aed',bg:'#f5f3ff'},
+                          {key:'eachway',icon:'🤝',label:'The Safety Net',col:'#0369a1',bg:'#f0f9ff'},
+                          {key:'hothand',icon:'🔥',label:'The Hot Hand',col:'#ea580c',bg:'#fff7ed'},
+                          {key:'analyst',icon:'🔬',label:'The Analyst',col:'#16a34a',bg:'#f0fdf4'},
+                          {key:'machine',icon:'🤖',label:'The Machine',col:'#475569',bg:'#f8fafc'},
+                          {key:'highroller',icon:'💎',label:'High Roller',col:'#d97706',bg:'#fffbeb'},
+                          {key:'tactician',icon:'♟️',label:'The Tactician',col:'#0e7490',bg:'#ecfeff'},
+                          {key:'wildcard',icon:'🃏',label:'The Wild Card',col:'#b45309',bg:'#fef9c3'},
+                          {key:'punter',icon:'🏇',label:'The Punter',col:'#1a3a1a',bg:'#f0fdf4'},
                         ];
-                        const t=types.find(x=>x.active);
+                        const t=types.reduce((a,b)=>(sc[b.key]||0)>(sc[a.key]||0)?b:a,types[types.length-1]);
                         if(!t) return null;
                         return(
                           <div style={{marginBottom:3}}>
                             <span style={{
-                              display:"inline-flex",alignItems:"center",gap:3,
+                              display:'inline-flex',alignItems:'center',gap:3,
                               fontSize:isMobile?9:10,fontWeight:700,
                               color:t.col,background:t.bg,
                               border:`1px solid ${t.col}44`,
                               borderRadius:20,
-                              padding:isMobile?"1px 7px":"2px 8px",
-                              whiteSpace:"nowrap",
+                              padding:isMobile?'1px 7px':'2px 8px',
+                              whiteSpace:'nowrap',
                               boxShadow:`0 1px 4px ${t.col}22`,
                             }}>
                               <span style={{fontSize:isMobile?10:11}}>{t.icon}</span>
@@ -2758,7 +2759,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                             </span>
                           </div>
                         );
-                      })()}
+                      })()} 
                       {/* Racing speed bar */}
                       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
                         <span style={{fontSize:10,flexShrink:0}}>🐎</span>
@@ -3403,16 +3404,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const bigBets=settled.filter(b=>b.stake>=15).length;
               const bigBetPct=settled.length?Math.round((bigBets/settled.length)*100):0;
               const highOddsBets=settled.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
-              const winBets=settled.filter(b=>b.type==="win").length;
-              const winOnlyPct=settled.length?Math.round((winBets/settled.length)*100):0;
-              const placeBets=settled.filter(b=>b.type==="place"||b.type==="eachway").length;
-              const safePct=settled.length?Math.round((placeBets/settled.length)*100):0;
-              const perfectRaces=raceStats.filter(r=>r.profit>0).length;
-              const lossStreak=longestLossStreak;
-              const winStreak=longestWinStreak;
-              const hasEnough=settled.length>=3;
-
-              // 10 personality types — checked in priority order
               const trifectaBets=settled.filter(b=>b.type==="trifecta");
               const firstFourBets=settled.filter(b=>b.type==="firstfour");
               const bigExoticBets=trifectaBets.length+firstFourBets.length;
@@ -3420,81 +3411,92 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const bestBigPayout=bigExoticWins.length?Math.max(...bigExoticWins.map(b=>b.payout||0)):0;
               const ewBets=settled.filter(b=>b.type==="eachway");
               const ewPct=settled.length?Math.round((ewBets.length/settled.length)*100):0;
+              const hasEnough=settled.length>=3;
+
+              // Score each type — highest score wins (fully exclusive)
+              const scores={
+                exotic:  (exoticPct>=55?exoticPct:0) + (bigExoticBets>=2?bigExoticBets*15:0),
+                roughie: (highOddsBets>=3?highOddsBets*20:0),
+                eachway: (ewPct>=40?ewPct:0),
+                hothand: (longestWinStreak>=3?longestWinStreak*20:0),
+                analyst: (raceWinRate>=60?raceWinRate:0),
+                machine: (raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16?raceWinRate+30:0),
+                highroller:(bigBetPct>=55?bigBetPct:0),
+                tactician:(avgStakeP<=5&&settled.length>=3?80:0),
+                wildcard: (longestLossStreak>=3&&longestWinStreak>=2?longestWinStreak*15+longestLossStreak*10:0),
+                punter:  hasEnough?1:0,
+              };
 
               const allTypes=[
                 {
                   key:"exotic",hint:"55%+ of your bets are exotics, or 2+ trifectas/first fours",icon:"🎰",name:"The Exotic Punter",
                   desc:"Trifectas, First Fours, Quinellas — always building the dream ticket and chasing the big one",
                   col:"#be185d",bg:"#fdf2f8",
-                  active:hasEnough&&(exoticPct>=55||bigExoticBets>=2),
                   stats:[`${exoticPct}% exotics`,bigExoticBets>0?`${bigExoticBets} tri/FF bets`:"-",bestBigPayout>0?`Best +${fmt(bestBigPayout)}`:"Still hunting"],
                 },
                 {
                   key:"roughie",hint:"Back 3+ horses at $10 odds or higher",icon:"🐎",name:"The Roughie Hunter",
                   desc:"Longshots only — $10 odds minimum, $100 payout in the dream. One day it'll come",
                   col:"#7c3aed",bg:"#f5f3ff",
-                  active:hasEnough&&highOddsBets>=3&&exoticPct<55,
                   stats:[`${highOddsBets} longshots backed`,`$10+ odds`,`${raceWinRate}% hit rate`],
                 },
                 {
                   key:"eachway",hint:"40%+ of your bets are Each Way",icon:"🤝",name:"The Safety Net",
                   desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",
                   col:"#0369a1",bg:"#f0f9ff",
-                  active:hasEnough&&ewPct>=40&&exoticPct<40,
                   stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`],
                 },
                 {
                   key:"hothand",hint:"Win 3 or more races in a row",icon:"🔥",name:"The Hot Hand",
                   desc:"On a winning run and can't be stopped — you're in the zone and you know it",
                   col:"#ea580c",bg:"#fff7ed",
-                  active:hasEnough&&longestWinStreak>=3,
                   stats:[`${longestWinStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`],
                 },
                 {
-                  key:"sniper",hint:"Hit rate of 60%+ without chasing longshots or big stakes",icon:"🔬",name:"The Analyst",
+                  key:"analyst",hint:"Hit rate of 60%+ without chasing longshots or big stakes",icon:"🔬",name:"The Analyst",
                   desc:"You study the form, weigh up the odds, and only bet when you're certain — cold, precise, and rarely wrong",
                   col:"#16a34a",bg:"#f0fdf4",
-                  active:hasEnough&&raceWinRate>=60&&bigBetPct<50&&highOddsBets<3,
                   stats:[`${raceWinRate}% win rate`,`${racesWon} wins from ${raceStats.length}`,"Picks winners"],
                 },
                 {
                   key:"machine",hint:"45%+ win rate, never lose more than 1 race in a row",icon:"🤖",name:"The Machine",
                   desc:"Same stake, same process, same result — methodical and immune to tilt",
                   col:"#475569",bg:"#f8fafc",
-                  active:hasEnough&&raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16&&exoticPct<40,
                   stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"],
                 },
                 {
                   key:"highroller",hint:"55%+ of your bets are $15 or more",icon:"💎",name:"The High Roller",
                   desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",
                   col:"#d97706",bg:"#fffbeb",
-                  active:hasEnough&&bigBetPct>=55&&exoticPct<55,
                   stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"],
                 },
                 {
                   key:"tactician",hint:"Keep your average bet under $5",icon:"♟️",name:"The Tactician",
                   desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",
                   col:"#0e7490",bg:"#ecfeff",
-                  active:hasEnough&&avgStakeP<=5&&exoticPct<55&&bigBetPct<40,
                   stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"],
                 },
                 {
-                  key:"comeback",hint:"Lose 3 in a row then bounce back with 2+ wins",icon:"🃏",name:"The Wild Card",
+                  key:"wildcard",hint:"Lose 3 in a row then bounce back with 2+ wins",icon:"🃏",name:"The Wild Card",
                   desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",
                   col:"#b45309",bg:"#fef9c3",
-                  active:hasEnough&&longestLossStreak>=3&&longestWinStreak>=2,
                   stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"],
                 },
                 {
                   key:"punter",hint:"Just keep betting — everyone earns this one",icon:"🏇",name:"The Punter",
                   desc:"Here for the races, here for the fun — you love the sport and that's all that matters",
                   col:"#1a3a1a",bg:"#f0fdf4",
-                  active:hasEnough,
                   stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"],
                 },
-              ];
+              ].map(t=>({...t,score:scores[t.key]||0,active:false}));
 
-              // Find active type — first match wins (priority order)
+              // Assign ONLY the single highest-scoring type
+              if(hasEnough){
+                const best=allTypes.reduce((a,b)=>b.score>a.score?b:a,allTypes[allTypes.length-1]);
+                best.active=true;
+              }
+
+              // Find active type
               const current=allTypes.find(t=>t.active);
 
               return(
