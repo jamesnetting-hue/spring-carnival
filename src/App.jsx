@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
 
-const INITIAL_RACES = [];
 
 // Responsive hook
 function useWindowWidth() {
@@ -294,7 +293,6 @@ const ADMIN_PIN = "7379";
 
 // --- RACE DATA ----------------------------------------------------------------
 // Races are added via the Admin panel
-const INITIAL_RACES = [];
 
 // --- BET TYPES: Win, Place, Trifecta, First Four only ------------------------
 const BET_TYPES = [
