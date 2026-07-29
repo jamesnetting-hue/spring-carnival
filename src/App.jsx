@@ -1612,7 +1612,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   // TAB requires minimum $1 unit ($1 = 100%), flexi lets you bet fractions
   const flexiPct = combos > 0 ? parseFloat(((stake / combos) * 100).toFixed(1)) : 0;
   // For boxed bets: total outlay displayed should reflect full $24 stake 
-  const boxedTotalCost = (boxed&&canShowBoxed&&combos>0) ? stake : 0;
 
   // Each Way costs stake x2 (one win bet + one place bet)
   const totalCost = betType==="eachway" ? stake * 2 : stake;
@@ -3142,8 +3141,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const pending = bets.filter(b=>b.won===null);
 
   // Best race
-  const bestRaceStat = raceStats.sort((a,b)=>b.profit-a.profit)[0];
-  const worstRaceStat = [...raceStats].sort((a,b)=>a.profit-b.profit)[0];
 
   // Best single win across all races
   const bestWin = bets.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
@@ -3163,13 +3160,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const won = bets.filter(b=>b.won===true);
   const lost = bets.filter(b=>b.won===false);
   const settled = bets.filter(b=>b.won!==null);
-  const byType = BET_TYPES.map(t=>{
-    const tb = settled.filter(b=>b.type===t.id);
-    const tw = tb.filter(b=>b.won===true);
-    const payout = tw.reduce((s,b)=>s+(b.payout||0),0);
-    const staked = tb.reduce((s,b)=>s+b.stake,0);
-    return { label:t.label, total:tb.length, wins:tw.length, payout, staked, profit:parseFloat((payout-staked).toFixed(2)) };
-  }).filter(t=>t.total>0);
 
   const handleNewPin = () => { if(newPin.length<4) return; setPinStep("confirm"); setNewPin2(""); setPinErr(""); };
   const handleConfirmPin = val => {
@@ -3631,7 +3621,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         // Barrier frequency
         const numFreq={};bets.forEach(b=>b.horses.forEach(n=>{numFreq[n]=(numFreq[n]||0)+1;}));
         const maxFreq=Math.max(...Object.values(numFreq),1);
-        const luckyNum=Object.entries(numFreq).sort(([,a],[,b])=>b-a)[0];
 
         // Best race & horse
         const bestRaceStat2=[...raceStats].sort((a,b)=>b.profit-a.profit)[0];
@@ -3694,7 +3683,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   if(h){barrierWins[n]=(barrierWins[n]||0)+1;}
                 });
               });
-              const luckyNum=Object.entries(barrierWins).sort((a,b)=>b[1]-a[1])[0];
+              const topBarrier=Object.entries(barrierWins).sort((a,b)=>b[1]-a[1])[0];
 
               // Bet timing
               const timingGroups={early:0,mid:0,late:0};
@@ -3713,7 +3702,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const timingLabel={early:"Early 60min+",mid:"15-60 mins",late:"Last 15min"};
               const timingIcon={early:"☀️",mid:"⏰",late:"⚡"};
 
-              if(!bestVenue&&!luckyNum&&!bestTiming) return null;
+              if(!bestVenue&&!topBarrier&&!bestTiming) return null;
               return(
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:8,marginBottom:12}}>
                   {/* Best Track */}
@@ -3729,12 +3718,12 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     </div>
                   )}
                   {/* Lucky Barrier */}
-                  {luckyNum&&(
+                  {topBarrier&&(
                     <div className="card" style={{textAlign:"center",padding:"14px 10px"}}>
                       <div style={{fontSize:26,marginBottom:6}}>🍀</div>
                       <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Lucky Number</div>
-                      <div style={{width:36,height:36,borderRadius:10,background:"#1a3a1a",color:"#fff",fontSize:18,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 4px"}}>{luckyNum[0]}</div>
-                      <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>{luckyNum[1]} win{luckyNum[1]!==1?"s":""}</div>
+                      <div style={{width:36,height:36,borderRadius:10,background:"#1a3a1a",color:"#fff",fontSize:18,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 4px"}}>{topBarrier[0]}</div>
+                      <div className="sy" style={{fontSize:11,color:C.green,fontWeight:700}}>{topBarrier[1]} win{topBarrier[1]!==1?"s":""}</div>
                     </div>
                   )}
                   {/* Bet Timing */}
@@ -3917,7 +3906,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     const maxAbs=Math.max(...raceStats.map(x=>Math.abs(x.profit)),.01);
                     const maxH=90;
                     const n=raceStats.length;
-                    const colW=Math.max(36,Math.floor(((isMobile?Math.min(window.innerWidth-56,360):500))/n)-4);
                     return(
                       <div style={{display:"flex",gap:4,alignItems:"flex-end",width:"100%",paddingBottom:4}}>
                         {raceStats.map((r,i)=>{
@@ -3988,7 +3976,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     const barW=freq>0?Math.max(6,Math.round((freq/maxFreq)*100)):0;
                     const isLucky=luckyBarrier&&n===parseInt(luckyBarrier[0]);
                     const laneCol=idx%2===0?"#fff":"#f5f9f5";
-                    const barCol=isLucky?"#d97706":C.accent;
                     return(
                       <div key={n} style={{display:"flex",alignItems:"center",height:28,background:laneCol,borderBottom:`1px solid #e8f0e8`}}>
                         {/* Barrier number */}
@@ -4554,8 +4541,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
           {races.filter(r=>r.status==="upcoming"||r.status==="closed").map(race=>{
             const hasHorses = race.horses.filter(h=>!h.scratched).length > 0;
             const hasOddsAsOf = !!race.oddsAsOf;
-            const hasScratchCheck = true; // reminder only
-            const steps = [
+                      const steps = [
               {label:"Race added", done:true},
               {label:"Horses imported", done:hasHorses},
               {label:"Odds as of set", done:hasOddsAsOf},
