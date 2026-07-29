@@ -40,7 +40,6 @@ function AnimatedMoney({value, delay=0}) {
 const requestNotifPerms = () => { if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); };
 const sendNotif = (title, body) => { if('Notification' in window && Notification.permission==='granted') new Notification(title,{body,icon:'/favicon.ico'}); };
 
-import { useState, useCallback, useEffect } from "react";
 
 // Responsive hook
 function useWindowWidth() {
