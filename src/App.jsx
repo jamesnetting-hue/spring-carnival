@@ -2721,9 +2721,33 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           const longshots=ab.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
                           const hitRate=Math.round((ab.filter(b=>b.won===true).length/ab.length)*100);
                           const avgStake=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
-                          const icon=exoticPct>=60?"🎰":bigBetPct>=50?"💎":longshots>=3?"🐎":hitRate>=60?"🎯":avgStake<=5?"♟️":"🏇";
-                          const label=exoticPct>=60?"Exotic Punter":bigBetPct>=50?"High Roller":longshots>=3?"Roughie Hunter":hitRate>=60?"The Sharp":avgStake<=5?"Tactician":"The Punter";
-                          return <span title={label} style={{fontSize:14,flexShrink:0,cursor:"default"}}>{icon}</span>;
+                          const types=[
+                            {icon:"🎰",label:"Exotic",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=60},
+                            {icon:"💎",label:"High Roller",col:"#d97706",bg:"#fffbeb",active:exoticPct<60&&bigBetPct>=50},
+                            {icon:"🐎",label:"Roughie",col:"#7c3aed",bg:"#f5f3ff",active:exoticPct<60&&bigBetPct<50&&longshots>=3},
+                            {icon:"🎯",label:"Sharp",col:"#16a34a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate>=60},
+                            {icon:"♟️",label:"Tactician",col:"#0e7490",bg:"#ecfeff",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake<=5},
+                            {icon:"🏇",label:"Punter",col:"#1a3a1a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake>5},
+                          ];
+                          const t=types.find(x=>x.active);
+                          if(!t) return null;
+                          return(
+                            <span style={{
+                              display:"inline-flex",alignItems:"center",gap:3,
+                              fontSize:10,fontWeight:700,
+                              color:t.col,
+                              background:t.bg,
+                              border:`1px solid ${t.col}44`,
+                              borderRadius:20,
+                              padding:isMobile?"1px 6px":"2px 8px",
+                              flexShrink:0,
+                              whiteSpace:"nowrap",
+                              boxShadow:`0 1px 4px ${t.col}22`,
+                            }}>
+                              <span style={{fontSize:11}}>{t.icon}</span>
+                              {!isMobile&&<span>{t.label}</span>}
+                            </span>
+                          );
                         })()}
                       </div>
                       {/* Racing speed bar */}
