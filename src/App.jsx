@@ -3230,6 +3230,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   const racesLost  = raceStats.filter(r=>r.profit<=0).length;
   const totalSettledRaces = raceStats.length;
   const raceWinRate = totalSettledRaces ? Math.round((racesWon/totalSettledRaces)*100) : 0;
+  const longestWinStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit>0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
+  const longestLossStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit<=0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
 
   const profit = parseFloat((account.totalWon).toFixed(2));
   const settledStaked = raceStats.reduce((s,r)=>s+r.staked,0);
@@ -3524,10 +3526,6 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         // Total bets count by type
         const mostUsedType=typeData.sort((a,b)=>b.count-a.count)[0];
         const bestTypeByHitRate=typeData.filter(t=>t.count>=2).sort((a,b)=>b.hitRate-a.hitRate)[0];
-
-        // Hot/cold runs
-        const longestWinStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit>0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
-        const longestLossStreak=(()=>{let best=0,cur=0;[...raceStats].forEach(r=>{if(r.profit<=0){cur++;best=Math.max(best,cur);}else cur=0;});return best;})();
 
         // Chart sizing - ensure fits within card padding
         const svgW=isMobile?Math.min(window.innerWidth-56,320):480;
