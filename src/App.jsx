@@ -1896,7 +1896,17 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       setSel(newSel);
     }
     setStakeStr("24");
-      };
+  };
+
+  const backFav=()=>{
+    const active=race.horses.filter(h=>!h.scratched);
+    const favourite=active.sort((a,b)=>(a.winOdds||99)-(b.winOdds||99))[0];
+    if(!favourite) return;
+    changeType("win");
+    setWinSel(favourite.number);
+    setPlaceSel(favourite.number);
+    setStakeStr("24");
+  };
 
   // Bet lock countdown - always called at top level (not inside callback)
   const countdown = useCountdown(race.date, race.raceTime);
@@ -2069,15 +2079,17 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             );
           })()}
 
-          {/* Lucky Dip + Popularity toggles */}
+          {/* Quick bet buttons */}
           {race.status==="upcoming"&&(
-            <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-              <button onClick={luckyDip} className="sy" style={{flex:1,padding:"9px 12px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#be185d)",border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+              <button onClick={luckyDip} className="sy" style={{flex:1,padding:"7px 10px",borderRadius:8,background:"linear-gradient(135deg,#7c3aed,#be185d)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                 🎲 Lucky Dip
               </button>
-
+              <button onClick={backFav} className="sy" style={{flex:1,padding:"7px 10px",borderRadius:8,background:"linear-gradient(135deg,#b45309,#d97706)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                ⭐ Back the Fav
+              </button>
               {totalBettors>0&&(
-                <button onClick={()=>setShowPopularity(p=>!p)} className="sy" style={{flex:1,padding:"9px 12px",borderRadius:10,background:showPopularity?"#1a3a1a":"#f0f7f0",border:`1.5px solid ${showPopularity?"#1a3a1a":C.border}`,color:showPopularity?"#fff":"#1a3a1a",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <button onClick={()=>setShowPopularity(p=>!p)} className="sy" style={{flex:1,padding:"7px 10px",borderRadius:8,background:showPopularity?"#1a3a1a":"#f0f7f0",border:`1.5px solid ${showPopularity?"#1a3a1a":C.border}`,color:showPopularity?"#fff":"#1a3a1a",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                   📊 Group Picks
                 </button>
               )}
@@ -2502,8 +2514,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             {/* Bet Type Card */}
             <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
               <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
-                <p className="sy" style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:"#444",marginBottom:2}}>Bet Type</p>
-                <p className="cg" style={{fontSize:14,fontWeight:700,color:"#111",margin:0}}>{def?.label} - {def?.desc}</p>
+                <p className="sy" style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:"rgba(255,255,255,.55)",marginBottom:2}}>Bet Type</p>
+                <p className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>{def?.label} - {def?.desc}</p>
               </div>
               <div style={{padding:"12px"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
