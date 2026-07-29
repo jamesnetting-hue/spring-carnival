@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // Responsive hook
 function useWindowWidth() {
@@ -10,6 +10,44 @@ function useWindowWidth() {
   }, []);
   return w;
 }
+
+// Animated counter hook
+function useAnimatedCounter(target, duration=1200) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if(!target) return;
+    let start=null;
+    const step=(ts)=>{
+      if(!start)start=ts;
+      const p=Math.min((ts-start)/duration,1);
+      const ease=1-Math.pow(1-p,3);
+      setVal(parseFloat((ease*target).toFixed(2)));
+      if(p<1)requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  },[target]);
+  return val;
+}
+
+// Animated money display component
+function AnimatedMoney({value, delay=0}) {
+  const [show, setShow] = useState(false);
+  useEffect(()=>{ const t=setTimeout(()=>setShow(true),delay); return()=>clearTimeout(t); },[delay]);
+  const animated=useAnimatedCounter(show?Math.abs(value):0, 1000);
+  if(value===0) return <span>$0.00</span>;
+  return <span>{value>0?"+":"-"}${animated.toFixed(2)}</span>;
+}
+
+// Sound manager
+const sounds = {
+  win:()=>{ try{ const a=new AudioContext();const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sine';o.frequency.setValueAtTime(523,a.currentTime);o.frequency.setValueAtTime(659,a.currentTime+0.1);o.frequency.setValueAtTime(784,a.currentTime+0.2);o.frequency.setValueAtTime(1047,a.currentTime+0.35);g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.8);o.start();o.stop(a.currentTime+0.8);}catch(e){} },
+  lose:()=>{ try{ const a=new AudioContext();const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sawtooth';o.frequency.setValueAtTime(300,a.currentTime);o.frequency.setValueAtTime(200,a.currentTime+0.2);g.gain.setValueAtTime(0.15,a.currentTime);g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.4);o.start();o.stop(a.currentTime+0.4);}catch(e){} },
+  bet:()=>{ try{ const a=new AudioContext();const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sine';o.frequency.setValueAtTime(800,a.currentTime);g.gain.setValueAtTime(0.1,a.currentTime);g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.15);o.start();o.stop(a.currentTime+0.15);}catch(e){} },
+};
+
+// Request browser notification permission
+const requestNotifPerms = () => { if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); };
+const sendNotif = (title, body) => { if('Notification' in window && Notification.permission==='granted') new Notification(title,{body,icon:'/favicon.ico'}); };
 
 // Countdown hook - returns {h, m, s, urgent, expired}
 function useCountdown(targetDateStr, targetTimeStr) {
@@ -213,9 +251,16 @@ function raceStaked(bets, playerId, raceId) {
     .reduce((s, b) => s + b.stake, 0);
 }
 
-// Race countdown component
-function RaceCountdown({date, time}) {
+// Race countdown component — fires notification at 5 min mark
+function RaceCountdown({date, time, raceName}) {
   const r = useCountdown(date, time);
+  const notifiedRef = useRef(false);
+  useEffect(()=>{
+    if(r&&!r.expired&&r.h===0&&r.m===5&&r.s===0&&!notifiedRef.current){
+      notifiedRef.current=true;
+      sendNotif(`⏰ ${raceName||"Race"} closes in 5 minutes!`,"Get your bets in now before betting closes.");
+    }
+  },[r?.m,r?.s]);
   if (!r || r.expired) return null;
   const label = r.h > 0 ? `${r.h}h ${r.m}m` : r.m > 0 ? `${r.m}m ${r.s}s` : `${r.s}s`;
   return (
@@ -391,6 +436,10 @@ export default function App() {
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [soundEnabled, setSoundEnabled] = useState(()=>localStorage.getItem('sc_sound')!=='off');
+
+  useEffect(()=>{ requestNotifPerms(); },[]);
+  useEffect(()=>{ localStorage.setItem('sc_sound',soundEnabled?'on':'off'); },[soundEnabled]);
 
   // Offline detection
   useEffect(() => {
@@ -879,10 +928,17 @@ export default function App() {
 
     // Show results banner for the logged-in player
     const myWins = settled.filter(b => b.playerId === session && b.won === true);
-    setResultsBanner({ raceName: races.find(r=>r.id===raceId)?.name, myWins: myWins.length, myPayout: myWins.reduce((s,b)=>s+(b.payout||0),0) });
+    const myPayout = myWins.reduce((s,b)=>s+(b.payout||0),0);
+    const raceName = races.find(r=>r.id===raceId)?.name;
+    setResultsBanner({ raceName, myWins: myWins.length, myPayout });
     if (myWins.length > 0) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
+      if(soundEnabled) sounds.win();
+      sendNotif(`🎉 You won in ${raceName}!`, `+${fmt(myPayout)} returned from ${myWins.length} winning bet${myWins.length!==1?"s":""}!`);
+    } else {
+      if(soundEnabled) sounds.lose();
+      sendNotif(`${raceName} settled`, `No wins this race — better luck next time!`);
     }
   };
 
@@ -1101,11 +1157,10 @@ export default function App() {
               </nav>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              {pendingBets.length>0&&false&&(
-                <button className="sy" style={{fontSize:13,padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.3)",borderRadius:8,color:"#fff",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6}} onClick={()=>setShowBetslip(true)}>
-                  🎫 <span style={{background:C.goldL,color:"#111",borderRadius:"50%",width:20,height:20,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800}}>{pendingBets.length}</span>
-                </button>
-              )}
+              {/* Sound toggle */}
+              <button title={soundEnabled?"Sound on":"Sound off"} onClick={()=>setSoundEnabled(p=>!p)} style={{fontSize:16,padding:"5px 8px",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,cursor:"pointer",color:soundEnabled?"#fff":"rgba(255,255,255,.4)",transition:"all .2s"}}>
+                {soundEnabled?"🔊":"🔇"}
+              </button>
               {liveAccount&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span className="sy mobile-hide" style={{fontSize:13,color:"rgba(255,255,255,.7)"}}>Hi, <strong style={{color:"#fff"}}>{liveAccount.name}</strong></span>
@@ -1168,7 +1223,7 @@ export default function App() {
 
       {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<641?"12px":"24px"} ${window.innerWidth<641?"90px":"48px"}`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage} accounts={accounts}/>}
-        {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet}/>}
+        {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet} allBets={bets} accounts={accounts} soundEnabled={soundEnabled}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onAddHorses={addHorsesToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
@@ -1462,6 +1517,56 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
         })()}
 
         {/* Season message */}
+        {/* Race Day Summary — shows when all today's races are finished */}
+        {(()=>{
+          const today=new Date().toISOString().split("T")[0];
+          const todayRaces=races.filter(r=>r.date===today);
+          const allDone=todayRaces.length>0&&todayRaces.every(r=>r.status==="finished"||r.status==="archived"||r.status==="closed");
+          if(!allDone||!account) return null;
+          const dayBets=bets.filter(b=>todayRaces.some(r=>r.id===b.raceId));
+          const myDayBets=dayBets.filter(b=>b.playerId===account.id&&b.won!==null);
+          const myDayWon=myDayBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+          const biggestWin=dayBets.filter(b=>b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0))[0];
+          const biggestWinPlayer=biggestWin?leaderboard.find(a=>a.id===biggestWin.playerId):null;
+          const roughie=dayBets.filter(b=>b.won===true&&b.potential&&b.stake&&b.potential/b.stake>=8).sort((a,b2)=>b2.potential/b2.stake-a.potential/a.stake)[0];
+          const roughiePlayer=roughie?leaderboard.find(a=>a.id===roughie.playerId):null;
+          return(
+            <div style={{background:"linear-gradient(135deg,#1a3a1a,#0f2010)",borderRadius:16,padding:"20px",marginBottom:20,boxShadow:"0 4px 24px rgba(0,0,0,.2)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+                <div>
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.5)",letterSpacing:".14em",textTransform:"uppercase",marginBottom:4}}>Race Day Wrap</div>
+                  <div className="cg" style={{fontSize:20,fontWeight:900,color:"#fff"}}>🏁 Day Complete!</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div className="sy" style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Your return</div>
+                  <div className="cg" style={{fontSize:22,fontWeight:900,color:myDayWon>0?"#4ade80":"rgba(255,255,255,.4)"}}>{myDayWon>0?"+":""}{fmt(myDayWon)}</div>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {biggestWinPlayer&&(
+                  <div style={{background:"rgba(255,255,255,.08)",borderRadius:12,padding:"12px"}}>
+                    <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4,textTransform:"uppercase",letterSpacing:".1em"}}>🎯 Biggest Win</div>
+                    <div className="sy" style={{fontSize:14,fontWeight:800,color:"#fff",marginBottom:2}}>{biggestWinPlayer.name}</div>
+                    <div className="cg" style={{fontSize:16,fontWeight:900,color:"#4ade80"}}>+{fmt(biggestWin.payout)}</div>
+                  </div>
+                )}
+                {roughiePlayer&&(
+                  <div style={{background:"rgba(255,255,255,.08)",borderRadius:12,padding:"12px"}}>
+                    <div className="sy" style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4,textTransform:"uppercase",letterSpacing:".1em"}}>🐎 Best Roughie</div>
+                    <div className="sy" style={{fontSize:14,fontWeight:800,color:"#fff",marginBottom:2}}>{roughiePlayer.name}</div>
+                    <div className="cg" style={{fontSize:16,fontWeight:900,color:"#fbbf24"}}>${(roughie.potential/roughie.stake).toFixed(1)} odds</div>
+                  </div>
+                )}
+              </div>
+              <button onClick={()=>{
+                const txt=`🏁 Spring Carnival — Race Day Wrap\n\nMy return: ${myDayWon>0?"+":""}${fmt(myDayWon)}\n${biggestWinPlayer?`Biggest win: ${biggestWinPlayer.name} +${fmt(biggestWin.payout)}\n`:""}\n${window.location.href}`;
+                navigator.share?navigator.share({title:"Race Day Results",text:txt}).catch(()=>{}):navigator.clipboard.writeText(txt).then(()=>alert("Copied!"));
+              }} style={{marginTop:14,width:"100%",padding:"10px",borderRadius:10,background:"rgba(255,255,255,.12)",border:"1px solid rgba(255,255,255,.2)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                📤 Share Day Results
+              </button>
+            </div>
+          );
+        })()}
         {(races.length===0||seasonMessage?.enabled)&&(
           <div style={{padding:isMobile?"28px 20px":"44px 36px",borderRadius:16,background:"linear-gradient(135deg, #1a3a1a 0%, #2d5a2d 100%)",marginBottom:24,textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:12}}>🏇</div>
@@ -1543,7 +1648,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {/* Countdown + odds */}
                         {race.raceTime&&race.status==="upcoming"&&(
                           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
-                            <RaceCountdown date={race.date} time={race.raceTime}/>
+                            <RaceCountdown date={race.date} time={race.raceTime} raceName={race.name}/>
                             {race.oddsAsOf&&<span className="sy" style={{fontSize:isMobile?12:13,color:C.muted}}>🕐 Odds: {race.oddsAsOf}</span>}
                           </div>
                         )}
@@ -1740,7 +1845,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 }
 
 // --- RACE SCREEN --------------------------------------------------------------
-function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCancelBet}) {
+function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCancelBet,allBets,accounts,soundEnabled}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [betType,setBetType]=useState("win");
@@ -1750,6 +1855,38 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [winSel,setWinSel]=useState(null);
   const [placeSel,setPlaceSel]=useState(null);
   const [showBetPanel,setShowBetPanel]=useState(false);
+  const [showPopularity,setShowPopularity]=useState(false);
+
+  // Most popular horse calc — aggregate all bets on this race (no player names)
+  const raceBets=allBets?allBets.filter(b=>b.raceId===race.id&&b.won===null):[];
+  const horsePopularity={};
+  raceBets.forEach(b=>b.horses.forEach(n=>{horsePopularity[n]=(horsePopularity[n]||0)+1;}));
+  const maxPop=Math.max(...Object.values(horsePopularity),1);
+  const totalBettors=[...new Set(raceBets.map(b=>b.playerId))].length;
+
+  // You vs the field
+  const myRaceBets=myBets.filter(b=>b.raceId===race.id&&b.won===null);
+  const myHorses=[...new Set(myRaceBets.flatMap(b=>b.horses))];
+
+  // Lucky dip — random allocation
+  const luckyDip=()=>{
+    const types=["win","place","eachway","quinella","exacta","trifecta","firstfour"];
+    const t=types[Math.floor(Math.random()*types.length)];
+    changeType(t);
+    const active=race.horses.filter(h=>!h.scratched);
+    if(t==="win"||t==="place"||t==="eachway"){
+      const h=active[Math.floor(Math.random()*active.length)];
+      setWinSel(h?.number);setPlaceSel(h?.number);
+    } else {
+      const shuffled=[...active].sort(()=>Math.random()-.5);
+      const needed=t==="quinella"?2:t==="exacta"?2:t==="trifecta"?3:4;
+      const picked=shuffled.slice(0,needed);
+      const newSel={};picked.forEach((h,i)=>newSel[i]=[h.number]);
+      setSel(newSel);
+    }
+    setStakeStr("24");
+    if(soundEnabled) sounds.bet();
+  };
 
   // Bet lock countdown - always called at top level (not inside callback)
   const countdown = useCountdown(race.date, race.raceTime);
@@ -1923,7 +2060,47 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             );
           })()}
 
-          {/* Your bets - right in the header so always visible */}
+          {/* Lucky Dip + Popularity toggles */}
+          {race.status==="upcoming"&&(
+            <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+              <button onClick={luckyDip} className="sy" style={{flex:1,padding:"9px 12px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#be185d)",border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                🎲 Lucky Dip
+              </button>
+              {totalBettors>0&&(
+                <button onClick={()=>setShowPopularity(p=>!p)} className="sy" style={{flex:1,padding:"9px 12px",borderRadius:10,background:showPopularity?"#1a3a1a":"#f0f7f0",border:`1.5px solid ${showPopularity?"#1a3a1a":C.border}`,color:showPopularity?"#fff":"#1a3a1a",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  📊 {showPopularity?"Hide":"Group Picks"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* You vs the Field panel */}
+          {showPopularity&&race.status==="upcoming"&&totalBettors>0&&(
+            <div style={{marginTop:10,padding:"12px 14px",background:"#f8fffe",borderRadius:12,border:`1px solid ${C.greenBd}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span className="sy" style={{fontSize:12,fontWeight:700,color:C.accent}}>📊 Group Picks — {totalBettors} player{totalBettors!==1?"s":""} have bet</span>
+                <span className="sy" style={{fontSize:11,color:C.muted}}>No names shown</span>
+              </div>
+              {race.horses.filter(h=>!h.scratched).sort((a,b)=>(horsePopularity[b.number]||0)-(horsePopularity[a.number]||0)).map(h=>{
+                const pop=horsePopularity[h.number]||0;
+                const barW=pop>0?Math.round((pop/maxPop)*100):0;
+                const isBacked=myHorses.includes(h.number);
+                return(
+                  <div key={h.number} style={{marginBottom:7}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                      <div style={{width:22,height:22,borderRadius:6,background:silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                      <span className="sy" style={{flex:1,fontSize:12,fontWeight:isBacked?700:500,color:"#111"}}>{h.name}</span>
+                      {isBacked&&<span style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>You ✓</span>}
+                      <span className="sy" style={{fontSize:11,color:C.muted,flexShrink:0}}>{pop} pick{pop!==1?"s":""}</span>
+                    </div>
+                    <div style={{height:6,background:"#e8f5e8",borderRadius:3,overflow:"hidden",marginLeft:30}}>
+                      <div style={{height:"100%",width:`${barW}%`,background:isBacked?C.accent:C.green,borderRadius:3,opacity:.8,transition:"width .5s ease"}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {myBets.length>0&&(
             <div style={{marginTop:10,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
               <p className="sy" style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Your Bets on This Race</p>
@@ -2815,7 +2992,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
 
                     {/* Winnings */}
                     <div style={{textAlign:"right",display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                      <span className="cg" style={{fontSize:isMobile?15:17,fontWeight:900,color:profit>0?C.green:profit===0?"#9ca3af":C.red}}>{profit>0?"+":""}{fmt(profit)}</span>
+                      <span className="cg" style={{fontSize:isMobile?15:17,fontWeight:900,color:profit>0?C.green:profit===0?"#9ca3af":C.red}}><AnimatedMoney value={profit} delay={fi*25}/></span>
                       {!isMobile&&<span className="sy" style={{fontSize:10,color:C.muted,marginTop:1}}>from {won} win{won!==1?"s":""}</span>}
                     </div>
                   </div>
@@ -3489,7 +3666,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 <div style={{marginBottom:12,borderRadius:18,overflow:"hidden",boxShadow:"0 8px 40px rgba(0,0,0,.12)"}}>
 
                   {/* ── Header bar ── */}
-                  <div style={{background:"linear-gradient(135deg,#0f0a1e,#1a0a2e)",padding:"14px 18px",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{background:"linear-gradient(135deg,#1a3a1a,#0f2010)",padding:"14px 18px",display:"flex",alignItems:"center",gap:10}}>
                     <span style={{fontSize:20}}>🧠</span>
                     <div>
                       <div className="sy" style={{fontSize:9,fontWeight:700,letterSpacing:".18em",textTransform:"uppercase",color:"rgba(255,255,255,.45)"}}>Spring Carnival</div>
@@ -3564,55 +3741,48 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   )}
 
                   {/* ── Grid of all 9 types ── */}
-                  <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>
-                    {current ? "All 9 Personality Types" : "🔒 9 Types to Unlock"}
-                  </div>
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>All personality types</div>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(3,1fr)",gap:8}}>
-                    {allTypes.map((t,idx)=>{
+                    {allTypes.map((t)=>{
                       const isActive=t.active;
-                      const isLocked=!isActive&&!current;
+                      const revealed=!!current; // once you have ANY type, all cards reveal
                       return(
                         <div key={t.key} style={{
                           borderRadius:14,padding:"14px 8px",
-                          background:isActive
-                            ?`linear-gradient(160deg,${t.col}22,${t.col}0e)`
-                            :isLocked
-                              ?"linear-gradient(160deg,#f1f5f9,#e8edf2)"
-                              :t.bg,
-                          border:`2px solid ${isActive?t.col+"88":isLocked?"#cbd5e1":t.col+"30"}`,
-                          opacity:isActive?1:isLocked?0.7:0.6,
+                          background:revealed
+                            ?isActive?`linear-gradient(160deg,${t.col}22,${t.col}0e)`:t.bg
+                            :"#f1f5f9",
+                          border:`2px solid ${revealed
+                            ?isActive?t.col+"88":t.col+"30"
+                            :"#e2e8f0"}`,
+                          opacity:revealed?(isActive?1:0.6):0.5,
                           display:"flex",flexDirection:"column",alignItems:"center",
                           textAlign:"center",gap:5,
                           boxShadow:isActive?`0 4px 20px ${t.col}44`:"none",
-                          position:"relative",
-                          overflow:"hidden",
+                          transition:"all .4s ease",
+                          filter:revealed?"none":"grayscale(1)",
                         }}>
-                          {/* Locked overlay shimmer */}
-                          {isLocked&&(
-                            <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.4) 0%,transparent 60%)",pointerEvents:"none"}}/>
-                          )}
                           <div style={{
                             width:40,height:40,borderRadius:12,
-                            background:isActive
-                              ?`linear-gradient(135deg,${t.col},${t.col}bb)`
-                              :isLocked
-                                ?"linear-gradient(135deg,#94a3b8,#64748b)"
-                                :`${t.col}30`,
+                            background:revealed
+                              ?isActive?`linear-gradient(135deg,${t.col},${t.col}bb)`:`${t.col}30`
+                              :"#cbd5e1",
                             display:"flex",alignItems:"center",justifyContent:"center",
                             fontSize:20,
-                            filter:isLocked?"grayscale(1)":"none",
                             boxShadow:isActive?`0 4px 12px ${t.col}55`:"none",
-                          }}>{isLocked?"🔒":t.icon}</div>
+                            transition:"all .4s ease",
+                          }}>{t.icon}</div>
                           <div className="sy" style={{
                             fontSize:isMobile?10:11,fontWeight:800,
-                            color:isActive?t.col:isLocked?"#94a3b8":"#1f2937",
+                            color:revealed?(isActive?t.col:"#1f2937"):"#94a3b8",
                             lineHeight:1.2,
-                          }}>{isLocked?"??????????":t.name.replace("The ","")}</div>
+                            transition:"color .4s ease",
+                          }}>{t.name.replace("The ","")}</div>
                           {isActive
                             ?<span style={{fontSize:9,padding:"2px 8px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
-                            :isLocked
-                              ?<div className="sy" style={{fontSize:9,color:"#94a3b8",lineHeight:1.3,fontStyle:"italic"}}>Bet in {3-settled.length} more race{3-settled.length===1?"":"s"}</div>
-                              :<div className="sy" style={{fontSize:9,color:"#4b5563",lineHeight:1.3}}>{t.hint}</div>
+                            :revealed
+                              ?<div className="sy" style={{fontSize:9,color:"#4b5563",lineHeight:1.3}}>{t.hint}</div>
+                              :<div className="sy" style={{fontSize:9,color:"#cbd5e1",lineHeight:1.3}}>–</div>
                           }
                         </div>
                       );
