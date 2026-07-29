@@ -2719,18 +2719,25 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                       {(()=>{
                         const ab=bets.filter(b=>b.playerId===a.id&&b.won!==null);
                         if(ab.length<3) return null;
+                        const abWon=ab.filter(b=>b.won===true);
                         const exoticPct=Math.round((ab.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(b.type)).length/ab.length)*100);
                         const bigBetPct=Math.round((ab.filter(b=>b.stake>=15).length/ab.length)*100);
                         const longshots=ab.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
-                        const hitRate=Math.round((ab.filter(b=>b.won===true).length/ab.length)*100);
+                        const hitRate=Math.round((abWon.length/ab.length)*100);
                         const avgStake=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
+                        const ewPct=Math.round((ab.filter(b=>b.type==="eachway").length/ab.length)*100);
+                        const bigExotic=ab.filter(b=>b.type==="trifecta"||b.type==="firstfour").length;
                         const types=[
-                          {icon:"🎰",label:"Exotic Punter",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=60},
-                          {icon:"💎",label:"High Roller",col:"#d97706",bg:"#fffbeb",active:exoticPct<60&&bigBetPct>=50},
-                          {icon:"🐎",label:"Roughie Hunter",col:"#7c3aed",bg:"#f5f3ff",active:exoticPct<60&&bigBetPct<50&&longshots>=3},
-                          {icon:"🎯",label:"The Sharp",col:"#16a34a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate>=60},
-                          {icon:"♟️",label:"The Tactician",col:"#0e7490",bg:"#ecfeff",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake<=5},
-                          {icon:"🏇",label:"The Punter",col:"#1a3a1a",bg:"#f0fdf4",active:exoticPct<60&&bigBetPct<50&&longshots<3&&hitRate<60&&avgStake>5},
+                          {icon:"🎰",label:"Exotic Punter",col:"#be185d",bg:"#fdf2f8",active:exoticPct>=55||bigExotic>=2},
+                          {icon:"🐎",label:"Roughie Hunter",col:"#7c3aed",bg:"#f5f3ff",active:longshots>=3&&exoticPct<55},
+                          {icon:"🤝",label:"The Safety Net",col:"#0369a1",bg:"#f0f9ff",active:ewPct>=40&&exoticPct<40},
+                          {icon:"🔥",label:"The Hot Hand",col:"#ea580c",bg:"#fff7ed",active:longestWinStreak>=3},
+                          {icon:"🔬",label:"The Analyst",col:"#16a34a",bg:"#f0fdf4",active:hitRate>=60&&bigBetPct<50&&longshots<3},
+                          {icon:"🤖",label:"The Machine",col:"#475569",bg:"#f8fafc",active:hitRate>=45&&longestLossStreak<=1&&avgStake>=8&&avgStake<=16&&exoticPct<40},
+                          {icon:"💎",label:"High Roller",col:"#d97706",bg:"#fffbeb",active:bigBetPct>=55&&exoticPct<55},
+                          {icon:"♟️",label:"The Tactician",col:"#0e7490",bg:"#ecfeff",active:avgStake<=5&&exoticPct<55&&bigBetPct<40},
+                          {icon:"🃏",label:"The Wild Card",col:"#b45309",bg:"#fef9c3",active:longestLossStreak>=3&&longestWinStreak>=2},
+                          {icon:"🏇",label:"The Punter",col:"#1a3a1a",bg:"#f0fdf4",active:true},
                         ];
                         const t=types.find(x=>x.active);
                         if(!t) return null;
@@ -2740,11 +2747,11 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                               display:"inline-flex",alignItems:"center",gap:3,
                               fontSize:isMobile?9:10,fontWeight:700,
                               color:t.col,background:t.bg,
-                              border:`1px solid ${t.col}44`,
+                              border:,
                               borderRadius:20,
                               padding:isMobile?"1px 7px":"2px 8px",
                               whiteSpace:"nowrap",
-                              boxShadow:`0 1px 4px ${t.col}22`,
+                              boxShadow:,
                             }}>
                               <span style={{fontSize:isMobile?10:11}}>{t.icon}</span>
                               <span>{t.label}</span>
@@ -3396,16 +3403,100 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const bigBets=settled.filter(b=>b.stake>=15).length;
               const bigBetPct=settled.length?Math.round((bigBets/settled.length)*100):0;
               const highOddsBets=settled.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
+              const winBets=settled.filter(b=>b.type==="win").length;
+              const winOnlyPct=settled.length?Math.round((winBets/settled.length)*100):0;
+              const placeBets=settled.filter(b=>b.type==="place"||b.type==="eachway").length;
+              const safePct=settled.length?Math.round((placeBets/settled.length)*100):0;
+              const perfectRaces=raceStats.filter(r=>r.profit>0).length;
+              const lossStreak=longestLossStreak;
+              const winStreak=longestWinStreak;
               const hasEnough=settled.length>=3;
 
+              // 10 personality types — checked in priority order
+              const trifectaBets=settled.filter(b=>b.type==="trifecta");
+              const firstFourBets=settled.filter(b=>b.type==="firstfour");
+              const bigExoticBets=trifectaBets.length+firstFourBets.length;
+              const bigExoticWins=won.filter(b=>b.type==="trifecta"||b.type==="firstfour");
+              const bestBigPayout=bigExoticWins.length?Math.max(...bigExoticWins.map(b=>b.payout||0)):0;
+              const ewBets=settled.filter(b=>b.type==="eachway");
+              const ewPct=settled.length?Math.round((ewBets.length/settled.length)*100):0;
+              const winStreak=longestWinStreak;
+              const lossStreak=longestLossStreak;
+
               const allTypes=[
-                {key:"exotic",icon:"🎰",name:"The Exotic Punter",desc:"Loves trifectas and first fours — always chasing the big payout",col:"#be185d",active:hasEnough&&exoticPct>=60},
-                {key:"roller",icon:"💎",name:"The High Roller",desc:"Bets big and bold — maximum stake, maximum thrill",col:"#d97706",active:hasEnough&&exoticPct<60&&bigBetPct>=50},
-                {key:"roughie",icon:"🐎",name:"The Roughie Hunter",desc:"Always backing the longshot — one day it'll come off huge",col:"#7c3aed",active:hasEnough&&exoticPct<60&&bigBetPct<50&&highOddsBets>=3},
-                {key:"sharp",icon:"🎯",name:"The Sharp",desc:"Consistent, calculated, clinical — finds winners others miss",col:"#16a34a",active:hasEnough&&exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate>=60},
-                {key:"tact",icon:"♟️",name:"The Tactician",desc:"Small stakes, spread wide — plays the long game",col:"#0e7490",active:hasEnough&&exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate<60&&avgStakeP<=5},
-                {key:"punter",icon:"🏇",name:"The Punter",desc:"In the game and loving every race — keep going!",col:"#1a3a1a",active:hasEnough&&exoticPct<60&&bigBetPct<50&&highOddsBets<3&&raceWinRate<60&&avgStakeP>5},
+                {
+                  key:"exotic",hint:"55%+ of your bets are exotics, or 2+ trifectas/first fours",icon:"🎰",name:"The Exotic Punter",
+                  desc:"Trifectas, First Fours, Quinellas — always building the dream ticket and chasing the big one",
+                  col:"#be185d",bg:"#fdf2f8",
+                  active:hasEnough&&(exoticPct>=55||bigExoticBets>=2),
+                  stats:[`${exoticPct}% exotics`,bigExoticBets>0?`${bigExoticBets} tri/FF bets`:"-",bestBigPayout>0?`Best +${fmt(bestBigPayout)}`:"Still hunting"],
+                },
+                {
+                  key:"roughie",hint:"Back 3+ horses at $10 odds or higher",icon:"🐎",name:"The Roughie Hunter",
+                  desc:"Longshots only — $10 odds minimum, $100 payout in the dream. One day it'll come",
+                  col:"#7c3aed",bg:"#f5f3ff",
+                  active:hasEnough&&highOddsBets>=3&&exoticPct<55,
+                  stats:[`${highOddsBets} longshots backed`,`$10+ odds`,`${raceWinRate}% hit rate`],
+                },
+                {
+                  key:"eachway",hint:"40%+ of your bets are Each Way",icon:"🤝",name:"The Safety Net",
+                  desc:"Each Way every race — you want a piece of the action but you're not going home empty handed",
+                  col:"#0369a1",bg:"#f0f9ff",
+                  active:hasEnough&&ewPct>=40&&exoticPct<40,
+                  stats:[`${ewPct}% Each Way`,`${ewBets.length} EW bets`,`$${avgStakeP} avg stake`],
+                },
+                {
+                  key:"hothand",hint:"Win 3 or more races in a row",icon:"🔥",name:"The Hot Hand",
+                  desc:"On a winning run and can't be stopped — you're in the zone and you know it",
+                  col:"#ea580c",bg:"#fff7ed",
+                  active:hasEnough&&winStreak>=3,
+                  stats:[`${winStreak} race win streak`,`${raceWinRate}% overall`,`${racesWon} profitable races`],
+                },
+                {
+                  key:"sniper",hint:"Hit rate of 60%+ without chasing longshots or big stakes",icon:"🔬",name:"The Analyst",
+                  desc:"You study the form, weigh up the odds, and only bet when you're certain — cold, precise, and rarely wrong",
+                  col:"#16a34a",bg:"#f0fdf4",
+                  active:hasEnough&&raceWinRate>=60&&bigBetPct<50&&highOddsBets<3,
+                  stats:[`${raceWinRate}% win rate`,`${racesWon} wins from ${raceStats.length}`,"Picks winners"],
+                },
+                {
+                  key:"machine",hint:"45%+ win rate, never lose more than 1 race in a row",icon:"🤖",name:"The Machine",
+                  desc:"Same stake, same process, same result — methodical and immune to tilt",
+                  col:"#475569",bg:"#f8fafc",
+                  active:hasEnough&&raceWinRate>=45&&lossStreak<=1&&avgStakeP>=8&&avgStakeP<=16&&exoticPct<40,
+                  stats:[`${raceWinRate}% win rate`,`Max ${lossStreak} race loss run`,"No emotion"],
+                },
+                {
+                  key:"highroller",hint:"55%+ of your bets are $15 or more",icon:"💎",name:"The High Roller",
+                  desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",
+                  col:"#d97706",bg:"#fffbeb",
+                  active:hasEnough&&bigBetPct>=55&&exoticPct<55,
+                  stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"],
+                },
+                {
+                  key:"tactician",hint:"Keep your average bet under $5",icon:"♟️",name:"The Tactician",
+                  desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",
+                  col:"#0e7490",bg:"#ecfeff",
+                  active:hasEnough&&avgStakeP<=5&&exoticPct<55&&bigBetPct<40,
+                  stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"],
+                },
+                {
+                  key:"comeback",hint:"Lose 3 in a row then bounce back with 2+ wins",icon:"🃏",name:"The Wild Card",
+                  desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",
+                  col:"#b45309",bg:"#fef9c3",
+                  active:hasEnough&&lossStreak>=3&&winStreak>=2,
+                  stats:[`${winStreak}🔥 best win run`,`${lossStreak}❄️ worst loss run`,"Never give up"],
+                },
+                {
+                  key:"punter",hint:"Just keep betting — everyone earns this one",icon:"🏇",name:"The Punter",
+                  desc:"Here for the races, here for the fun — you love the sport and that's all that matters",
+                  col:"#1a3a1a",bg:"#f0fdf4",
+                  active:hasEnough,
+                  stats:[`${settled.length} bets placed`,`${raceWinRate}% win rate`,"True racing fan"],
+                },
               ];
+
+              // Find active type — first match wins (priority order)
               const current=allTypes.find(t=>t.active);
 
               return(
@@ -3414,48 +3505,47 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
                   {/* Active personality or locked state */}
                   {current?(
-                    <div style={{background:`linear-gradient(135deg,${current.col}10,${current.col}04)`,border:`1.5px solid ${current.col}33`,borderRadius:12,padding:isMobile?"12px":"16px",marginBottom:12,position:"relative",overflow:"hidden"}}>
-                      <div style={{position:"absolute",top:-8,right:-8,fontSize:64,opacity:.06}}>{current.icon}</div>
-                      <div style={{display:"flex",alignItems:"center",gap:14}}>
-                        <div style={{fontSize:isMobile?42:50,lineHeight:1,flexShrink:0,filter:`drop-shadow(0 2px 8px ${current.col}66)`}}>{current.icon}</div>
-                        <div>
-                          <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:900,color:current.col,marginBottom:4}}>{current.name}</div>
-                          <div className="sy" style={{fontSize:12,color:C.soft,lineHeight:1.4}}>{current.desc}</div>
-                          <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
-                            <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Exotic bets: {exoticPct}%</span>
-                            <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Avg stake: ${avgStakeP}</span>
-                            <span style={{fontSize:10,padding:"2px 8px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}33`}}>Longshots: {highOddsBets}</span>
-                          </div>
+                    <div style={{background:`linear-gradient(135deg,${current.col}12,${current.col}05)`,border:`1.5px solid ${current.col}44`,borderRadius:14,padding:isMobile?"14px":"18px",marginBottom:14,position:"relative",overflow:"hidden"}}>
+                      <div style={{position:"absolute",top:-10,right:-10,fontSize:80,opacity:.06,lineHeight:1}}>{current.icon}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
+                        <div style={{fontSize:isMobile?48:56,lineHeight:1,flexShrink:0,filter:`drop-shadow(0 2px 10px ${current.col}88)`}}>{current.icon}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div className="cg" style={{fontSize:isMobile?19:24,fontWeight:900,color:current.col,marginBottom:4,lineHeight:1.1}}>{current.name}</div>
+                          <div className="sy" style={{fontSize:isMobile?12:13,color:C.soft,lineHeight:1.4}}>{current.desc}</div>
                         </div>
+                      </div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {current.stats.map((s,i)=>(
+                          <span key={i} style={{fontSize:10,padding:"3px 10px",background:`${current.col}15`,color:current.col,borderRadius:20,fontWeight:700,border:`1px solid ${current.col}30`}}>{s}</span>
+                        ))}
                       </div>
                     </div>
                   ):(
                     <div style={{background:"#f8f9fa",border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"20px 16px",marginBottom:14,textAlign:"center"}}>
                       <div style={{fontSize:40,marginBottom:8,filter:"grayscale(1)",opacity:.4}}>🔒</div>
                       <div className="sy" style={{fontSize:14,fontWeight:700,color:"#9ca3af",marginBottom:4}}>Personality not yet unlocked</div>
-                      <div className="sy" style={{fontSize:12,color:C.muted,lineHeight:1.5}}>{settled.length===0?"Place your first bets to get started!":settled.length<3?`Bet in ${3-settled.length} more settled race${3-settled.length===1?"":"s"} to unlock your personality`:"Keep betting to unlock!"}</div>
+                      <div className="sy" style={{fontSize:12,color:C.muted,lineHeight:1.5}}>{settled.length===0?"Place your first bets to get started!":settled.length<3?`Bet in ${3-settled.length} more settled race${3-settled.length===1?"":"s"} to unlock`:"Keep betting to unlock!"}</div>
                     </div>
                   )}
 
-                  {/* All types grid */}
-                  <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>All personality types</div>
+                  {/* All 10 types grid */}
+                  <div className="sy" style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>All {allTypes.length} personality types</div>
                   <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:6}}>
                     {allTypes.map(t=>(
                       <div key={t.key} style={{
-                        borderRadius:12,padding:"12px 10px",
-                        background:t.active?`linear-gradient(135deg,${t.col}18,${t.col}08)`:"#f4f5f7",
-                        border:`1.5px solid ${t.active?t.col+"55":C.border}`,
-                        opacity:t.active?1:0.38,
+                        borderRadius:12,padding:"10px",
+                        background:t.active?`linear-gradient(135deg,${t.col}12,${t.col}05)`:"#f5f5f5",
+                        border:`1.5px solid ${t.active?t.col+"44":C.border}`,
+                        opacity:t.active?1:0.45,
                         display:"flex",flexDirection:"column",alignItems:"center",
-                        textAlign:"center",gap:4,
+                        textAlign:"center",gap:3,
                         boxShadow:t.active?`0 2px 12px ${t.col}22`:"none",
-                        transition:"all .2s",
                       }}>
-                        <span style={{fontSize:26,filter:t.active?"none":"grayscale(1)",lineHeight:1}}>{t.icon}</span>
-                        <div className="sy" style={{fontSize:11,fontWeight:700,color:t.active?t.col:"#9ca3af",lineHeight:1.2}}>{t.name.replace("The ","")}</div>
+                        <span style={{fontSize:22,filter:t.active?"none":"grayscale(1)",lineHeight:1,marginBottom:2}}>{t.icon}</span>
+                        <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:t.active?t.col:"#666",lineHeight:1.2,marginBottom:2}}>{t.name}</div>
                         {t.active
                           ?<span style={{fontSize:9,padding:"1px 7px",background:t.col,color:"#fff",borderRadius:20,fontWeight:700}}>✓ You</span>
-                          :<span style={{fontSize:9,color:"#bbb"}}>🔒 Locked</span>}
+                          :<div className="sy" style={{fontSize:9,color:"#888",lineHeight:1.3,marginTop:1}}>{t.hint}</div>}
                       </div>
                     ))}
                   </div>
