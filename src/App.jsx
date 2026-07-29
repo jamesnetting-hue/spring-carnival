@@ -2740,7 +2740,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           machine:(hr>=45&&abLossStreak<=1&&as>=8&&as<=16)?hr+30:0,
                           highroller:bbp>=55?bbp:0,
                           tactician:as<=5?80:0,
-                          wildcard:(abLossStreak>=3&&abWinStreak>=2)?abWinStreak*15+abLossStreak*10:0,
+                          cold:abLossStreak>=3&&abWinStreak<2?abLossStreak*20:0,
                         };
                         const types=[
                           {key:'exotic',icon:'🎰',label:'Exotic Punter',col:'#be185d',bg:'#fdf2f8'},
@@ -2751,7 +2751,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           {key:'machine',icon:'🤖',label:'The Machine',col:'#475569',bg:'#f1f5f9'},
                           {key:'highroller',icon:'💎',label:'High Roller',col:'#d97706',bg:'#fffbeb'},
                           {key:'tactician',icon:'♟️',label:'The Tactician',col:'#0e7490',bg:'#ecfeff'},
-                          {key:'wildcard',icon:'🃏',label:'The Wild Card',col:'#b45309',bg:'#fef9c3'},
+                          {key:'cold',icon:'📉',label:'The Drifter',col:'#0284c7',bg:'#f0f9ff'},
                         ];
                         const t=types.reduce((a,b)=>(sc[b.key]||0)>(sc[a.key]||0)?b:a,types[0]);
                         if(!t) return null;
@@ -3427,7 +3427,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 if(key==="machine") return (raceWinRate>=45&&longestLossStreak<=1&&avgStakeP>=8&&avgStakeP<=16)?raceWinRate+30:0;
                 if(key==="highroller") return bigBetPct>=55?bigBetPct:0;
                 if(key==="tactician") return avgStakeP<=5&&settled.length>=3?80:0;
-                if(key==="wildcard") return (longestLossStreak>=3&&longestWinStreak>=2)?longestWinStreak*15+longestLossStreak*10:0;
+                if(key==="cold") return longestLossStreak>=3&&longestWinStreak<2?longestLossStreak*20:0;
                 return 0;
               };
 
@@ -3440,7 +3440,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 {key:"machine",icon:"🤖",name:"The Machine",hint:"45%+ win rate, never lose more than 1 race in a row",desc:"Same stake, same process, same result — methodical and immune to tilt",col:"#475569",bg:"#f8fafc",stats:[`${raceWinRate}% win rate`,`Max ${longestLossStreak} race loss run`,"No emotion"]},
                 {key:"highroller",icon:"💎",name:"The High Roller",hint:"55%+ of your bets are $15 or more",desc:"Maximum stakes, maximum confidence — if you're going to punt, go big or go home",col:"#d97706",bg:"#fffbeb",stats:[`${bigBetPct}% big bets ($15+)`,`$${avgStakeP} avg stake`,"All in mentality"]},
                 {key:"tactician",icon:"♟️",name:"The Tactician",hint:"Keep your average bet under $5",desc:"Small stakes, every angle covered — you think three moves ahead and never over-commit",col:"#0e7490",bg:"#ecfeff",stats:[`$${avgStakeP} avg stake`,`${settled.length} bets placed`,"Strategic coverage"]},
-                {key:"wildcard",icon:"🃏",name:"The Wild Card",hint:"Lose 3 in a row then bounce back with 2+ wins",desc:"Cold runs don't break you — you've copped a losing streak and bounced back every time",col:"#b45309",bg:"#fef9c3",stats:[`${longestWinStreak}🔥 best win run`,`${longestLossStreak}❄️ worst loss run`,"Never give up"]},
+                {key:"cold",icon:"📉",name:"The Drifter",hint:"Currently on a 3+ race losing streak",desc:"The runs just aren't coming — but every cold streak ends. Keep showing up and the winner will land",col:"#0284c7",bg:"#f0f9ff",stats:[`${longestLossStreak} race cold run`,`${raceWinRate}% overall hit rate`,"Due for one"]},
               ].map(t=>({...t,score:getScore(t.key),active:false}));
 
               // Pick single highest scoring type
@@ -3604,11 +3604,12 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           overflow:"hidden",
                         }}>
                           {a.unlocked&&<div style={{position:"absolute",top:4,right:4,width:8,height:8,borderRadius:"50%",background:"#fbbf24",boxShadow:"0 0 6px #fbbf24"}}/>}
+                          {!a.unlocked&&<div style={{position:"absolute",top:6,right:6,fontSize:13,lineHeight:1}}>🔒</div>}
                           <div style={{fontSize:a.unlocked?28:22,filter:a.unlocked?"none":"grayscale(1)",opacity:a.unlocked?1:0.35,marginBottom:5,lineHeight:1}}>{a.icon}</div>
                           <div className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:a.unlocked?"#92400e":"#374151",lineHeight:1.2,marginBottom:3}}>{a.name}</div>
                           {a.unlocked
                             ?<div className="sy" style={{fontSize:9,color:"#b45309",lineHeight:1.3,fontWeight:600}}>{a.desc}</div>
-                            :<div className="sy" style={{fontSize:9,color:"#6b7280",lineHeight:1.3}}>🔒 {a.hint}</div>}
+                            :<div className="sy" style={{fontSize:9,color:"#6b7280",lineHeight:1.3}}>{a.hint}</div>}
                         </div>
                       ))}
                     </div>
