@@ -1660,47 +1660,47 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                   {/* Top row: track + time */}
                   <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:6}}>
-                    <div>
-                      <div style={{fontSize:isMobile?10:11,fontWeight:700,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:2}}>{race.venue}</div>
-                      <div className="cg" style={{fontSize:isMobile?14:16,fontWeight:900,color:"#fff",lineHeight:1.2}}>{race.name}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:isMobile?11:12,fontWeight:700,color:"rgba(255,255,255,.85)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{race.venue}</div>
+                      <div className="cg" style={{fontSize:isMobile?16:18,fontWeight:900,color:"#fff",lineHeight:1.2}}>{race.name}</div>
                     </div>
                     <div style={{textAlign:"right",flexShrink:0}}>
-                      <div style={{fontSize:isMobile?16:18,fontWeight:900,color:"#fff",letterSpacing:"-1px",lineHeight:1}}>{timeLabel}</div>
-                      {race.raceNum&&<div style={{fontSize:9,color:"rgba(255,255,255,.6)",marginTop:2}}>R{race.raceNum.replace(/[^0-9]/g,"")}</div>}
+                      <div style={{fontSize:isMobile?18:20,fontWeight:900,color:"#fff",letterSpacing:"-1px",lineHeight:1}}>{timeLabel}</div>
+                      {race.raceNum&&<div style={{fontSize:11,color:"rgba(255,255,255,.8)",marginTop:3,fontWeight:600}}>Race {race.raceNum.replace(/[^0-9]/g,"")}</div>}
                     </div>
                   </div>
 
                   {/* Middle: fav + distance */}
-                  <div style={{borderTop:"1px solid rgba(255,255,255,.15)",paddingTop:8,display:"flex",flexDirection:"column",gap:4}}>
+                  <div style={{borderTop:"1px solid rgba(255,255,255,.2)",paddingTop:10,display:"flex",flexDirection:"column",gap:5}}>
                     {fav&&fav.winOdds&&(
-                      <div style={{fontSize:isMobile?11:12,fontWeight:700,color:"rgba(255,255,255,.9)"}}>⭐ {fav.name} <span style={{color:"#fcd34d"}}>${fav.winOdds.toFixed(1)}</span></div>
+                      <div style={{fontSize:isMobile?13:14,fontWeight:700,color:"#fff"}}>⭐ {fav.name} <span style={{color:"#fcd34d",fontWeight:800}}>${fav.winOdds.toFixed(1)}</span></div>
                     )}
-                    <div style={{fontSize:isMobile?10:11,color:"rgba(255,255,255,.65)"}}>
+                    <div style={{fontSize:isMobile?12:13,fontWeight:600,color:"rgba(255,255,255,.85)"}}>
                       {race.distance}{race.distance?" · ":""}{race.horses.filter(h=>!h.scratched).length} runners
                     </div>
                     {isUpcoming&&race.raceTime&&<div><RaceCountdown date={race.date} time={race.raceTime} raceName={race.name}/></div>}
                     {isFinished&&race.result&&(()=>{
                       const first=race.horses.find(x=>x.number===race.result.first);
-                      return first?<div style={{fontSize:isMobile?11:12,fontWeight:700,color:"rgba(255,255,255,.9)"}}>1st: {first.name}</div>:null;
+                      return first?<div style={{fontSize:isMobile?13:14,fontWeight:800,color:"#fff"}}>1st: {first.name}</div>:null;
                     })()}
                   </div>
 
                   {/* Bottom: my bet OR CTA */}
                   <div style={{marginTop:"auto"}}>
                     {myBetSummary?(
-                      <div style={{background:"rgba(255,255,255,.15)",borderRadius:10,padding:"8px 10px",border:"1px solid rgba(255,255,255,.2)"}}>
-                        <div style={{fontSize:isMobile?11:12,fontWeight:800,color:"#fff"}}>
-                          {betWon?"✓ Won":"betLost"===String(betLost)?betLost?"✗ Lost":"":betLost?"✗ Lost":hasScratched?"⚠️ Scratched":"✓ Bet placed"}
+                      <div style={{background:"rgba(255,255,255,.18)",borderRadius:10,padding:"10px 12px",border:"1px solid rgba(255,255,255,.3)"}}>
+                        <div style={{fontSize:isMobile?13:14,fontWeight:800,color:"#fff"}}>
+                          {betWon?"✓ Won":betLost?"✗ Lost":hasScratched?"⚠️ Scratched":"✓ Bet placed"}
                           {betWon&&myBetSummary&&<span style={{color:"#fcd34d"}}> +{fmt(isEW?myBetSummary.pairPayout:myBetSummary.payout)}</span>}
                         </div>
-                        <div style={{fontSize:10,color:"rgba(255,255,255,.7)",marginTop:2}}>
-                          {def2&&(isEW?"EW":def2.label)} {hn?.name} · {fmt(myBetSummary.stake)}
-                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d"}}> · ${raceBal} left</span>}
+                        <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.85)",marginTop:3,fontWeight:600}}>
+                          {def2&&(isEW?"Each Way":def2.label)} · {hn?.name} · {fmt(myBetSummary.stake)}
+                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d",fontWeight:700}}> · ${raceBal} left</span>}
                         </div>
                       </div>
                     ):isUpcoming&&account?(
-                      <div style={{background:"rgba(255,255,255,.18)",borderRadius:10,padding:"10px",textAlign:"center",border:"1px solid rgba(255,255,255,.25)"}}>
-                        <div style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>Place your $24 →</div>
+                      <div style={{background:"rgba(255,255,255,.18)",borderRadius:10,padding:"12px",textAlign:"center",border:"1px solid rgba(255,255,255,.3)"}}>
+                        <div style={{fontSize:isMobile?13:14,fontWeight:800,color:"#fff"}}>Place your $24 →</div>
                       </div>
                     ):null}
                   </div>
