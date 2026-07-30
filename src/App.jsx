@@ -1664,10 +1664,10 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   onMouseLeave={e=>{e.currentTarget.style.boxShadow=hasScratched?"0 0 0 2px #f59e0b":"0 1px 4px rgba(0,0,0,.06)";}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
-                  <div style={{display:"flex",alignItems:"stretch"}}>
+                  <div style={{display:"flex",alignItems:"stretch",minHeight:"100%"}}>
 
                     {/* Left colour bar — status */}
-                    <div style={{width:5,flexShrink:0,background:statusCol}}/>
+                    <div style={{width:6,flexShrink:0,background:statusCol,alignSelf:"stretch"}}/>
 
                     {/* Main content */}
                     <div style={{flex:1,padding:isMobile?"12px 14px":"14px 18px",minWidth:0}}>
