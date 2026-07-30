@@ -401,6 +401,9 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @media(min-width:641px) and (max-width:900px){
   .card{padding:16px}
 }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 `;
 
 // --- APP ----------------------------------------------------------------------
@@ -2414,7 +2417,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               <div style={{width:32,height:32,borderRadius:"50%",background:silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:15,fontWeight:700,color:"#000"}}>{h.name}</div>
-                                {myPos.length>0&&<div style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(", ")}</div>}
+                                {myPos.length>0&&<div style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(" · ")}</div>}
                               </div>
                             </div>
                             <div style={{display:"flex",gap:0,borderTop:"1px solid #e5e7eb"}}>
@@ -2433,14 +2436,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   )}
                 </div>
 
-                {/* Combinations + Flexi info */}
-                {combos>0&&(
-                  <div style={{background:"#f0fdf4",borderRadius:10,padding:"10px 14px",marginBottom:14,border:"1.5px solid #bbf7d0"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:combos>1?4:0}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#000"}}>✓ {combos} combination{combos!==1?"s":""}</span>
-                      {combos>1&&<span style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>{flexiPct}% flexi</span>}
+                {/* Combinations + Flexi info — shown for ALL exotic bet types */}
+                {combos>0&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&(
+                  <div style={{background:"#f0fdf4",borderRadius:10,padding:"12px 14px",marginBottom:14,border:"1.5px solid #bbf7d0"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                      <span style={{fontSize:14,fontWeight:700,color:"#000"}}>✓ {combos} combination{combos!==1?"s":""}</span>
+                      <span style={{fontSize:14,fontWeight:800,color:flexiPct>=100?"#16a34a":"#92400e"}}>{flexiPct}% flexi</span>
                     </div>
-                    {combos>1&&<div style={{fontSize:12,color:"#555"}}>${stake} covers {combos} bets at {fmt(unitStake)} each · Flexi {flexiPct}%</div>}
+                    <div style={{fontSize:12,color:"#555"}}>
+                      ${stake} total · {combos} bets · {fmt(unitStake)} each
+                    </div>
+                    {flexiPct<100&&(
+                      <div style={{marginTop:6,fontSize:12,fontWeight:600,color:"#92400e"}}>
+                        ⚠ Under $1 unit — bet is valid but pays proportionally
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2553,7 +2563,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <div style={{display:"flex",flexDirection:"column",gap:5}}>
                         {(sel[0]||[]).length===0
                           ?<span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:600,fontStyle:"italic"}}>← Select on each horse</span>
-                          :(sel[0]||[]).map(n=>{const h=race.horses.find(x=>x.number===n);return <span key={n} style={{fontSize:12,padding:"4px 10px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{n} {h?.name}</span>;})}
+                          :(sel[0]||[]).map(n=>(<span key={n} style={{fontSize:12,padding:"4px 10px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>#{n}</span>))}
                       </div>
                       {combos>0&&<p className="sy" style={{fontSize:12,color:C.green,marginTop:6,fontWeight:700}}>✓ {combos} combination{combos!==1?"s":""}</p>}
                     </div>
@@ -2567,7 +2577,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             {posHorses.length===0
                               ?<span className="sy" style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>—</span>
                               :posHorses.map(h=>(
-                                <span key={h.number} style={{fontSize:12,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{h.number} {h.name}</span>
+                                <span key={h.number} style={{fontSize:12,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>#{h.number}</span>
                               ))}
                           </div>
                         );
