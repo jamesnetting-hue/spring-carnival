@@ -1593,38 +1593,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           );
         })()}
 
-        {/* ── Race Day Wrap ── */}
-        {(()=>{
-          const today=localDateStr();
-          const todayRaces=races.filter(r=>r.date===today);
-          const allDone=todayRaces.length>0&&todayRaces.every(r=>r.status==="finished"||r.status==="archived"||r.status==="closed");
-          if(!allDone||!account) return null;
-          const dayBets=bets.filter(b=>todayRaces.some(r=>r.id===b.raceId));
-          const myDayWon=dayBets.filter(b=>b.playerId===account.id&&b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-          const biggestWin=dayBets.filter(b=>b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0))[0];
-          const biggestWinPlayer=biggestWin?leaderboard.find(a=>a.id===biggestWin.playerId):null;
-          return(
-            <div style={{background:"linear-gradient(135deg,#1a3a1a,#0f2010)",borderRadius:16,padding:"18px 20px",marginBottom:16,boxShadow:"0 6px 26px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05)"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:biggestWinPlayer?12:0}}>
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.5)",letterSpacing:".12em",textTransform:"uppercase",marginBottom:3}}>Race Day Wrap</div>
-                  <div className="cg" style={{fontSize:18,fontWeight:900,color:"#fff"}}>🏁 Day Complete!</div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Your return</div>
-                  <div className="cg" style={{fontSize:22,fontWeight:900,color:myDayWon>0?"#4ade80":"rgba(255,255,255,.4)",fontVariantNumeric:"tabular-nums"}}>{myDayWon>0?"+":""}{fmt(myDayWon)}</div>
-                </div>
-              </div>
-              {biggestWinPlayer&&(
-                <div style={{background:"rgba(255,255,255,.1)",borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:12,color:"rgba(255,255,255,.8)"}}>🎯 Biggest win: <strong style={{color:"#fff"}}>{biggestWinPlayer.name}</strong></span>
-                  <span style={{fontSize:14,fontWeight:800,color:"#4ade80",fontVariantNumeric:"tabular-nums"}}>+{fmt(biggestWin.payout)}</span>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
         {/* ── Empty state ── */}
         {(races.length===0||seasonMessage?.enabled)&&(
           <div style={{padding:isMobile?"32px 20px":"48px 36px",borderRadius:16,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",textAlign:"center",marginBottom:16,boxShadow:"0 6px 24px rgba(15,32,16,.22)"}}>
@@ -1733,6 +1701,9 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             {urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
                           </span>
                         )}
+                        {isClosed&&(
+                          <span style={{color:"#b45309",fontWeight:700}}>🔒 Betting closed — awaiting result</span>
+                        )}
                         {isFinished&&race.result&&(()=>{
                           const first=race.horses.find(x=>x.number===race.result.first);
                           const second=race.horses.find(x=>x.number===race.result.second);
@@ -1743,7 +1714,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                     {/* Right: time + one clear action */}
                     <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                      <div style={{fontSize:isMobile?14:15,fontWeight:700,color:urgent?"#ea580c":"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
+                      <div style={{fontSize:isMobile?14:15,fontWeight:700,color:urgent?"#ea580c":isClosed?"#b45309":"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
+
+                      {isClosed&&!myBet&&(
+                        <span style={{fontSize:12,fontWeight:800,color:"#b45309",background:"#fef3c7",borderRadius:20,padding:"3px 11px",whiteSpace:"nowrap"}}>🔒 Closed</span>
+                      )}
 
                       {isUpcoming&&account&&(
                         betPlaced?(
