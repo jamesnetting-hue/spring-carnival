@@ -2201,22 +2201,22 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   {/* Number + Silk */}
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",alignSelf:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
                     {/* Runner number */}
-                    <div style={{width:isMobile?28:34,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a",alignSelf:"stretch"}}>
-                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
+                    <div style={{width:isMobile?22:34,display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a",alignSelf:"stretch"}}>
+                      <span style={{fontSize:isMobile?11:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk image or colour circle */}
-                    <div style={{width:isMobile?44:52,display:"flex",alignItems:"center",justifyContent:"center",padding:"6px",background:"#fff"}}>
+                    <div style={{width:isMobile?38:52,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"4px":"6px",background:"#fff"}}>
                       {h.silkUrl?(
                         <img src={h.silkUrl} alt=""
-                          style={{width:isMobile?32:38,height:isMobile?32:38,objectFit:"contain",display:"block"}}
+                          style={{width:isMobile?28:38,height:isMobile?28:38,objectFit:"contain",display:"block"}}
                           onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>
                       ):null}
                       <div className="silk-fb" style={{
-                        width:isMobile?32:38,height:isMobile?32:38,borderRadius:"50%",
+                        width:isMobile?28:38,height:isMobile?28:38,borderRadius:"50%",
                         background:scr?"#d1d5db":silkCol(h.number),
                         display:h.silkUrl?"none":"flex",
                         alignItems:"center",justifyContent:"center",
-                        fontSize:isMobile?12:14,fontWeight:800,color:"#fff",
+                        fontSize:isMobile?11:14,fontWeight:800,color:"#fff",
                         boxShadow:"inset 0 -2px 0 rgba(0,0,0,.2)",flexShrink:0,
                       }}>{h.number}</div>
                     </div>
@@ -2257,43 +2257,43 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     isMobile ? (
                       /* Mobile: TAB-style - Win/Place buttons OR position buttons depending on bet type */
                       betType==="win"||betType==="place"||betType==="eachway" ? (
-                        <div style={{display:"flex",gap:4,padding:"8px 8px",flexShrink:0}}>
+                        <div style={{display:"flex",gap:3,padding:"6px 5px",flexShrink:0}}>
                           {/* WIN button */}
                           <button className="sy" style={{
-                            minWidth:64,padding:"10px 6px",borderRadius:8,textAlign:"center",fontFamily:"inherit",cursor:"pointer",
+                            minWidth:52,padding:"7px 3px",borderRadius:7,textAlign:"center",fontFamily:"inherit",cursor:"pointer",
                             border:`2px solid ${winSel===h.number?"#1a3a1a":"#e5e7eb"}`,
                             background:winSel===h.number?"#1a3a1a":"#fff",
                             color:winSel===h.number?"#fff":"#000",
                           }} onClick={e=>{e.stopPropagation();setWinSel(h.number);setPlaceSel(null);setBetType("win");setSel({0:[h.number]});setShowBetPanel(true);}}>
-                            <div style={{fontSize:14,fontWeight:800}}>{winSel===h.number?"✓":"$"}{winSel===h.number?"":h.winOdds?.toFixed(2)}</div>
-                            <div style={{fontSize:9,fontWeight:700,letterSpacing:".04em",marginTop:2}}>WIN</div>
+                            <div style={{fontSize:12,fontWeight:800}}>{winSel===h.number?"✓":"$"}{winSel===h.number?"":h.winOdds?.toFixed(2)}</div>
+                            <div style={{fontSize:8,fontWeight:700,letterSpacing:".03em",marginTop:1}}>WIN</div>
                           </button>
                           {/* PLACE button */}
                           <button className="sy" style={{
-                            minWidth:64,padding:"10px 6px",borderRadius:8,textAlign:"center",fontFamily:"inherit",cursor:"pointer",
+                            minWidth:52,padding:"7px 3px",borderRadius:7,textAlign:"center",fontFamily:"inherit",cursor:"pointer",
                             border:`2px solid ${placeSel===h.number&&betType!=="win"?"#1a3a1a":"#e5e7eb"}`,
                             background:placeSel===h.number&&betType!=="win"?"#1a3a1a":"#fff",
                             color:placeSel===h.number&&betType!=="win"?"#fff":"#000",
                           }} onClick={e=>{e.stopPropagation();setPlaceSel(h.number);setWinSel(null);setBetType("place");setSel({0:[h.number]});setShowBetPanel(true);}}>
-                            <div style={{fontSize:14,fontWeight:800}}>{placeSel===h.number&&betType!=="win"?"✓":"$"}{placeSel===h.number&&betType!=="win"?"":h.placeOdds?.toFixed(2)}</div>
-                            <div style={{fontSize:9,fontWeight:700,letterSpacing:".04em",marginTop:2}}>PLACE</div>
+                            <div style={{fontSize:12,fontWeight:800}}>{placeSel===h.number&&betType!=="win"?"✓":"$"}{placeSel===h.number&&betType!=="win"?"":h.placeOdds?.toFixed(2)}</div>
+                            <div style={{fontSize:8,fontWeight:700,letterSpacing:".03em",marginTop:1}}>PLACE</div>
                           </button>
                         </div>
                       ) : canShowBoxed&&!boxed ? (
                         /* Exotic position buttons - right side, one line always */
-                        <div style={{display:"flex",flexDirection:"column",gap:4,padding:"8px 8px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
-                          <div style={{display:"flex",gap:3}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:3,padding:isMobile?"6px 5px":"8px 8px",flexShrink:0,alignItems:"flex-end",justifyContent:"center"}}>
+                          <div style={{display:"flex",gap:2}}>
                             {def.positions.map((pos,pi)=>{
                               const isThis=(sel[pi]||[]).includes(h.number);
                               return(
                                 <button key={pi} className="sy" style={{
-                                  width:isMobile?40:48,height:isMobile?38:44,
-                                  borderRadius:8,
+                                  width:isMobile?32:48,height:isMobile?30:44,
+                                  borderRadius:7,
                                   border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,
                                   background:isThis?"#1a3a1a":"#fff",
                                   color:isThis?"#fff":"#374151",
                                   cursor:"pointer",fontWeight:800,
-                                  fontSize:isMobile?def.positions.length>3?10:12:13,
+                                  fontSize:isMobile?def.positions.length>3?9:10:13,
                                   fontFamily:"inherit",flexShrink:0,
                                   display:"flex",alignItems:"center",justifyContent:"center",
                                   boxShadow:isThis?"0 2px 8px rgba(26,58,26,.3)":"none",
@@ -2304,7 +2304,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               );
                             })}
                           </div>
-                          {posLabels.length>0&&<div className="sy" style={{fontSize:11,color:"#fff",fontWeight:700,background:"#1a3a1a",padding:"3px 9px",borderRadius:20,flexShrink:0}}>✓ Selected</div>}
+                          {posLabels.length>0&&<div className="sy" style={{fontSize:10,color:"#fff",fontWeight:700,background:"#1a3a1a",padding:"2px 8px",borderRadius:20,flexShrink:0}}>✓ Selected</div>}
                         </div>
                       ) : canShowBoxed&&boxed ? (
                         /* Boxed - single select button */
@@ -2349,13 +2349,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     )
                   ) : null}
                   {scr&&(
-                    <div style={{display:"flex",gap:6,padding:"12px 10px",flexShrink:0}}>
-                      <div style={{width:isMobile?68:78,padding:"10px 0",borderRadius:8,border:`1px solid ${C.border}`,background:"#f3f4f6",textAlign:"center"}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#000"}}>SCR</div>
-                      </div>
-                      <div style={{width:isMobile?68:78,padding:"10px 0",borderRadius:8,border:`1px solid ${C.border}`,background:"#f3f4f6",textAlign:"center"}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#000"}}>SCR</div>
-                      </div>
+                    <div style={{display:"flex",alignItems:"center",padding:isMobile?"0 10px 0 4px":"0 14px",flexShrink:0}}>
+                      <span className="sy" style={{fontSize:11,fontWeight:800,color:C.red,background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:20,padding:"4px 10px",whiteSpace:"nowrap"}}>SCRATCHED</span>
                     </div>
                   )}
                 </div>
