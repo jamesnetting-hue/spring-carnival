@@ -235,6 +235,12 @@ const BET_TYPES = [
 // --- HELPERS ------------------------------------------------------------------
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
+// Local calendar date as YYYY-MM-DD — NOT toISOString(), which is UTC and can be
+// a day behind/ahead of the user's actual local date (e.g. early morning in AEST/AEDT).
+const localDateStr = (d = new Date()) => {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 const formColor = f => {
   const v = String(f).toLowerCase();
   if(v==="1") return "#16803a";
@@ -932,7 +938,7 @@ export default function App() {
     const myPayout = myWins.reduce((s,b)=>s+(b.payout||0),0);
     const raceName = races.find(r=>r.id===raceId)?.name;
     // Build daily recap — how many races today, total returned
-    const today=new Date().toISOString().split("T")[0];
+    const today=localDateStr();
     const todayRaces=races.filter(r=>r.date===today&&r.status==="finished");
     const myTodayBets=bets.filter(b=>todayRaces.some(r=>r.id===b.raceId)&&b.playerId===session&&b.won!==null);
     const myTodayReturn=myTodayBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
@@ -1589,7 +1595,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
         {/* ── Race Day Wrap ── */}
         {(()=>{
-          const today=new Date().toISOString().split("T")[0];
+          const today=localDateStr();
           const todayRaces=races.filter(r=>r.date===today);
           const allDone=todayRaces.length>0&&todayRaces.every(r=>r.status==="finished"||r.status==="archived"||r.status==="closed");
           if(!allDone||!account) return null;
@@ -1629,8 +1635,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
         {/* ── Race groups ── */}
         {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayRaces])=>{
-          const isToday=date===new Date().toISOString().split("T")[0];
-          const isTomorrow=date===new Date(Date.now()+86400000).toISOString().split("T")[0];
+          const isToday=date===localDateStr();
+          const isTomorrow=date===localDateStr(new Date(Date.now()+86400000));
           const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
           const dayUpcoming=dayRaces.filter(r=>r.status==="upcoming").length;
           const dayDone=dayRaces.filter(r=>r.status==="finished").length;
