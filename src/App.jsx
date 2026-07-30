@@ -2550,6 +2550,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div style={{position:"relative",marginBottom:10}}>
                     <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:20,fontWeight:700,color:"#000"}}>$</span>
                     <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
+                      onWheel={e=>e.target.blur()}
                       style={{paddingLeft:32,fontSize:22,fontWeight:700,padding:"13px 14px 13px 32px",width:"100%",borderRadius:12,border:"2px solid #e5e7eb",boxSizing:"border-box"}}/>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:6}}>
@@ -2680,6 +2681,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 <div style={{position:"relative",marginBottom:10}}>
                   <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:20,fontWeight:700,color:"#000"}}>$</span>
                   <input className="inp sy" type="number" step="0.50" min="0.10" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
+                    onWheel={e=>e.target.blur()}
                     style={{paddingLeft:32,fontSize:22,fontWeight:800,padding:"12px 12px 12px 32px",width:"100%",borderRadius:10,border:"2px solid #e5e7eb",color:"#111"}}/>
                 </div>
 
@@ -5251,6 +5253,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                               <input className="inp-sm sy" type="number" step="0.01" min="0" placeholder="0.00"
                                 value={getInp(race.id).divs?.[key]||""}
                                 onChange={e=>setDiv(race.id,key,e.target.value)}
+                                onWheel={e=>e.target.blur()}
                                 style={{paddingLeft:22}}/>
                             </div>
                           </div>
@@ -5428,14 +5431,14 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   <label className="sy soft" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Win Odds *</label>
                   <div style={{position:"relative"}}>
                     <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"#000",pointerEvents:"none"}}>$</span>
-                    <input className="inp sy" type="number" step="0.1" min="1" placeholder="4.50" value={horseForm.winOdds} onChange={e=>setHorseForm(p=>({...p,winOdds:e.target.value}))} style={{paddingLeft:22}}/>
+                    <input className="inp sy" type="number" step="0.1" min="1" placeholder="4.50" value={horseForm.winOdds} onChange={e=>setHorseForm(p=>({...p,winOdds:e.target.value}))} onWheel={e=>e.target.blur()} style={{paddingLeft:22}}/>
                   </div>
                 </div>
                 <div>
                   <label className="sy soft" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".08em",display:"block",marginBottom:4}}>Place Odds *</label>
                   <div style={{position:"relative"}}>
                     <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"#000",pointerEvents:"none"}}>$</span>
-                    <input className="inp sy" type="number" step="0.1" min="1" placeholder="1.80" value={horseForm.placeOdds} onChange={e=>setHorseForm(p=>({...p,placeOdds:e.target.value}))} style={{paddingLeft:22}}/>
+                    <input className="inp sy" type="number" step="0.1" min="1" placeholder="1.80" value={horseForm.placeOdds} onChange={e=>setHorseForm(p=>({...p,placeOdds:e.target.value}))} onWheel={e=>e.target.blur()} style={{paddingLeft:22}}/>
                   </div>
                 </div>
               </div>
@@ -5626,14 +5629,14 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   <label className="sy soft" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Win Odds</label>
                   <div style={{position:"relative"}}>
                     <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#555"}}>$</span>
-                    <input className="inp sy" type="number" step="0.1" value={editHorseForm.winOdds||""} onChange={e=>setEditHorseForm(p=>({...p,winOdds:e.target.value}))} style={{paddingLeft:22}}/>
+                    <input className="inp sy" type="number" step="0.1" value={editHorseForm.winOdds||""} onChange={e=>setEditHorseForm(p=>({...p,winOdds:e.target.value}))} onWheel={e=>e.target.blur()} style={{paddingLeft:22}}/>
                   </div>
                 </div>
                 <div>
                   <label className="sy soft" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:4}}>Place Odds</label>
                   <div style={{position:"relative"}}>
                     <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#555"}}>$</span>
-                    <input className="inp sy" type="number" step="0.1" value={editHorseForm.placeOdds||""} onChange={e=>setEditHorseForm(p=>({...p,placeOdds:e.target.value}))} style={{paddingLeft:22}}/>
+                    <input className="inp sy" type="number" step="0.1" value={editHorseForm.placeOdds||""} onChange={e=>setEditHorseForm(p=>({...p,placeOdds:e.target.value}))} onWheel={e=>e.target.blur()} style={{paddingLeft:22}}/>
                   </div>
                 </div>
               </div>
