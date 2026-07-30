@@ -2084,7 +2084,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 return(
                   <div key={h.number} style={{marginBottom:7}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                      <div style={{width:22,height:22,borderRadius:6,background:silkCol(h.number),display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                      <div style={{width:26,height:26,borderRadius:6,background:"#fff",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
+                        {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                        <div className="silk-fb" style={{width:22,height:22,borderRadius:5,background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",position:"absolute"}}>{h.number}</div>
+                      </div>
                       <span className="sy" style={{flex:1,fontSize:12,fontWeight:isBacked?700:500,color:"#111"}}>{h.name}</span>
                       {isBacked&&<span style={{fontSize:10,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>You ✓</span>}
                       <span className="sy" style={{fontSize:11,color:"#000",flexShrink:0}}>{pop} pick{pop!==1?"s":""}</span>
