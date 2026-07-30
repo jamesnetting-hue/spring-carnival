@@ -5134,7 +5134,11 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                         <p className="sy soft" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".1em"}}>Horses ({race.horses.filter(h=>!h.scratched).length} active)</p>
                         <div style={{display:"flex",gap:6}}>
                           <button className="sy" style={{fontSize:12,padding:"3px 10px",borderRadius:5,border:`1px solid ${C.border}`,background:"#f4f5f7",color:C.soft,cursor:"pointer",fontWeight:600}}
-                            onClick={()=>{setBulkImportFor(race.id);setBulkText("");setBulkErr("");setBulkPreview([]);}}>
+                            onClick={()=>{
+                              let saved="";
+                              try{saved=localStorage.getItem(`bulkDraft_${race.id}`)||"";}catch(e){}
+                              setBulkImportFor(race.id);setBulkText(saved);setBulkErr("");setBulkPreview([]);
+                            }}>
                             📋 Bulk Import
                           </button>
                           <button className="sy" style={{fontSize:12,padding:"3px 10px",borderRadius:5,border:`1px solid ${C.accent}`,background:C.accentGlow,color:C.accent,cursor:"pointer",fontWeight:700}}
@@ -5322,7 +5326,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
               <button className="btn btn-ghost sy" style={{fontSize:12,padding:"5px 10px"}} onClick={()=>setBulkImportFor(null)}>Close</button>
             </div>
             <p className="cg" style={{fontSize:16,fontWeight:700,marginBottom:4}}>{races.find(r=>r.id===bulkImportFor)?.name}</p>
-            <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format:</p>
+            <p className="sy soft" style={{fontSize:12,marginBottom:10}}>Paste one horse per line in this format. Your text is auto-saved as you type, so it's safe even if you close this or refresh.</p>
             <div style={{padding:"10px 14px",background:"#f0f4ff",border:`1px solid rgba(26,86,160,.2)`,borderRadius:8,marginBottom:14,fontFamily:"monospace",fontSize:12,color:C.soft,lineHeight:1.8}}>
               1. Red Sentinel (2) | J D Gibbons | T G Ryan & S Alexiou | 15.00 | 3.60 | f6 | 58.5<br/>
               <span style={{opacity:.6}}>form, weight and silk URL (last 3 columns) are all optional</span>
@@ -5336,6 +5340,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 setBulkText(e.target.value);
                 setBulkErr("");
                 setBulkPreview([]);
+                try{localStorage.setItem(`bulkDraft_${bulkImportFor}`, e.target.value);}catch(err){}
               }}
               style={{marginBottom:10,fontFamily:"monospace",fontSize:isMobile?11:12,resize:"vertical",minHeight:isMobile?140:200}}
             />
@@ -5348,8 +5353,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 <div style={{maxHeight:180,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
                   {bulkPreview.map((h,i)=>(
                     <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12,gap:8,alignItems:"center"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        {h.silkUrl&&<img src={h.silkUrl} alt="silk" style={{width:24,height:24,objectFit:"contain",borderRadius:3}}/>}
+                      <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
+                        {h.silkUrl&&<img src={h.silkUrl} alt="silk" style={{width:24,height:24,objectFit:"contain",borderRadius:3}} onError={e=>{e.target.style.display="none";}}/>}
                         <span className="sy"><strong>#{h.number} {h.name}</strong> <span style={{color:C.soft}}>· {h.jockey} · {h.trainer}</span></span>
                       </div>
                       <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
@@ -5376,6 +5381,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   <button className="btn btn-ghost" style={{padding:12,fontSize:13}} onClick={()=>setBulkPreview([])}>← Edit</button>
                   <button className="btn btn-gold" style={{flex:1,padding:12,fontSize:13}} onClick={()=>{
                     onAddHorses(bulkImportFor, bulkPreview);
+                    try{localStorage.removeItem(`bulkDraft_${bulkImportFor}`);}catch(err){}
                     setBulkImportFor(null);
                     setBulkText("");
                     setBulkPreview([]);
