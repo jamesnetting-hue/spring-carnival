@@ -1664,65 +1664,65 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 2px 10px rgba(0,0,0,.15)";}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
-                  {/* Venue + race num — tiny label */}
-                  <div style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.6)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:5}}>
-                    {race.venue}{race.raceNum?` · R${race.raceNum.replace(/[^0-9]/g,"")}`:""}</div>
+                  {/* Venue + race num */}
+                  <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>
+                    {race.venue}{race.raceNum?` · Race ${race.raceNum.replace(/[^0-9]/g,"")}`:""}</div>
 
                   {/* Race name */}
-                  <div className="cg" style={{fontSize:isMobile?14:16,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:8}}>{race.name}</div>
-
-                  {/* Time + countdown on same row */}
-                  <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:8}}>
-                    <span style={{fontSize:isMobile?20:22,fontWeight:800,color:"#fff",letterSpacing:"-.5px",lineHeight:1}}>{timeLabel}</span>
-                    {countdownLabel&&(
-                      <span style={{fontSize:isMobile?12:13,fontWeight:500,color:urgent?"#fcd34d":"rgba(255,255,255,.75)"}}>
-                        {urgent?"⚡ ":""}{countdownLabel} {urgent?"left":"to go"}
-                      </span>
-                    )}
-                    {isFinished&&<span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>Finished</span>}
-                    {isClosed&&<span style={{fontSize:12,color:"rgba(255,255,255,.7)"}}>Locked</span>}
-                  </div>
+                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:6}}>{race.name}</div>
 
                   {/* Fav */}
                   {fav&&fav.winOdds&&(
-                    <div style={{fontSize:isMobile?12:12,color:"rgba(255,255,255,.8)",marginBottom:4}}>
-                      ⭐ <span style={{fontWeight:500}}>{fav.name}</span> <span style={{color:"#fcd34d"}}>${fav.winOdds.toFixed(1)}</span>
+                    <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff",marginBottom:4}}>
+                      ⭐ {fav.name} <span style={{color:"#fcd34d",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
                     </div>
                   )}
 
                   {/* Distance + runners */}
-                  <div style={{fontSize:11,color:"rgba(255,255,255,.55)",marginBottom:8}}>
+                  <div style={{fontSize:isMobile?11:12,fontWeight:500,color:"rgba(255,255,255,.9)",marginBottom:10}}>
                     {[race.distance,race.horses.filter(h=>!h.scratched).length+" runners"].filter(Boolean).join(" · ")}
+                  </div>
+
+                  {/* Time + countdown — moved lower */}
+                  <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10}}>
+                    <span style={{fontSize:isMobile?18:20,fontWeight:800,color:"#fff",letterSpacing:"-.5px",lineHeight:1}}>{timeLabel}</span>
+                    {countdownLabel&&(
+                      <span style={{fontSize:isMobile?12:13,fontWeight:600,color:urgent?"#fcd34d":"#fff"}}>
+                        {urgent?"⚡ ":""}{countdownLabel} {urgent?"left":"to go"}
+                      </span>
+                    )}
+                    {isFinished&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Finished</span>}
+                    {isClosed&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Locked</span>}
                   </div>
 
                   {/* Result for finished */}
                   {isFinished&&race.result&&(()=>{
                     const first=race.horses.find(x=>x.number===race.result.first);
                     const second=race.horses.find(x=>x.number===race.result.second);
-                    return first?<div style={{fontSize:12,color:"rgba(255,255,255,.85)",marginBottom:8}}>
-                      <span style={{fontWeight:600}}>1st</span> {first.name}{second?<span style={{color:"rgba(255,255,255,.65)"}}> · <span style={{fontWeight:600,color:"rgba(255,255,255,.85)"}}>2nd</span> {second.name}</span>:null}
+                    return first?<div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff",marginBottom:8}}>
+                      <span style={{fontWeight:700}}>1st</span> {first.name}{second?<span> · <span style={{fontWeight:700}}>2nd</span> {second.name}</span>:null}
                     </div>:null;
                   })()}
 
-                  {/* Divider */}
-                  <div style={{borderTop:"1px solid rgba(255,255,255,.15)",marginTop:"auto",paddingTop:10}}>
+                  {/* Bottom: bet status */}
+                  <div style={{borderTop:"1px solid rgba(255,255,255,.2)",marginTop:"auto",paddingTop:10}}>
                     {myBetSummary?(
                       <div>
-                        <div style={{fontSize:isMobile?12:13,fontWeight:600,color:"#fff"}}>
+                        <div style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff"}}>
                           {betWon?"✓ Won":betLost?"✗ Lost":hasScratched?"⚠️ Scratched":"✓ Bet placed"}
                           {betWon&&<span style={{color:"#fcd34d"}}> +{fmt(isEW?myBetSummary.pairPayout:myBetSummary.payout)}</span>}
                         </div>
-                        <div style={{fontSize:11,fontWeight:400,color:"rgba(255,255,255,.65)",marginTop:2}}>
+                        <div style={{fontSize:isMobile?11:12,fontWeight:500,color:"#fff",marginTop:3}}>
                           {def2&&(isEW?"Each Way":def2.label)} · {hn?.name} · {fmt(myBetSummary.stake)}
-                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d",fontWeight:500}}> · ${raceBal} to go</span>}
+                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d",fontWeight:600}}> · ${raceBal} left</span>}
                         </div>
                       </div>
                     ):isUpcoming&&account?(
-                      <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"rgba(255,255,255,.85)"}}>
+                      <div style={{fontSize:isMobile?13:14,fontWeight:600,color:"#fff"}}>
                         Place your $24 →
                       </div>
                     ):(
-                      <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>
+                      <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff"}}>
                         {isFinished?"Race complete":isClosed?"Betting closed":""}
                       </div>
                     )}
