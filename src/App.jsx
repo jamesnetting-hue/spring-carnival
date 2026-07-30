@@ -1701,17 +1701,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       {/* Race name */}
                       <div className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em",marginBottom:3}}>{race.name}</div>
 
-                      {/* One quiet line: fav, then countdown or result — never both stacked as badges */}
+                      {/* One quiet line: just the countdown, or result */}
                       <div style={{fontSize:12,color:"#666",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                        {fav&&fav.winOdds&&isUpcoming&&(
-                          <span style={{display:"inline-flex",alignItems:"center",gap:5}}>
-                            <span style={{width:6,height:6,borderRadius:"50%",background:silkCol(fav.number),flexShrink:0}}/>
-                            Fav <strong style={{color:"#000"}}>{fav.name}</strong> <span style={{color:"#8a6416",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
-                          </span>
-                        )}
                         {isUpcoming&&minsUntil!==null&&minsUntil>=0&&(
                           <span style={{color:urgent?"#ea580c":"#888",fontWeight:urgent?700:400,fontVariantNumeric:"tabular-nums"}}>
-                            {fav?"· ":""}{urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
+                            {urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
                           </span>
                         )}
                         {isFinished&&race.result&&(()=>{
