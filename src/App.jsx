@@ -1670,16 +1670,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   </div>
 
                   {/* Line 2: Race name */}
-                  <div className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:10}}>{race.name}</div>
-
-                  {/* Line 3: Fav */}
-                  {fav&&fav.winOdds&&(
-                    <div style={{fontSize:isMobile?13:14,fontWeight:600,color:"#fff",marginBottom:8}}>
-                      Fav: <strong>{fav.name}</strong> <span style={{color:"#fcd34d",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
-                      
-                    </div>
-                  )}
-
+                  {/* Line 2: Race name */}
+                  <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:"#fff",lineHeight:1.15,marginBottom:12}}>{race.name}</div>
                   {/* Line 4: Time + countdown */}
                   <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10}}>
                     <span style={{fontSize:isMobile?17:19,fontWeight:800,color:"#fff",letterSpacing:"-.5px"}}>{timeLabel}</span>
@@ -2028,17 +2020,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             );
           })()}
           {/* Sub info row */}
-          <div style={{background:"#fff",padding:isMobile?"8px 14px":"9px 18px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span className="sy" style={{fontSize:isMobile?11:12,fontWeight:600,color:"#000"}}>{race.distance}</span>
-            <span style={{color:"#d1d5db"}}>·</span>
-            <span className="sy" style={{fontSize:isMobile?11:12,fontWeight:600,color:"#000"}}>{race.horses.filter(h=>!h.scratched).length} runners</span>
-            {fav&&<><span style={{color:"#d1d5db"}}>·</span><span className="sy" style={{fontSize:isMobile?11:12,fontWeight:600,color:"#000"}}>⭐ {fav.name} <span style={{color:"#92400e",fontWeight:700}}>${fav.winOdds?.toFixed(1)}</span></span></>}
-            {race.oddsAsOf&&<><span style={{color:"#d1d5db"}}>·</span><span className="sy" style={{fontSize:isMobile?10:11,color:"#000",fontWeight:600}}>Odds: {race.oddsAsOf}</span></>}
+          <div style={{background:"#f8fafb",padding:isMobile?"8px 14px":"10px 18px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",borderBottom:`1px solid #e5e7eb`}}>
+            {[race.distance, race.horses.filter(h=>!h.scratched).length+" runners", fav?`⭐ ${fav.name} $${fav.winOdds?.toFixed(1)}`:"", race.oddsAsOf?`Odds: ${race.oddsAsOf}`:""].filter(Boolean).map((item,i,arr)=>(
+              <span key={i} className="sy" style={{fontSize:12,fontWeight:600,color:"#000"}}>{item}{i<arr.length-1&&<span style={{color:"#d1d5db",marginLeft:8}}>·</span>}</span>
+            ))}
           </div>
 
           {/* Quick bet buttons */}
           {race.status==="upcoming"&&(
-            <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
               <button onClick={luckyDip} className="sy" style={{flex:1,padding:"7px 10px",borderRadius:8,background:"linear-gradient(135deg,#7c3aed,#be185d)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                 🎲 Lucky Dip
               </button>
@@ -2109,7 +2099,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       {isMobile&&race.status==="upcoming"&&(
         <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
           onClick={()=>setShowBetPanel(true)}>
-          + Place a Bet
+          + New Bet
         </button>
       )}
 
@@ -2119,8 +2109,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           {/* Desktop column headers */}
           {!isMobile&&(
             <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"0 10px 6px",borderBottom:`1px solid ${C.border}`,marginBottom:6}}>
-              <span className="sy" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".1em",color:"#000",width:72,textAlign:"center",fontWeight:800}}>WIN</span>
-              <span className="sy" style={{fontSize:12,textTransform:"uppercase",letterSpacing:".1em",color:"#000",width:80,textAlign:"center",fontWeight:800}}>PLACE</span>
+              <span className="sy" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".1em",color:"#000",width:72,textAlign:"center",fontWeight:700}}>Win</span>
+              <span className="sy" style={{fontSize:11,textTransform:"uppercase",letterSpacing:".1em",color:"#000",width:80,textAlign:"center",fontWeight:700}}>Place</span>
             </div>
           )}
 
@@ -2137,15 +2127,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               <div key={h.number} style={{
                 marginBottom:isMobile?3:8,
                 borderRadius:isMobile?8:12,
-                border:`${isMobile?"1.5px":"2px"} solid ${(winActive||placeActive||highlighted)?C.accent:scr?"#e5e7eb":C.border}`,
-                background:(winActive||placeActive||highlighted)?"rgba(30,92,30,.05)":scr?"#f9f9f9":"#fff",
+                border:`2px solid ${(winActive||placeActive||highlighted)?"#1a3a1a":scr?"#f3f4f6":"#e5e7eb"}`,
+                background:(winActive||placeActive||highlighted)?"#f0fdf4":scr?"#fafafa":"#fff",
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"stretch",gap:0}}>
                   {/* Number + Silk - compact TAB style */}
                   <div style={{flexShrink:0,display:"flex",alignItems:"stretch",alignSelf:"stretch",overflow:"hidden",borderRadius:isMobile?"7px 0 0 7px":"10px 0 0 10px",borderRight:`1px solid ${C.border}`}}>
                     {/* Runner number - full height flush */}
-                    <div style={{minWidth:isMobile?22:28,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#9ca3af":"#1a3a1a",alignSelf:"stretch"}}>
+                    <div style={{minWidth:isMobile?26:32,padding:"0 6px",display:"flex",alignItems:"center",justifyContent:"center",background:scr?"#d1d5db":"#1a3a1a",alignSelf:"stretch"}}>
                       <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff"}}>{h.number}</span>
                     </div>
                     {/* Silk */}
@@ -2171,13 +2161,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div style={{flex:1,padding:isMobile?"8px 8px":"10px 12px",minWidth:0,cursor:scr?"default":"pointer"}}
                     onClick={()=>{if(scr)return;if(!isMobile){if(betType==="win"||betType==="place")toggleHorse(0,h.number);if(canShowBoxed&&boxed)toggleHorse(0,h.number);}}}>
                     <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:2}}>
-                      <span className="sy" style={{fontWeight:800,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?"#9ca3af":"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
+                      <span className="sy" style={{fontWeight:700,fontSize:isMobile?14:16,textDecoration:scr?"line-through":"",color:scr?"#9ca3af":"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:12,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:12,padding:"1px 6px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
                       {!isMobile&&posLabels.length>0&&<span style={{fontSize:12,padding:"2px 8px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>✓ {posLabels.join(", ")}</span>}
                     </div>
                     <div className="sy" style={{fontSize:isMobile?12:13,color:"#000",lineHeight:1.4}}>
-                      <strong style={{color:"#000",fontWeight:800}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:"#000",fontWeight:800}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?`  ${h.weight}kg`:""}
+                      {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
                     </div>
                     {h.form&&h.form.length>0&&(
                       <div style={{display:"flex",gap:2,marginTop:isMobile?2:4}}>
@@ -2432,8 +2422,8 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 {/* Stake */}
                 <div style={{borderTop:"1px solid #f3f4f6",paddingTop:10,marginBottom:6}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <span className="sy" style={{fontSize:12,fontWeight:700,color:"#374151"}}>Stake</span>
-                    <span className="sy" style={{fontSize:12,color:"#000",fontWeight:700}}>{fmt(raceBalance)} remaining</span>
+                    <span className="sy" style={{fontSize:12,fontWeight:800,color:"#000",textTransform:"uppercase",letterSpacing:".06em"}}>Stake</span>
+                    <span className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>Budget: {fmt(raceBalance)} left</span>
                   </div>
                   <div style={{position:"relative",marginBottom:8}}>
                     <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:18,fontWeight:700,color:"#000"}}>$</span>
@@ -2473,17 +2463,17 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             {/* Bet Type Card */}
             <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
               <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
-                <p className="sy" style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".12em",color:"rgba(255,255,255,.55)",marginBottom:2}}>Bet Type</p>
-                <p className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>{def?.label} - {def?.desc}</p>
+                <p className="sy" style={{fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",marginBottom:3}}>Bet Type</p>
+                <p className="cg" style={{fontSize:15,fontWeight:800,color:"#fff",margin:0}}>{def?.label} <span style={{fontWeight:400,color:"rgba(255,255,255,.7)",fontSize:13}}>— {def?.desc}</span></p>
               </div>
               <div style={{padding:"12px"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                   {BET_TYPES.map(t=>(
                     <button key={t.id} onClick={()=>changeType(t.id)} className="sy" style={{
-                      padding:"10px 8px",borderRadius:8,
-                      border:`1.5px solid ${betType===t.id?"#1a3a1a":C.border}`,
-                      background:betType===t.id?"#1a3a1a":"#fafafa",
-                      color:betType===t.id?"#fff":"#374151",
+                      padding:"11px 8px",borderRadius:10,
+                      border:`2px solid ${betType===t.id?"#1a3a1a":"#e5e7eb"}`,
+                      background:betType===t.id?"#1a3a1a":"#fff",
+                      color:betType===t.id?"#fff":"#000",
                       cursor:"pointer",textAlign:"center",transition:"all .15s",
                       fontWeight:700,fontSize:13,fontFamily:"inherit",
                     }}>{t.label}</button>
@@ -2575,7 +2565,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 {/* Quick amounts */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:12}}>
                   {[2,5,10,raceBalance].filter((v,i,a)=>a.indexOf(v)===i&&v>0).slice(0,4).map(v=>(
-                    <button key={v} className="sy" style={{padding:"9px 4px",borderRadius:8,border:`1.5px solid ${stakeStr===String(v)?"#1a3a1a":"#e5e7eb"}`,background:stakeStr===String(v)?"#1a3a1a":"#fff",color:stakeStr===String(v)?"#fff":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
+                    <button key={v} className="sy" style={{padding:"10px 4px",borderRadius:10,border:`2px solid ${stakeStr===String(v)?"#1a3a1a":"#e5e7eb"}`,background:stakeStr===String(v)?"#1a3a1a":"#fff",color:stakeStr===String(v)?"#fff":"#000",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
                       onClick={()=>setStakeStr(String(v))}>
                       ${v}
                     </button>
