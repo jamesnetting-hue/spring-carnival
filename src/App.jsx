@@ -1567,7 +1567,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           if(!allDone||!account) return null;
           const dayBets=bets.filter(b=>todayRaces.some(r=>r.id===b.raceId));
           const myDayWon=dayBets.filter(b=>b.playerId===account.id&&b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-          const biggestWin=dayBets.filter(b=>b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0))[0];
+          const biggestWin=dayBets.filter(db=>db.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0))[0];
           const biggestWinPlayer=biggestWin?leaderboard.find(a=>a.id===biggestWin.playerId):null;
           return(
             <div style={{background:"linear-gradient(135deg,#1a3a1a,#0f2010)",borderRadius:16,padding:"18px 20px",marginBottom:16,boxShadow:"0 4px 24px rgba(0,0,0,.2)"}}>
@@ -1600,7 +1600,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
         )}
 
         {/* ── Race groups ── */}
-        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayRaces])=>{
+        {Object.entries(grouped).sort(([da],[db])=>da.localeCompare(db)).map(([date,dayRaces])=>{
           const isToday=date===new Date().toISOString().split("T")[0];
           const isTomorrow=date===new Date(Date.now()+86400000).toISOString().split("T")[0];
           const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
@@ -1630,7 +1630,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
             {/* Race cards — single column list */}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {dayRaces.sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||"")).map((race,raceIdx)=>{
+            {dayRaces.sort((ra,rb)=>(ra.raceTime||"").localeCompare(rb.raceTime||"")).map((race,raceIdx)=>{
               const rb=myBets.filter(b=>b.raceId===race.id);
               const raceBal=account?getRaceBalance(account.id,race.id):STARTING_BALANCE;
               const isUpcoming=race.status==="upcoming";
@@ -1642,7 +1642,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const minsUntil=race.raceTime&&race.date?Math.round((new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000):null;
               const urgent=minsUntil!==null&&minsUntil>=0&&minsUntil<=30&&isUpcoming&&!betPlaced;
               const hasScratched=rb.some(b=>b.won===null&&b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched));
-              const fav=race.horses.filter(h=>!h.scratched).sort((a,b)=>(a.winOdds||99)-(b.winOdds||99))[0];
+              const fav=race.horses.filter(h=>!h.scratched).sort((ha,hb)=>(ha.winOdds||99)-(hb.winOdds||99))[0];
 
               // Card accent colour — 4 states
               const partialBet=myBet&&!betPlaced&&isUpcoming; // has bet but money left
