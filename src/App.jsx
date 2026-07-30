@@ -1666,83 +1666,65 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                   <div style={{display:"flex",alignItems:"stretch",minHeight:"100%"}}>
 
-                    {/* Left colour bar — status */}
+                    {/* Left colour bar */}
                     <div style={{width:6,flexShrink:0,background:statusCol,alignSelf:"stretch"}}/>
 
-                    {/* Main content */}
-                    <div style={{flex:1,padding:isMobile?"12px 14px":"14px 18px",minWidth:0}}>
+                    {/* Content */}
+                    <div style={{flex:1,padding:isMobile?"13px 14px":"15px 18px",minWidth:0,display:"flex",flexDirection:"column",gap:6}}>
 
-                      {/* Row 1: track info + time */}
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:11,fontWeight:600,color:statusCol,textTransform:"uppercase",letterSpacing:".05em"}}>
-                          {[race.venue, race.raceNum?`Race ${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance].filter(Boolean).join(" · ")}
+                      {/* Top row: venue info left, time right */}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                        <span style={{fontSize:11,fontWeight:600,color:statusCol,textTransform:"uppercase",letterSpacing:".04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {[race.venue, race.raceNum?`R${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance].filter(Boolean).join(" · ")}
                         </span>
-                        <span style={{fontSize:isMobile?15:17,fontWeight:800,color:"#000",letterSpacing:"-.5px",flexShrink:0,marginLeft:10}}>{timeLabel}</span>
+                        <span style={{fontSize:14,fontWeight:800,color:"#000",letterSpacing:"-.5px",flexShrink:0}}>{timeLabel}</span>
                       </div>
 
-                      {/* Row 2: race name */}
-                      <div className="cg" style={{fontSize:isMobile?17:21,fontWeight:800,color:"#000",lineHeight:1.2,marginBottom:6}}>{race.name}</div>
+                      {/* Race name */}
+                      <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:800,color:"#000",lineHeight:1.15}}>{race.name}</div>
 
-                      {/* Row 3: countdown OR result OR status */}
+                      {/* Countdown / result — only one line, subtle */}
                       {isUpcoming&&cdLabel&&(
-                        <div style={{fontSize:12,fontWeight:600,color:urgent?"#c05621":"#000",marginBottom:6}}>
-                          {urgent?"⚡ Closes in ":""}{cdLabel}{urgent?" — bet now!":""}
+                        <div style={{fontSize:12,fontWeight:500,color:urgent?"#c05621":"#555"}}>
+                          {urgent?"⚡ ":""}{cdLabel}{urgent?" left — bet now":""}
                         </div>
                       )}
                       {isFinished&&race.result&&(()=>{
                         const first=race.horses.find(x=>x.number===race.result.first);
                         const second=race.horses.find(x=>x.number===race.result.second);
-                        return first?<div style={{fontSize:12,color:"#000",marginBottom:6}}>
-                          <strong>1st</strong> {first.name}{second?<span style={{color:"#555"}}> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</span>:null}
+                        return first?<div style={{fontSize:12,color:"#555"}}>
+                          <span style={{fontWeight:700,color:"#000"}}>1st</span> {first.name}
+                          {second?<span> · <span style={{fontWeight:700,color:"#000"}}>2nd</span> {second.name}</span>:null}
                         </div>:null;
                       })()}
-                      {hasScratched&&<div style={{fontSize:12,fontWeight:700,color:"#92400e",marginBottom:4}}>⚠️ Horse scratched — update your bet</div>}
+                      {hasScratched&&<div style={{fontSize:12,fontWeight:600,color:"#92400e"}}>⚠️ Horse scratched</div>}
 
-                      {/* Row 4: bet status buttons */}
+                      {/* Action row — clean, one line */}
                       {isUpcoming&&account&&(
-                        <div style={{marginTop:2}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
                           {betPlaced?(
-                            /* All budget spent */
-                            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                              <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"#f0fdf4",border:"1.5px solid #16a34a",borderRadius:8,padding:"7px 14px"}}>
-                                <span style={{fontSize:14}}>✅</span>
-                                <span style={{fontSize:13,fontWeight:700,color:"#16a34a"}}>Bets in — good luck!</span>
-                              </div>
-                              <div style={{display:"inline-block",background:"#fff",border:"1.5px solid #e5e7eb",borderRadius:8,padding:"7px 14px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                                <span style={{fontSize:13,fontWeight:600,color:"#000"}}>Change Bet</span>
-                              </div>
-                            </div>
+                            <>
+                              <span style={{fontSize:12,fontWeight:600,color:"#16a34a"}}>✓ Bets in</span>
+                              <span style={{fontSize:11,color:"#d1d5db"}}>·</span>
+                              <button style={{fontSize:12,fontWeight:600,color:"#555",background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",textDecoration:"underline",textUnderlineOffset:2}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Change</button>
+                            </>
                           ):myBet?(
-                            /* Has bet but budget remaining */
-                            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                              <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fef3c7",border:"1.5px solid #f59e0b",borderRadius:8,padding:"7px 14px"}}>
-                                <span style={{fontSize:13,fontWeight:700,color:"#92400e"}}>⚡ ${raceBal} still to bet</span>
-                              </div>
-                              <div style={{display:"inline-block",background:statusCol,borderRadius:8,padding:"7px 14px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                                <span style={{fontSize:13,fontWeight:700,color:"#fff"}}>Add more →</span>
-                              </div>
-                            </div>
+                            <>
+                              <span style={{fontSize:12,fontWeight:600,color:"#92400e"}}>⚡ ${raceBal} left</span>
+                              <button style={{fontSize:12,fontWeight:700,color:"#fff",background:statusCol,border:"none",borderRadius:6,padding:"4px 12px",cursor:"pointer",fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
+                            </>
                           ):(
-                            /* No bet yet */
-                            <div style={{display:"inline-block",background:statusCol,borderRadius:8,padding:"8px 18px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                              <span style={{fontSize:13,fontWeight:700,color:"#fff"}}>Place Bet</span>
-                            </div>
+                            <button style={{fontSize:13,fontWeight:700,color:"#fff",background:statusCol,border:"none",borderRadius:8,padding:"7px 16px",cursor:"pointer",fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Place Bet</button>
                           )}
                         </div>
                       )}
-                      {/* Settled bet result */}
                       {myBet&&!isUpcoming&&(
-                        <div style={{fontSize:12,color:"#000",marginTop:2}}>
-                          <strong style={{color:betWon?"#16a34a":betLost?"#dc2626":"#555"}}>
-                            {betWon?"✓ Won":betLost?"✗ Lost":"Pending"}
-                          </strong>
-                          {betWon&&<span style={{color:"#16a34a",fontWeight:700}}> +{fmt(isEW?myBet.pairPayout:myBet.payout)}</span>}
-                          <span style={{color:"#555"}}> · {def2&&(isEW?"EW":def2.label)} · {hn?.name}</span>
-                        </div>
-                      )}
-                      {!account&&!isUpcoming&&(
                         <div style={{fontSize:12,color:"#555"}}>
-                          {isFinished?"Race finished":isClosed?"Betting closed":""}
+                          <span style={{fontWeight:700,color:betWon?"#16a34a":betLost?"#dc2626":"#555"}}>
+                            {betWon?"✓ Won":betLost?"✗ Lost":"Pending"}
+                          </span>
+                          {betWon&&<span style={{color:"#16a34a",fontWeight:600}}> +{fmt(isEW?myBet.pairPayout:myBet.payout)}</span>}
+                          <span> · {def2&&(isEW?"EW":def2.label)} · {hn?.name}</span>
                         </div>
                       )}
                     </div>
