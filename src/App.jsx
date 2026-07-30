@@ -1718,8 +1718,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         </div>
                       </div>
                     ):isUpcoming&&account?(
-                      <div style={{fontSize:isMobile?13:14,fontWeight:600,color:"#fff"}}>
-                        Place your $24 →
+                      <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 12px",textAlign:"center",border:"1px solid rgba(255,255,255,.3)"}}>
+                        <span style={{fontSize:isMobile?13:14,fontWeight:700,color:"#fff"}}>Place Bet →</span>
                       </div>
                     ):(
                       <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff"}}>
