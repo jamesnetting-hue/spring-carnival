@@ -1644,10 +1644,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const hasScratched=rb.some(b=>b.won===null&&b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched));
               const fav=race.horses.filter(h=>!h.scratched).sort((a,b)=>(a.winOdds||99)-(b.winOdds||99))[0];
 
-              // Card accent colour
-              const accentCol=isFinished?"#94a3b8":isClosed?"#dc2626":betPlaced?"#16a34a":urgent?"#ea580c":"#1a3a1a";
-              const cardBg=betPlaced?"#f0fdf4":urgent?"#fff7ed":isFinished?"#f8fafc":isClosed?"#fff5f5":"#fff";
-              const borderCol=betPlaced?"#bbf7d0":urgent?"#fed7aa":isFinished?"#e2e8f0":isClosed?"#fecaca":"#e5e7eb";
+              // Card accent colour — 4 states
+              const partialBet=myBet&&!betPlaced&&isUpcoming; // has bet but money left
+              const accentCol=isFinished?"#94a3b8":isClosed?"#dc2626":betPlaced?"#16a34a":partialBet?"#ea580c":urgent?"#ea580c":"#1a3a1a";
+              const cardBg=betPlaced?"#f0fdf4":partialBet?"#fff7ed":urgent?"#fff7ed":isFinished?"#f8fafc":isClosed?"#fff5f5":"#fff";
+              const borderCol=betPlaced?"#bbf7d0":partialBet?"#fed7aa":urgent?"#fed7aa":isFinished?"#e2e8f0":isClosed?"#fecaca":"#e5e7eb";
 
               // My bet
               const displayed=[];const ewPairs=new Set();
@@ -1728,17 +1729,25 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                           {isUpcoming&&account&&(
                             betPlaced?(
-                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                                <span style={{fontSize:12,fontWeight:700,color:"#16a34a"}}>✓ In</span>
-                                <button style={{fontSize:11,color:"#555",background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",textDecoration:"underline",textUnderlineOffset:2}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Change</button>
+                              /* ✅ All budget in — green pill + red Change bubble */
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+                                <div style={{background:"#16a34a",borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                                  <span style={{fontSize:14}}>✅</span>
+                                  <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>Bets in</span>
+                                </div>
+                                <button style={{fontSize:11,fontWeight:700,color:"#fff",background:"#dc2626",border:"none",borderRadius:20,padding:"3px 10px",cursor:"pointer",fontFamily:"inherit"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Change</button>
                               </div>
                             ):myBet?(
-                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                                <span style={{fontSize:11,fontWeight:600,color:"#ea580c"}}>⚡ ${raceBal} left</span>
-                                <button style={{fontSize:12,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
+                              /* 🟠 Partial bet — orange warning + Add more */
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+                                <div style={{background:"#fff7ed",border:"1.5px solid #fed7aa",borderRadius:20,padding:"4px 10px"}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:"#ea580c"}}>⚡ ${raceBal} left</span>
+                                </div>
+                                <button style={{fontSize:12,fontWeight:700,color:"#fff",background:"#ea580c",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
                               </div>
                             ):(
-                              <button style={{fontSize:13,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet $24</button>
+                              /* No bet yet */
+                              <button style={{fontSize:13,fontWeight:700,color:"#fff",background:"#1a3a1a",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet $24</button>
                             )
                           )}
 
