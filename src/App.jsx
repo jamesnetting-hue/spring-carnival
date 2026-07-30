@@ -1717,29 +1717,29 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     </div>
 
                     {/* Right: time + one clear action */}
-                    <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
-                      <div style={{fontSize:isMobile?14:15,fontWeight:700,color:"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
+                    <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+                      <div style={{fontSize:isMobile?14:15,fontWeight:700,color:urgent?"#ea580c":"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
 
                       {isUpcoming&&account&&(
                         betPlaced?(
-                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
-                            <span style={{fontSize:12,fontWeight:700,color:"#16a34a"}}>✓ Bet placed</span>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                            <span style={{fontSize:12,fontWeight:800,color:"#15803d",background:"#dcfce7",borderRadius:20,padding:"3px 11px"}}>✓ Bet placed</span>
                             <button style={{fontSize:11,color:"#888",background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",textDecoration:"underline",textUnderlineOffset:2}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Change</button>
                           </div>
                         ):myBet?(
-                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                            <span style={{fontSize:11,fontWeight:600,color:"#888",fontVariantNumeric:"tabular-nums"}}>${raceBal} left</span>
-                            <button style={{fontSize:12,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:7,padding:"6px 13px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+                            <span style={{fontSize:11,fontWeight:700,color:"#b45309",background:"#fef3c7",borderRadius:20,padding:"2px 10px",fontVariantNumeric:"tabular-nums"}}>${raceBal} left</span>
+                            <button style={{fontSize:12,fontWeight:700,color:"#fff",background:"#d97706",border:"none",borderRadius:7,padding:"6px 13px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(217,119,6,.3)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
                           </div>
                         ):(
-                          <button style={{fontSize:13,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:8,padding:"8px 17px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet Now</button>
+                          <button style={{fontSize:13,fontWeight:700,color:"#fff",background:"#1a3a1a",border:"none",borderRadius:8,padding:"8px 17px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(26,58,26,.35)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet Now</button>
                         )
                       )}
 
                       {/* Settled result */}
                       {myBet&&!isUpcoming&&(
                         <div style={{fontSize:12,textAlign:"right"}}>
-                          <span style={{fontWeight:700,color:betWon?"#16a34a":betLost?"#b91c1c":"#888"}}>
+                          <span style={{fontWeight:800,fontSize:12,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"3px 11px"}}>
                             {betWon?"Won":betLost?"Lost":"Pending"}
                           </span>
                           {betWon&&<div style={{fontSize:13,fontWeight:800,color:"#16a34a",marginTop:2,fontVariantNumeric:"tabular-nums"}}>+{fmt(isEW?myBet.pairPayout:myBet.payout)}</div>}
