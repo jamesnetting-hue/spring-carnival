@@ -273,9 +273,9 @@ function RaceCountdown({date, time, raceName}) {
 }
 const C = {
   // Backgrounds
-  bg:"#f0f2f0",        // soft off-white with a hint of green
-  card:"#ffffff",
-  surface:"#f7f8f7",
+  bg:"#e8ebe8",        // slightly darker off-white with green tint
+  card:"#f7f9f7",      // cards slightly off-white so they sit on the bg
+  surface:"#f0f2f0",
   header:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",   // deep racing green for header
 
   // Borders
@@ -1654,7 +1654,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               return(
                 <div key={race.id} style={{
                   marginBottom:8,borderRadius:14,overflow:"hidden",
-                  background:"#fff",
+                  background:"#f7f9f7",
                   border:hasScratched?"2px solid #f59e0b":"1px solid #e5e7eb",
                   boxShadow:"0 1px 4px rgba(0,0,0,.06)",
                   cursor:isUpcoming?"pointer":"default",
@@ -2173,7 +2173,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 marginBottom:isMobile?3:8,
                 borderRadius:isMobile?8:12,
                 border:`2px solid ${(winActive||placeActive||highlighted)?"#1a3a1a":scr?"#f3f4f6":"#e5e7eb"}`,
-                background:(winActive||placeActive||highlighted)?"#f0fdf4":scr?"#fafafa":"#fff",
+                background:(winActive||placeActive||highlighted)?"#f0fdf4":scr?"#f0f2f0":"#f7f9f7",
                 overflow:"hidden",opacity:scr?0.6:1,transition:"all .15s",
               }}>
                 <div style={{display:"flex",alignItems:"stretch",gap:0}}>
@@ -2348,7 +2348,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         {isMobile&&showBetPanel&&(
           <>
             <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:899}} onClick={()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");}}/>
-            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"20px 20px 0 0",boxShadow:"0 -4px 30px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,16px)",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#f7f9f7",borderRadius:"20px 20px 0 0",boxShadow:"0 -4px 30px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,16px)",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
 
               {/* Handle + header */}
               <div style={{flexShrink:0,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:"20px 20px 0 0",padding:"10px 16px 14px"}}>
@@ -2523,7 +2523,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           <div style={{position:"sticky",top:70,display:"flex",flexDirection:"column",gap:12}}>
 
             {/* Bet Type Card */}
-            <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+            <div style={{background:"#f7f9f7",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
               <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"12px 16px"}}>
                 <p className="sy" style={{fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",marginBottom:3}}>Bet Type</p>
                 <p className="cg" style={{fontSize:15,fontWeight:800,color:"#fff",margin:0}}>{def?.label} <span style={{fontWeight:400,color:"rgba(255,255,255,.7)",fontSize:13}}>— {def?.desc}</span></p>
@@ -2554,7 +2554,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             </div>
 
             {/* Selection + Stake Card */}
-            <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+            <div style={{background:"#f7f9f7",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
 
               {/* Selection summary */}
               <div style={{padding:"14px 16px",borderBottom:`1px solid #f3f4f6`,minHeight:64}}>
