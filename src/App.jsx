@@ -1754,7 +1754,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                                 <button style={{fontSize:12,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:7,padding:"6px 13px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:`0 2px 6px ${accentCol}40`}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
                               </div>
                             ):(
-                              <button style={{fontSize:13,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:8,padding:"8px 17px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:`0 2px 8px ${accentCol}45`}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet $24</button>
+                              <button style={{fontSize:13,fontWeight:700,color:"#fff",background:accentCol,border:"none",borderRadius:8,padding:"8px 17px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:`0 2px 8px ${accentCol}45`}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet Now</button>
                             )
                           )}
 
