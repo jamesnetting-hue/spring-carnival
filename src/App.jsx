@@ -1664,23 +1664,28 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 2px 10px rgba(0,0,0,.15)";}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
-                  {/* Venue + race num */}
-                  <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>
-                    {race.venue}{race.raceNum?` · Race ${race.raceNum.replace(/[^0-9]/g,"")}`:""}</div>
+                  {/* Venue + race num + distance top row */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                    <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)",textTransform:"uppercase",letterSpacing:".06em"}}>
+                      {race.venue}{race.raceNum?` · R${race.raceNum.replace(/[^0-9]/g,"")}`:""}</div>
+                    {race.distance&&<div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)"}}>{race.distance}</div>}
+                  </div>
 
                   {/* Race name */}
-                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:6}}>{race.name}</div>
+                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:8}}>{race.name}</div>
 
-                  {/* Fav */}
+                  {/* Fav — prominent pill */}
                   {fav&&fav.winOdds&&(
-                    <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff",marginBottom:4}}>
-                      ⭐ {fav.name} <span style={{color:"#fcd34d",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
+                    <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.18)",borderRadius:8,padding:"5px 10px",marginBottom:6,border:"1px solid rgba(255,255,255,.25)"}}>
+                      <span style={{fontSize:13}}>⭐</span>
+                      <span style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff"}}>{fav.name}</span>
+                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fcd34d"}}>${fav.winOdds.toFixed(1)}</span>
                     </div>
                   )}
 
-                  {/* Distance + runners */}
+                  {/* Runners */}
                   <div style={{fontSize:isMobile?11:12,fontWeight:500,color:"rgba(255,255,255,.9)",marginBottom:10}}>
-                    {[race.distance,race.horses.filter(h=>!h.scratched).length+" runners"].filter(Boolean).join(" · ")}
+                    {race.horses.filter(h=>!h.scratched).length} runners
                   </div>
 
                   {/* Time + countdown — moved lower */}
