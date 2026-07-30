@@ -2004,7 +2004,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{position:"absolute",bottom:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.03)",pointerEvents:"none"}}/>
 
             {/* Venue + race info line */}
-            <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.6)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:8}}>
               {[race.venue, race.raceNum?`Race ${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance, race.horses.filter(h=>!h.scratched).length+" runners"].filter(Boolean).join("  ·  ")}
             </div>
 
@@ -2015,7 +2015,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 <div style={{fontSize:isMobile?28:36,fontWeight:900,lineHeight:1,color:raceBalance===0?"#4ade80":raceBalance===STARTING_BALANCE?"#f87171":"#fcd34d"}}>
                   {raceBalance===0?"✓":fmt(raceBalance)}
                 </div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,.6)",marginTop:3,fontWeight:500}}>
+                <div style={{fontSize:11,color:"rgba(255,255,255,.85)",marginTop:3,fontWeight:600}}>
                   {raceBalance===0?"All in!":raceBalance===STARTING_BALANCE?"budget":"of $24 left"}
                 </div>
               </div>
@@ -2031,7 +2031,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   const label=r.h>0?`${r.h}h ${r.m}m`:`${String(r.m).padStart(2,"0")}:${String(r.s).padStart(2,"0")}`;
                   const isUrgent=totalMins<5;
                   return(
-                    <span style={{fontSize:13,fontWeight:700,color:isUrgent?"#fcd34d":"rgba(255,255,255,.75)",animation:isUrgent?"pulse 1s infinite":"none"}}>
+                    <span style={{fontSize:13,fontWeight:700,color:isUrgent?"#fcd34d":"#fff",animation:isUrgent?"pulse 1s infinite":"none"}}>
                       {isUrgent?"⚡ ":""}Closes in {label}{isUrgent?" — hurry!":""}
                     </span>
                   );
@@ -2041,7 +2041,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               </div>
             )}
 
-            {race.oddsAsOf&&<div style={{marginTop:6,fontSize:11,color:"rgba(255,255,255,.45)"}}>Odds as of {race.oddsAsOf}</div>}
+            {race.oddsAsOf&&<div style={{marginTop:6,fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:500}}>Odds as of {race.oddsAsOf}</div>}
           </div>
 
           {/* Budget progress bar */}
