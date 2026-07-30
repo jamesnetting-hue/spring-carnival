@@ -2556,7 +2556,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       return h?(
                         <div style={{display:"flex",alignItems:"center",gap:10}}>
                           <div style={{padding:"4px 12px",background:"#1a3a1a",borderRadius:20,flexShrink:0}}>
-                            <span className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>✓ Selected</span>
+                            <span className="sy" style={{fontSize:12,fontWeight:700,color:"#fff"}}>✓ Selected</span>
                           </div>
                           {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:32,height:32,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                           <div style={{flex:1}}>
