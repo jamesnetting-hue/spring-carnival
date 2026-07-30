@@ -276,7 +276,7 @@ const C = {
   bg:"#f0f2f0",        // soft off-white with a hint of green
   card:"#ffffff",
   surface:"#f7f8f7",
-  header:"#1a3a1a",   // deep racing green for header
+  header:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",   // deep racing green for header
 
   // Borders
   border:"#d4dbd4",
@@ -1162,7 +1162,7 @@ export default function App() {
       {screen!=="auth"&&(
         <>
           {/* -- HEADER -- */}
-          <header style={{background:C.header,padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
+          <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
@@ -1184,7 +1184,7 @@ export default function App() {
           </header>
 
           {/* -- MOBILE BOTTOM NAV -- */}
-          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:C.header,borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 12px), 12px)"}}>
+          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 12px), 12px)"}}>
             {[["lobby","Races"],["leaderboard","Leaders"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
@@ -1766,7 +1766,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             const maxW=Math.max(...leaderboard.slice(0,8).map(a=>a.totalWon),0.01);
             return(
               <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-                <div style={{background:"#1a3a1a",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <h3 className="cg" style={{fontSize:14,fontWeight:700,color:"#fff",margin:0}}>🏆 Standings</h3>
                   <span className="sy" style={{fontSize:11,color:"rgba(255,255,255,.6)"}}>{leaderboard.length} players</span>
                 </div>
@@ -1802,7 +1802,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
           {/* How to play */}
           <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
-            <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
+            <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"12px 16px"}}>
               <h3 className="cg" style={{fontSize:14,fontWeight:800,color:"#fff",margin:0,letterSpacing:".01em"}}>📖 How It Works</h3>
             </div>
             <div style={{padding:"12px 16px"}}>
@@ -2104,16 +2104,34 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               <div style={{display:"flex",flexDirection:"column",gap:5}}>
                 {myBets.map(b=>{
                   const d=BET_TYPES.find(t=>t.id===b.type);
-                  const horse=race.horses.find(h=>h.number===b.horses[0]);
                   const canCancel=b.won===null&&race.status==="upcoming";
+                  const horseNames=b.horses.map(n=>{
+                    const h=race.horses.find(x=>x.number===n);
+                    return `#${n} ${h?.name||""}`;
+                  });
                   return(
-                    <div key={b.id} style={{display:"flex",alignItems:"center",gap:6,padding:isMobile?"8px 12px":"6px 10px",borderRadius:8,background:b.won===true?C.greenBg:b.won===false?C.redBg:"rgba(26,58,26,.06)",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:"#1a3a1a"}`}}>
-                      <span className="sy" style={{fontSize:12,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:"#1a3a1a"}}>{d?.label}</span>
-                      {horse&&<span className="sy" style={{fontSize:13,color:"#000"}}>#{horse.number} {horse.name}</span>}
-                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>{fmt(b.stake)}</span>
-                      {b.won===true&&<span className="sy" style={{fontSize:12,color:C.green,fontWeight:700}}>→ +{fmt(b.payout)}</span>}
-                      {b.won===false&&<span className="sy" style={{fontSize:12,color:C.red}}>Lost</span>}
-                      {canCancel&&<button className="sy" style={{fontSize:12,padding:"2px 7px",borderRadius:5,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}} onClick={()=>{if(window.confirm("Cancel this bet?"))onCancelBet(b.id);}}>✕</button>}
+                    <div key={b.id} style={{padding:"9px 12px",borderRadius:8,background:b.won===true?C.greenBg:b.won===false?C.redBg:"rgba(26,58,26,.06)",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:"#1a3a1a"}`}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,marginBottom:horseNames.length>1?4:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <span className="sy" style={{fontSize:12,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:"#1a3a1a"}}>{d?.label}</span>
+                          <span className="sy" style={{fontSize:12,fontWeight:700,color:"#000"}}>{fmt(b.stake)}</span>
+                          {b.won===true&&<span className="sy" style={{fontSize:12,color:C.green,fontWeight:700}}>+{fmt(b.payout)}</span>}
+                          {b.won===false&&<span className="sy" style={{fontSize:12,color:C.red}}>Lost</span>}
+                        </div>
+                        {canCancel&&<button className="sy" style={{fontSize:11,padding:"2px 8px",borderRadius:5,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700,flexShrink:0}} onClick={()=>{if(window.confirm("Cancel this bet?"))onCancelBet(b.id);}}>Cancel</button>}
+                      </div>
+                      {/* All horses */}
+                      {horseNames.length===1?(
+                        <div className="sy" style={{fontSize:12,color:"#000"}}>{horseNames[0]}</div>
+                      ):(
+                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:2}}>
+                          {horseNames.map((name,i)=>(
+                            <span key={i} style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:600}}>
+                              {d?.positions?.[i]?.label||`#${i+1}`} {name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -2333,7 +2351,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:900,background:"#fff",borderRadius:"20px 20px 0 0",boxShadow:"0 -4px 30px rgba(0,0,0,.2)",paddingBottom:"env(safe-area-inset-bottom,16px)",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
 
               {/* Handle + header */}
-              <div style={{flexShrink:0,background:"#1a3a1a",borderRadius:"20px 20px 0 0",padding:"10px 16px 14px"}}>
+              <div style={{flexShrink:0,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:"20px 20px 0 0",padding:"10px 16px 14px"}}>
                 <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,.3)",margin:"0 auto 10px"}}/>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div>
@@ -2506,7 +2524,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
             {/* Bet Type Card */}
             <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
-              <div style={{background:"#1a3a1a",padding:"12px 16px"}}>
+              <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"12px 16px"}}>
                 <p className="sy" style={{fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"rgba(255,255,255,.6)",marginBottom:3}}>Bet Type</p>
                 <p className="cg" style={{fontSize:15,fontWeight:800,color:"#fff",margin:0}}>{def?.label} <span style={{fontWeight:400,color:"rgba(255,255,255,.7)",fontSize:13}}>— {def?.desc}</span></p>
               </div>
@@ -2829,7 +2847,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
     <div className="fu">
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <div style={{background:"#1a3a1a",borderRadius:16,padding:isMobile?"16px":"20px 24px",marginBottom:14,position:"relative",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
+      <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:16,padding:isMobile?"16px":"20px 24px",marginBottom:14,position:"relative",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
         <div style={{position:"absolute",top:0,right:0,bottom:0,width:6,background:"repeating-linear-gradient(180deg,#fff 0,#fff 8px,#1a3a1a 8px,#1a3a1a 16px)",opacity:.12}}/>
         <div>
           <h2 className="cg" style={{fontSize:isMobile?20:26,fontWeight:900,color:"#fff",marginBottom:2}}>🏆 Leaderboard</h2>
@@ -2873,7 +2891,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
           return(
           <div style={{background:"#fff",borderRadius:14,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.05)",marginBottom:16}}>
             {/* Table header */}
-            <div style={{display:"grid",gridTemplateColumns:"50px 1fr auto",background:"#1a3a1a",padding:"10px 14px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"50px 1fr auto",background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"10px 14px"}}>
               <span className="sy" style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".08em"}}>#</span>
               <span className="sy" style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".08em"}}>Player</span>
               <span className="sy" style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.7)",textTransform:"uppercase",letterSpacing:".08em",textAlign:"right"}}>Winnings</span>
@@ -3541,7 +3559,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
   return (
     <div className="fu">
       {/* Header */}
-      <div style={{background:"#1a3a1a",borderRadius:14,padding:isMobile?"14px 16px":"18px 24px",marginBottom:16,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
+      <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:14,padding:isMobile?"14px 16px":"18px 24px",marginBottom:16,boxShadow:"0 4px 20px rgba(26,58,26,.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
           <div style={{width:48,height:48,borderRadius:"50%",background:"rgba(255,255,255,.18)",border:"2px solid rgba(255,255,255,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#fff",flexShrink:0}}>
             {account.name[0].toUpperCase()}
