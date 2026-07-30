@@ -1342,13 +1342,13 @@ function AuthScreen({onRegister, onLogin, accounts}) {
   };
 
   if (forgotPin) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px",background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 50%,#1a3a1a 100%)`}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px",background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 40%,#2d6a4f 100%)"}}>
       <div style={{width:"100%",maxWidth:420}}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontSize:52,marginBottom:8}}>🏇</div>
           <h1 className="cg" style={{fontSize:40,fontWeight:900,color:"#fff"}}>Spring Carnival</h1>
         </div>
-        <div className="card fu">
+        <div className="card fu" style={{boxShadow:"0 8px 40px rgba(0,0,0,.3)",border:"none"}}>
           <h3 className="cg" style={{fontSize:24,marginBottom:6}}>Forgot your PIN?</h3>
           <p className="sy" style={{fontSize:14,color:"#000",marginBottom:16}}>Enter the email address you signed up with and we'll give you a hint.</p>
           <input className="inp sy" type="email" placeholder="Your email address" value={fpEmail} onChange={e=>{setFpEmail(e.target.value);setFpMsg("");}} onKeyDown={e=>e.key==="Enter"&&handleForgotPin()} style={{marginBottom:10}}/>
@@ -1365,13 +1365,13 @@ function AuthScreen({onRegister, onLogin, accounts}) {
   );
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px",background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 50%,#1a3a1a 100%)`}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px",background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 40%,#2d6a4f 100%)"}}>
       <div style={{width:"100%",maxWidth:520}}>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontSize:"clamp(40px,10vw,60px)",marginBottom:8}}>🏇</div>
           <h1 className="cg" style={{fontSize:"clamp(28px, 7vw, 48px)",fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
-          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.7)",letterSpacing:".16em",textTransform:"uppercase"}}>GROUP 1 COMPETITION</p>
-          <p className="sy" style={{fontSize:12,marginTop:6,color:"rgba(255,255,255,.55)"}}>$24 per race · PIN login · Live leaderboard</p>
+          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.9)",letterSpacing:".2em",textTransform:"uppercase",fontWeight:700}}>GROUP 1 COMPETITION</p>
+          <p className="sy" style={{fontSize:13,marginTop:6,color:"rgba(255,255,255,.75)"}}>$24 per race · PIN login · Live leaderboard</p>
         </div>
         <div className="card fu">
           <div className="tog" style={{marginBottom:20}}>
