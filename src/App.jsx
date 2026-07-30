@@ -1601,9 +1601,9 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
         {/* ── Race groups ── */}
         {Object.entries(grouped).sort(([da],[db])=>da.localeCompare(db)).map(([date,dayRaces])=>{
-          const isToday=date===new Date().toISOString().split("T")[0];
-          const isTomorrow=date===new Date(Date.now()+86400000).toISOString().split("T")[0];
-          const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+          const isRaceDay=date===new Date().toISOString().split("T")[0];
+          const isNextDay=date===new Date(Date.now()+86400000).toISOString().split("T")[0];
+          const dateLabel=isRaceDay?"Today":isNextDay?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
           const dayUpcoming=dayRaces.filter(r=>r.status==="upcoming").length;
           const dayDone=dayRaces.filter(r=>r.status==="finished").length;
           return(
@@ -1612,12 +1612,12 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             {/* Day header */}
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
               <div style={{
-                background:isToday?"#1a3a1a":"transparent",
-                border:isToday?"none":"1.5px solid #1a3a1a",
+                background:isRaceDay?"#1a3a1a":"transparent",
+                border:isRaceDay?"none":"1.5px solid #1a3a1a",
                 borderRadius:8,padding:"5px 14px",flexShrink:0,
               }}>
-                <span style={{fontSize:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap"}}>
-                  {isToday?"🏇 ":""}{dateLabel}
+                <span style={{fontSize:13,fontWeight:800,color:isRaceDay?"#fff":"#1a3a1a",whiteSpace:"nowrap"}}>
+                  {isRaceDay?"🏇 ":""}{dateLabel}
                 </span>
               </div>
               <div style={{height:1,flex:1,background:"#e5e7eb"}}/>
@@ -1638,7 +1638,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const isClosed=race.status==="closed";
               const betPlaced=raceBal===0;
               const noBet=raceBal===STARTING_BALANCE&&rb.length===0&&isUpcoming;
-              const timeLabel=race.raceTime?race.raceTime.substring(0,5):"TBC";
+              const raceTimeLabel=race.raceTime?race.raceTime.substring(0,5):"TBC";
               const minsUntil=race.raceTime&&race.date?Math.round((new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000):null;
               const urgent=minsUntil!==null&&minsUntil>=0&&minsUntil<=30&&isUpcoming&&!betPlaced;
               const hasScratched=rb.some(b=>b.won===null&&b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched));
@@ -1725,7 +1725,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                         {/* Right: time + action */}
                         <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                          <div style={{fontSize:isMobile?15:17,fontWeight:800,color:"#000",letterSpacing:"-.5px",lineHeight:1}}>{timeLabel}</div>
+                          <div style={{fontSize:isMobile?15:17,fontWeight:800,color:"#000",letterSpacing:"-.5px",lineHeight:1}}>{raceTimeLabel}</div>
 
                           {isUpcoming&&account&&(
                             betPlaced?(
