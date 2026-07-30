@@ -163,7 +163,7 @@ const sb = {
 
 // --- CONSTANTS ----------------------------------------------------------------
 const STARTING_BALANCE = 24.00;
-const ADMIN_PASSWORD = "7379";
+const ADMIN_PASSWORD = "LandRoverD2$";
 
 // Each individual Group 1 race gets its own $24 budget per player.
 
