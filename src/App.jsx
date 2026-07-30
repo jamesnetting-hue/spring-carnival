@@ -1734,7 +1734,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             </div>
 
           </div>
-          </div>
           );
         })}
       </div>
