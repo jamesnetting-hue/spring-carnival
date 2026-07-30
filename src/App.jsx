@@ -2261,7 +2261,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span className="sy" style={{fontWeight:700,fontSize:isMobile?13:16,textDecoration:scr?"line-through":"",color:scr?C.muted:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:12,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:12,padding:"1px 6px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
-                      {!isMobile&&posLabels.map(pl=>(<span key={pl} style={{fontSize:12,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700}}>{pl}</span>))}
+                      {!isMobile&&posLabels.length>0&&<span style={{fontSize:12,padding:"2px 8px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>✓ {posLabels.join(", ")}</span>}
                     </div>
                     <div className="sy" style={{fontSize:isMobile?12:13,color:C.soft,lineHeight:1.3}}>
                       <strong style={{color:C.text,fontWeight:600}}>J</strong> {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · <strong style={{color:C.text,fontWeight:600}}>T</strong> {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?`  ${h.weight}kg`:""}
@@ -2336,7 +2336,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               );
                             })}
                           </div>
-                          {posLabels.length>0&&<div className="sy" style={{fontSize:12,color:"#1a3a1a",fontWeight:700,textAlign:"right"}}>{posLabels.join("·")}</div>}
+                          {posLabels.length>0&&<div className="sy" style={{fontSize:11,color:"#fff",fontWeight:700,textAlign:"right",background:"#1a3a1a",padding:"2px 7px",borderRadius:20}}>✓ {posLabels.join("·")}</div>}
                         </div>
                       ) : canShowBoxed&&boxed ? (
                         /* Boxed - single select button */
@@ -2434,7 +2434,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         const h=race.horses.find(x=>x.number===n);
                         return h?(
                           <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"#f0fdf4",borderRadius:10,border:"2px solid #bbf7d0",marginBottom:10}}>
-                            <div style={{width:26,height:26,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                            <div style={{width:26,height:26,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>
                             {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:24,height:24,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                             <div style={{flex:1}}>
                               <div className="sy" style={{fontSize:13,fontWeight:700}}>{h.name} <span style={{color:"#555",fontSize:12,fontWeight:400}}>({h.barrier||h.number})</span></div>
@@ -2455,7 +2455,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                                 else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}
                                 else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}
                               }}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>
                               {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:22,height:22,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                               <span className="sy" style={{flex:1,fontSize:14,fontWeight:600,color:"#111"}}>{h.name} <span style={{color:"#555",fontWeight:400,fontSize:12}}>({h.barrier||h.number})</span></span>
                               <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
@@ -2483,7 +2483,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           const inSel=(sel[0]||[]).includes(h.number);
                           return(
                             <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:9,border:`1.5px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                              <div style={{width:24,height:24,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>
                               {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                               <span className="sy" style={{flex:1,fontSize:14,fontWeight:600,color:"#111"}}>{h.name}</span>
                               <span className="sy" style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>${h.winOdds.toFixed(2)}</span>
@@ -2494,7 +2494,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         const myPos=def.positions.map((p,pi)=>(sel[pi]||[]).includes(h.number)?p.label:null).filter(Boolean);
                         return(
                           <div key={h.number} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 10px",borderRadius:9,border:`1.5px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa"}}>
-                            <div style={{width:22,height:22,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
+                            <div style={{width:22,height:22,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff",flexShrink:0}}>✓</div>
                             {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                             <span className="sy" style={{flex:1,fontSize:12,fontWeight:600,color:"#111"}}>{h.name}</span>
                             <div style={{display:"flex",gap:3}}>
