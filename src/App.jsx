@@ -2472,7 +2472,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               </div>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:15,fontWeight:700,color:"#000"}}>{h.name}</div>
-                                <div style={{fontSize:12,color:"#555"}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong></div>
+                                <div style={{fontSize:12,color:"#555"}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
                               </div>
                             </button>
                           );
@@ -2487,7 +2487,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               </div>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:15,fontWeight:700,color:"#000"}}>{h.name}</div>
-                                {myPos.length>0&&<div style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(" · ")}</div>}
+                                {myPos.length>0
+                                  ?<div style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(" · ")}</div>
+                                  :<div style={{fontSize:12,color:"#555"}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
+                                }
                               </div>
                             </div>
                             <div style={{display:"flex",gap:0,borderTop:"1px solid #e5e7eb"}}>
