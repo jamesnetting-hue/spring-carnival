@@ -1587,18 +1587,30 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           </div>
         )}
 
-        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayRaces])=>(
+        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayRaces])=>{
+          const isToday=date===new Date().toISOString().split("T")[0];
+          const isTomorrow=date===new Date(Date.now()+86400000).toISOString().split("T")[0];
+          const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+          const dayUpcoming=dayRaces.filter(r=>r.status==="upcoming").length;
+          const dayDone=dayRaces.filter(r=>r.status==="finished").length;
+          return(
           <div key={date} style={{marginBottom:isMobile?16:24}}>
-            {/* Date divider */}
+            {/* Race day header */}
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-              <div style={{height:1,flex:1,background:"linear-gradient(to right, transparent, #e5e7eb)"}}/>
-              <span className="sy" style={{fontSize:12,color:C.soft,textTransform:"uppercase",letterSpacing:".1em",whiteSpace:"nowrap",fontWeight:600}}>
-                {new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+              <div style={{background:isToday?"#1a3a1a":"#f4f5f7",borderRadius:10,padding:"6px 14px",flexShrink:0}}>
+                <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":"#374151",whiteSpace:"nowrap"}}>
+                  {isToday?"🏇 ":""}{dateLabel}
+                </span>
+              </div>
+              <div style={{height:1,flex:1,background:"#e5e7eb"}}/>
+              <span className="sy" style={{fontSize:11,color:"#9ca3af",whiteSpace:"nowrap",flexShrink:0}}>
+                {dayRaces.length} race{dayRaces.length!==1?"s":""}
+                {dayDone>0?` · ${dayDone} done`:""}
+                {dayUpcoming>0?` · ${dayUpcoming} open`:""}
               </span>
-              <div style={{height:1,flex:1,background:"linear-gradient(to left, transparent, #e5e7eb)"}}/>
             </div>
 
-            {dayRaces.map(race=>{
+            {dayRaces.sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||"")).map((race,raceIdx)=>{
               const rb=myBets.filter(b=>b.raceId===race.id);
               const active=race.horses.filter(h=>!h.scratched).length;
               const fav=race.horses.filter(h=>!h.scratched).sort((a,b)=>(a.winOdds||99)-(b.winOdds||99))[0];
@@ -1608,137 +1620,135 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const isFinished=race.status==="finished";
               const isClosed=race.status==="closed";
               const betPlaced=raceBal===0;
-              const noBet=raceBal===STARTING_BALANCE&&rb.length===0;
+              const noBet=raceBal===STARTING_BALANCE&&rb.length===0&&isUpcoming;
 
-              // Venue colour coding - Australian tracks
-              const venueCol=(()=>{
+              // Venue colours
+              const venueColor=(()=>{
                 const v=(race.venue||"").toLowerCase();
-                if(v.includes("randwick")) return {bg:"#1a3a1a"};
-                if(v.includes("rosehill")) return {bg:"#7c2d12"};
-                if(v.includes("flemington")) return {bg:"#1e3a5f"};
-                if(v.includes("caulfield")) return {bg:"#3b1f6b"};
-                if(v.includes("moonee")) return {bg:"#1e4d3b"};
-                if(v.includes("eagle")) return {bg:"#4a1c2c"};
-                if(v.includes("morphettville")) return {bg:"#2d4a1e"};
-                return {bg:"#1a3a1a"};
+                if(v.includes("randwick")) return "#1a3a1a";
+                if(v.includes("rosehill")) return "#7c2d12";
+                if(v.includes("flemington")) return "#1e3a5f";
+                if(v.includes("caulfield")) return "#3b1f6b";
+                if(v.includes("moonee")) return "#1e4d3b";
+                if(v.includes("eagle")) return "#4a1c2c";
+                return "#1a3a1a";
               })();
+
+              // Time display
+              const timeLabel=race.raceTime?race.raceTime.substring(0,5):"TBC";
+              const minsUntil=race.raceTime&&race.date?Math.round((new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000):null;
 
               return(
                 <div key={race.id} style={{
-                  marginBottom:isMobile?10:12,borderRadius:16,background:"#fff",
-                  border:"1px solid "+C.border,
-                  boxShadow:isUpcoming&&noBet?"0 2px 12px rgba(245,158,11,.12)":"0 1px 6px rgba(0,0,0,.06)",
-                  cursor:isUpcoming?"pointer":"default",transition:"all .18s",overflow:"hidden",
-                  animation:isUpcoming&&noBet?"subtleGlow 3s ease-in-out infinite":"none",
+                  marginBottom:isMobile?8:10,
+                  borderRadius:14,
+                  background:"#fff",
+                  border:`1px solid ${hasScratched?"#ffc107":noBet?"#f59e0b33":C.border}`,
+                  boxShadow:noBet?"0 2px 16px rgba(245,158,11,.12)":isFinished?"none":"0 1px 4px rgba(0,0,0,.05)",
+                  overflow:"hidden",
+                  cursor:isUpcoming?"pointer":"default",
+                  transition:"box-shadow .15s,transform .15s",
+                  animation:noBet?"subtleGlow 3s ease-in-out infinite":"none",
                 }}
-                  onMouseEnter={e=>{if(!isMobile&&isUpcoming){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 28px rgba(0,0,0,.1)";}}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=isUpcoming&&noBet?"0 2px 12px rgba(245,158,11,.12)":"0 1px 6px rgba(0,0,0,.06)";}}
+                  onMouseEnter={e=>{if(!isMobile&&isUpcoming){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 24px rgba(0,0,0,.1)";}}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=noBet?"0 2px 16px rgba(245,158,11,.12)":isFinished?"none":"0 1px 4px rgba(0,0,0,.05)";}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
-                  {/* Venue header strip */}
-                  <div style={{background:venueCol.bg,padding:isMobile?"8px 14px":"9px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-                      <span style={{fontSize:14}}>🏇</span>
-                      <span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{race.venue||"Race"}</span>
-                      {race.raceNum&&<span className="sy" style={{fontSize:isMobile?10:11,color:"rgba(255,255,255,.5)",flexShrink:0}}>· {race.raceNum}</span>}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-                      {race.grade&&<span className="sy" style={{fontSize:9,fontWeight:700,color:race.grade==="Feature Race"?"#fbbf24":"rgba(255,255,255,.55)",background:"rgba(255,255,255,.1)",padding:"2px 7px",borderRadius:10,whiteSpace:"nowrap"}}>{race.grade}</span>}
-                      <span className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:isFinished?"#4ade80":isClosed?"#f87171":betPlaced?"#4ade80":"rgba(255,255,255,.75)"}}>
-                        {isClosed?"🔒 Locked":isFinished?"✓ Done":betPlaced?"✅ In":"Open"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Scratched warning */}
+                  {/* Scratched banner */}
                   {hasScratched&&(
-                    <div style={{padding:"7px 16px",background:"#fff3cd",borderBottom:"1px solid #ffc107",display:"flex",gap:8,alignItems:"center"}}>
-                      <span>⚠️</span>
-                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#854d0e"}}>A selection has been scratched — tap to update</span>
+                    <div style={{padding:"6px 14px",background:"#fff3cd",borderBottom:"1px solid #ffc107",display:"flex",gap:6,alignItems:"center"}}>
+                      <span style={{fontSize:13}}>⚠️</span>
+                      <span className="sy" style={{fontSize:12,fontWeight:700,color:"#854d0e"}}>Scratching — tap to update your bet</span>
                     </div>
                   )}
 
-                  {/* Main body */}
-                  <div style={{padding:isMobile?"12px 14px":"14px 18px"}}>
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+                  {/* Main layout: time strip + content */}
+                  <div style={{display:"flex",minHeight:isMobile?72:80}}>
+
+                    {/* Left time strip */}
+                    <div style={{
+                      width:isMobile?58:70,flexShrink:0,
+                      background:isFinished?"#f8f9fa":isClosed?"#fee2e2":venueColor,
+                      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                      padding:"10px 4px",gap:2,
+                    }}>
+                      <span style={{fontSize:isMobile?14:16,fontWeight:900,color:isFinished?"#9ca3af":isClosed?"#dc2626":"#fff",lineHeight:1,letterSpacing:"-.5px"}}>{timeLabel}</span>
+                      <span style={{fontSize:9,fontWeight:600,color:isFinished?"#9ca3af":isClosed?"#f87171":"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:".06em"}}>
+                        {isFinished?"Done":isClosed?"Locked":"Race "+( raceIdx+1)}
+                      </span>
+                      {isUpcoming&&minsUntil!==null&&minsUntil>=0&&minsUntil<=60&&(
+                        <div style={{marginTop:3,padding:"1px 5px",borderRadius:6,background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)"}}>
+                          <span style={{fontSize:9,fontWeight:800,color:minsUntil<=10?"#fbbf24":"rgba(255,255,255,.9)"}}>{minsUntil}m</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right content */}
+                    <div style={{flex:1,minWidth:0,padding:isMobile?"10px 12px":"11px 16px",display:"flex",gap:8,alignItems:"center"}}>
                       <div style={{flex:1,minWidth:0}}>
 
-                        {/* Race name */}
-                        <h3 className="cg" style={{fontSize:isMobile?16:22,fontWeight:800,marginBottom:4,lineHeight:1.15,color:"#111"}}>{race.name}</h3>
-
-                        {/* Info row */}
-                        <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:isMobile?4:6,marginBottom:6}}>
-                          {race.distance&&<span className="sy" style={{fontSize:isMobile?11:13,color:"#555"}}>{race.distance}</span>}
-                          {race.distance&&<span style={{color:"#d1d5db"}}>·</span>}
-                          <span className="sy" style={{fontSize:isMobile?11:13,color:"#555"}}>{active} runners{active<race.horses.length?<span style={{color:C.red}}> ({race.horses.length-active} scr)</span>:""}</span>
-                          {fav&&fav.winOdds&&<><span style={{color:"#d1d5db"}}>·</span><span className="sy" style={{fontSize:isMobile?11:13}}><span style={{color:"#f59e0b"}}>⭐ </span><strong style={{color:"#111"}}>{fav.name}</strong><span style={{color:"#f59e0b",fontWeight:700}}> ${fav.winOdds.toFixed(1)}</span></span></>}
+                        {/* Venue + grade */}
+                        <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,flexWrap:"wrap"}}>
+                          <span className="sy" style={{fontSize:isMobile?10:11,fontWeight:700,color:venueColor}}>{race.venue}</span>
+                          {race.raceNum&&<span className="sy" style={{fontSize:isMobile?10:11,color:"#9ca3af"}}>· R{race.raceNum.replace(/[^0-9]/g,'')}</span>}
+                          {race.grade&&<span style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8,background:race.grade==="Feature Race"?"#fffbeb":"#f0fdf4",color:race.grade==="Feature Race"?"#b45309":C.accent,border:`1px solid ${race.grade==="Feature Race"?"#fde68a":C.greenBd}`}}>{race.grade}</span>}
+                          {race.distance&&<span className="sy" style={{fontSize:isMobile?9:10,color:"#9ca3af"}}>· {race.distance}</span>}
                         </div>
 
-                        {/* Countdown */}
-                        {race.raceTime&&isUpcoming&&(
-                          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                        {/* Race name */}
+                        <div className="cg" style={{fontSize:isMobile?14:17,fontWeight:800,color:"#111",lineHeight:1.2,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{race.name}</div>
+
+                        {/* Fav + runners */}
+                        <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                          <span className="sy" style={{fontSize:isMobile?10:11,color:"#6b7280"}}>{active} runners</span>
+                          {active<race.horses.length&&<span className="sy" style={{fontSize:isMobile?10:11,color:C.red}}>({race.horses.length-active} scr)</span>}
+                          {fav&&fav.winOdds&&<>
+                            <span style={{color:"#d1d5db",fontSize:10}}>·</span>
+                            <span className="sy" style={{fontSize:isMobile?10:11}}>
+                              <span style={{color:"#f59e0b"}}>⭐</span>
+                              <span style={{fontWeight:700,color:"#111"}}> {fav.name}</span>
+                              <span style={{color:"#f59e0b",fontWeight:700}}> ${fav.winOdds.toFixed(1)}</span>
+                            </span>
+                          </>}
+                        </div>
+
+                        {/* Countdown for upcoming races */}
+                        {isUpcoming&&minsUntil!==null&&minsUntil>60&&(
+                          <div style={{marginTop:4}}>
                             <RaceCountdown date={race.date} time={race.raceTime} raceName={race.name}/>
-                            {race.oddsAsOf&&<span className="sy" style={{fontSize:11,color:C.muted}}>odds {race.oddsAsOf}</span>}
                           </div>
                         )}
 
                         {/* Player dots */}
                         {isUpcoming&&accounts?.length>0&&(()=>{
-                          const playersWithBets=accounts.filter(a=>bets.some(b=>b.raceId===race.id&&b.playerId===a.id&&b.won===null)).length;
-                          const allIn=playersWithBets===accounts.length;
+                          const n=accounts.filter(a=>bets.some(b=>b.raceId===race.id&&b.playerId===a.id&&b.won===null)).length;
+                          const allIn=n===accounts.length;
                           return(
-                            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:4}}>
-                              <div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
-                                {accounts.slice(0,isMobile?20:accounts.length).map(a=>{
-                                  const has=bets.some(b=>b.raceId===race.id&&b.playerId===a.id&&b.won===null);
-                                  return <div key={a.id} title={a.name} style={{width:isMobile?7:8,height:isMobile?7:8,borderRadius:"50%",background:has?venueCol.bg:"#e5e7eb",flexShrink:0}}/>;
-                                })}
-                              </div>
-                              <span className="sy" style={{fontSize:11,color:allIn?C.green:"#9ca3af",fontWeight:allIn?700:400}}>{playersWithBets}/{accounts.length}{allIn?" · All in ✓":""}</span>
+                            <div style={{display:"flex",alignItems:"center",gap:4,marginTop:4}}>
+                              {accounts.slice(0,isMobile?20:accounts.length).map(a=>{
+                                const has=bets.some(b=>b.raceId===race.id&&b.playerId===a.id&&b.won===null);
+                                return <div key={a.id} style={{width:6,height:6,borderRadius:"50%",background:has?venueColor:"#e5e7eb",flexShrink:0}}/>;
+                              })}
+                              <span className="sy" style={{fontSize:10,color:allIn?C.green:"#9ca3af",fontWeight:allIn?700:400}}>{n}/{accounts.length}{allIn?" all in ✓":""}</span>
                             </div>
                           );
                         })()}
 
-                        {/* Budget warning */}
-                        {isUpcoming&&account&&raceBal>0&&rb.length>0&&race.raceTime&&race.date&&(()=>{
-                          const mins=(new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000;
-                          if(mins>10||mins<0) return null;
-                          return <div style={{marginBottom:4,padding:"3px 8px",borderRadius:6,background:"#fff3cd",border:"1px solid #ffc107",display:"inline-flex",alignItems:"center",gap:4}}><span style={{fontSize:12}}>⚠️</span><span className="sy" style={{fontSize:12,color:"#856404",fontWeight:700}}>{fmt(raceBal)} unspent — {Math.round(mins)}m left!</span></div>;
-                        })()}
-
                         {/* Results */}
                         {isFinished&&race.result&&(
-                          <div style={{marginTop:4,display:"flex",gap:isMobile?8:14,flexWrap:"wrap"}}>
+                          <div style={{marginTop:4,display:"flex",gap:8,flexWrap:"wrap"}}>
                             {["first","second","third","fourth"].map((k,i)=>{
                               const h=race.horses.find(x=>x.number===race.result[k]);
-                              return h?<span key={k} className="sy" style={{fontSize:isMobile?10:12,color:i===0?"#111":"#6b7280",fontWeight:i===0?700:400}}>
+                              return h?<span key={k} className="sy" style={{fontSize:isMobile?10:11,color:i===0?"#111":"#6b7280",fontWeight:i===0?700:400}}>
                                 <span style={{color:i===0?C.accent:"#9ca3af",fontWeight:700}}>{["1st","2nd","3rd","4th"][i]}</span> {h.name}
                               </span>:null;
                             })}
                           </div>
                         )}
 
-                        {/* Group picks */}
-                        {(isClosed||isFinished)&&(()=>{
-                          const counts={};
-                          bets.filter(b=>b.raceId===race.id&&(b.type==="win"||b.type==="eachway")).forEach(b=>{
-                            const h=race.horses.find(x=>x.number===b.horses[0]);
-                            if(h&&!h.scratched) counts[h.name]=(counts[h.name]||0)+1;
-                          });
-                          const sorted=Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,4);
-                          if(!sorted.length) return null;
-                          return(
-                            <div style={{marginTop:6,display:"flex",flexWrap:"wrap",gap:4}}>
-                              {sorted.map(([name,count],i)=>(
-                                <span key={name} className="sy" style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,background:i===0?venueCol.bg:"rgba(30,92,30,.08)",color:i===0?"#fff":C.green,border:`1px solid ${i===0?"transparent":C.greenBd}`}}>{count}× {name}</span>
-                              ))}
-                            </div>
-                          );
-                        })()}
-
-                        {/* Bet strips */}
+                        {/* My bets */}
                         {rb.length>0&&(
-                          <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid #f3f4f6",display:"flex",flexWrap:"wrap",gap:4}}>
+                          <div style={{marginTop:6,display:"flex",flexWrap:"wrap",gap:4}}>
                             {(()=>{
                               const displayed=[];const ewPairs=new Set();
                               rb.forEach((b,idx)=>{
@@ -1754,54 +1764,49 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                                 const won=isEW?b.pairWon:b.won===true;
                                 const lost=isEW?b.bothLost:b.won===false;
                                 return(
-                                  <div key={b.id} className="sy" style={{fontSize:isMobile?10:11,padding:isMobile?"3px 9px":"4px 11px",borderRadius:20,background:hasScr?"#fff3cd":won?C.greenBg:lost?C.redBg:"#f4f5f4",border:`1px solid ${hasScr?"#ffc107":won?C.greenBd:lost?C.redBd:C.border}`,color:hasScr?"#856404":won?C.green:lost?C.red:C.text,fontWeight:600}}>
-                                    {hasScr?"⚠️ ":won?"✓ ":""}<strong>{isEW?"EW":def2?.label}</strong> · {hn?.name} · {fmt(b.stake)}{won?` +${fmt(isEW?b.pairPayout:b.payout)}`:lost?" · Lost":""}
-                                  </div>
+                                  <span key={b.id} className="sy" style={{fontSize:isMobile?9:10,padding:"2px 8px",borderRadius:20,background:hasScr?"#fff3cd":won?C.greenBg:lost?C.redBg:"#f4f5f4",border:`1px solid ${hasScr?"#ffc107":won?C.greenBd:lost?C.redBd:C.border}`,color:hasScr?"#856404":won?C.green:lost?C.red:"#374151",fontWeight:600}}>
+                                    {hasScr?"⚠️ ":won?"✓ ":""}<strong>{isEW?"EW":def2?.label}</strong> {hn?.name} {fmt(b.stake)}{won?` +${fmt(isEW?b.pairPayout:b.payout)}`:lost?" L":""}
+                                  </span>
                                 );
                               });
                             })()}
                             {isUpcoming&&rb.some(b=>b.won===null)&&(
-                              <button className="sy" style={{fontSize:isMobile?10:11,padding:isMobile?"3px 9px":"4px 11px",borderRadius:20,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}}
-                                onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Update →</button>
+                              <span className="sy" style={{fontSize:isMobile?9:10,padding:"2px 8px",borderRadius:20,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}}
+                                onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Edit →</span>
                             )}
                           </div>
                         )}
                       </div>
 
-                      {/* Right CTA */}
-                      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                        {isUpcoming&&account&&(
-                          betPlaced?(
-                            <div>
-                              <div style={{padding:isMobile?"7px 12px":"8px 14px",borderRadius:10,background:C.greenBg,border:`1.5px solid ${C.greenBd}`}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
-                                <div style={{fontSize:isMobile?11:12,fontWeight:800,color:C.green}}>✅ Bet in</div>
-                              </div>
-                              {rb[0]?.placedAt&&<div className="sy" style={{fontSize:11,color:C.muted,marginTop:2,textAlign:"right"}}>{new Date(rb[rb.length-1].placedAt).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"})}</div>}
+                      {/* CTA */}
+                      {isUpcoming&&account&&(
+                        <div style={{flexShrink:0}}>
+                          {betPlaced?(
+                            <div style={{textAlign:"center",padding:isMobile?"6px 10px":"7px 12px",borderRadius:10,background:C.greenBg,border:`1.5px solid ${C.greenBd}`}}>
+                              <div style={{fontSize:16}}>✅</div>
+                              <div className="sy" style={{fontSize:10,fontWeight:700,color:C.green}}>In</div>
                             </div>
                           ):rb.length>0?(
-                            <button className="sy" style={{padding:isMobile?"8px 12px":"9px 16px",borderRadius:10,border:`1.5px solid ${C.gold}`,background:"rgba(184,134,11,.08)",color:C.gold,cursor:"pointer",fontWeight:700,fontSize:isMobile?11:12}}
-                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>⚡ {fmt(raceBal)} left</button>
+                            <div style={{textAlign:"center",padding:isMobile?"6px 10px":"7px 12px",borderRadius:10,background:"#fffbeb",border:"1.5px solid #fbbf24",cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                              <div style={{fontSize:16}}>⚡</div>
+                              <div className="sy" style={{fontSize:10,fontWeight:700,color:"#b45309"}}>${raceBal}</div>
+                            </div>
                           ):(
-                            <button className="sy" style={{padding:isMobile?"10px 14px":"12px 20px",borderRadius:10,background:venueCol.bg,border:"none",color:"#fff",cursor:"pointer",fontWeight:900,fontSize:isMobile?13:14,animation:"pulse 1.5s infinite",boxShadow:`0 4px 16px ${venueCol.bg}66`,whiteSpace:"nowrap"}}
-                              onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet Now</button>
-                          )
-                        )}
-                        {isFinished&&race.result&&(
-                          <div className="sy" style={{fontSize:isMobile?9:10,textAlign:"right",color:C.soft,lineHeight:1.6}}>
-                            {["first","second","third","fourth"].map((k,i)=>{
-                              const h=race.horses.find(x=>x.number===race.result[k]);
-                              return h?<div key={k} style={{fontWeight:i===0?700:400,color:i===0?C.accent:C.muted}}>{["1st","2nd","3rd","4th"][i]}: {h.name}</div>:null;
-                            })}
-                          </div>
-                        )}
-                      </div>
+                            <div style={{textAlign:"center",padding:isMobile?"8px 12px":"10px 16px",borderRadius:10,background:venueColor,cursor:"pointer",animation:"pulse 2s infinite",boxShadow:`0 4px 14px ${venueColor}66`}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                              <div style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff",whiteSpace:"nowrap"}}>Bet</div>
+                              <div style={{fontSize:isMobile?10:11,color:"rgba(255,255,255,.7)"}}>$24</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
+
           </div>
-        ))}
+        );})}
       </div>
 
       {/* Right sidebar */}
@@ -2469,7 +2474,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         const myPos=def.positions.map((p,pi)=>(sel[pi]||[]).includes(h.number)?p.label:null).filter(Boolean);
                         return(
                           <div key={h.number} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 10px",borderRadius:9,border:`1.5px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa"}}>
-                            <div style={{width:22,height:22,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#111",flexShrink:0}}>{h.number}</div>
+                            <div style={{width:22,height:22,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>{h.number}</div>
                             {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain",flexShrink:0}} onError={e=>e.target.style.display="none"}/>}
                             <span className="sy" style={{flex:1,fontSize:12,fontWeight:600,color:"#111"}}>{h.name}</span>
                             <div style={{display:"flex",gap:3}}>
@@ -2594,7 +2599,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <div style={{display:"flex",flexDirection:"column",gap:5}}>
                         {(sel[0]||[]).length===0
                           ?<span className="sy" style={{fontSize:12,color:"#555",fontStyle:"italic"}}>← Select on each horse</span>
-                          :(sel[0]||[]).map(n=>{const h=race.horses.find(x=>x.number===n);return <span key={n} style={{fontSize:12,padding:"4px 10px",background:"#1a3a1a",color:"#111",borderRadius:20,fontWeight:600}}>#{n} {h?.name}</span>;})}
+                          :(sel[0]||[]).map(n=>{const h=race.horses.find(x=>x.number===n);return <span key={n} style={{fontSize:12,padding:"4px 10px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{n} {h?.name}</span>;})}
                       </div>
                       {combos>0&&<p className="sy" style={{fontSize:12,color:C.green,marginTop:6,fontWeight:700}}>✓ {combos} combination{combos!==1?"s":""}</p>}
                     </div>
@@ -2608,7 +2613,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             {posHorses.length===0
                               ?<span className="sy" style={{fontSize:12,color:"#555",fontStyle:"italic"}}>-</span>
                               :posHorses.map(h=>(
-                                <span key={h.number} style={{fontSize:12,padding:"3px 9px",background:"#1a3a1a",color:"#111",borderRadius:20,fontWeight:600}}>#{h.number} {h.name}</span>
+                                <span key={h.number} style={{fontSize:12,padding:"3px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:600}}>#{h.number} {h.name}</span>
                               ))}
                           </div>
                         );
