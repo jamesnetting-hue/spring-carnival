@@ -1650,8 +1650,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                 border:isToday?"none":"1.5px solid #1a3a1a",
                 borderRadius:8,padding:isMobile?"4px 11px":"5px 14px",flexShrink:0,
               }}>
-                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap",letterSpacing:".01em"}}>
-                  {isToday?"🏇 ":""}{dateLabel}
+                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap",letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:isToday?6:0}}>
+                  {isToday&&<span style={{fontSize:isMobile?17:19}}>🏇</span>}{dateLabel}
                 </span>
               </div>
               <div style={{height:1,flex:1,background:"repeating-linear-gradient(to right,#d4dbd4 0 5px,transparent 5px 10px)"}}/>
