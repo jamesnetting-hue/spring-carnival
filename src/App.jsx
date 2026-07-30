@@ -1,4 +1,4 @@
-\/* eslint-disable no-unused-vars */
+/* eslint-disable no-unused-vars */
 /* build:2 */
 import { useState, useCallback, useEffect, useRef } from "react";
 
