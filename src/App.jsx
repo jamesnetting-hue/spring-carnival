@@ -377,20 +377,24 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 
 /* -- RESPONSIVE -- */
 @media(max-width:640px){
+  body{font-size:15px}
   .desktop-nav{display:none!important}
   .mobile-nav{display:flex!important}
   .mobile-hide{display:none!important}
-  .card{padding:14px;border-radius:10px}
-  .surface{padding:10px}
-  .modal{border-radius:20px 20px 0 0;padding:20px 16px 40px;max-height:92vh}
-  .btn{font-size:15px;padding:13px 18px}
-  .inp{font-size:16px;padding:12px 14px}
-  .inp-sm{font-size:14px;padding:8px 10px}
-  h2.cg{font-size:20px!important}
-  h3.cg{font-size:17px!important}
-  h4.cg{font-size:15px!important}
-  .badge{font-size:11px;padding:4px 9px}
-  .hrow{padding:8px 10px!important}
+  .card{padding:12px;border-radius:10px}
+  .surface{padding:9px}
+  .modal{border-radius:18px 18px 0 0;padding:18px 14px 36px;max-height:92vh}
+  .btn{font-size:14px;padding:11px 16px}
+  .inp{font-size:16px;padding:11px 13px}
+  .inp-sm{font-size:14px;padding:7px 10px}
+  h1.cg{font-size:24px!important}
+  h2.cg{font-size:19px!important}
+  h3.cg{font-size:16px!important}
+  h4.cg{font-size:14px!important}
+  .badge{font-size:10px;padding:3px 8px}
+  .hrow{padding:7px 9px!important}
+  .tab{padding:7px 12px;font-size:13px}
+  .topt{padding:8px;font-size:12px}
 }
 @media(min-width:641px){
   .desktop-nav{display:flex!important}
@@ -1169,7 +1173,7 @@ export default function App() {
       )}
 
       {toast&&(
-        <div style={{position:"fixed",top:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
+        <div style={{position:"fixed",top:window.innerWidth<641?62:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
           {toast.msg}
         </div>
       )}
@@ -1177,9 +1181,9 @@ export default function App() {
       {screen!=="auth"&&(
         <>
           {/* -- HEADER -- */}
-          <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
+          <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:window.innerWidth<641?"0 12px":"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:window.innerWidth<641?52:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span className="cg" style={{fontSize:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
+              <span className="cg" style={{fontSize:window.innerWidth<641?15:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
                 {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
@@ -1199,14 +1203,14 @@ export default function App() {
           </header>
 
           {/* -- MOBILE BOTTOM NAV -- */}
-          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 12px), 12px)"}}>
+          <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 10px), 10px)"}}>
             {[["lobby","Races"],["leaderboard","Leaders"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
                 <button key={s} onClick={()=>setScreen(s)}
-                  style={{flex:1,padding:"14px 4px 12px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"transparent",border:"none",cursor:"pointer",position:"relative",transition:"all .15s",minHeight:56}}>
+                  style={{flex:1,padding:"10px 4px 8px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"transparent",border:"none",cursor:"pointer",position:"relative",transition:"all .15s",minHeight:46}}>
                   {active&&<div style={{position:"absolute",top:0,left:"20%",right:"20%",height:3,background:C.goldL,borderRadius:"0 0 4px 4px"}}/>}
-                  <span className="sy" style={{fontSize:13,fontWeight:active?700:500,color:active?"#fff":"rgba(255,255,255,.5)",letterSpacing:".01em",transition:"all .15s"}}>{l}</span>
+                  <span className="sy" style={{fontSize:12,fontWeight:active?700:500,color:active?"#fff":"rgba(255,255,255,.5)",letterSpacing:".01em",transition:"all .15s"}}>{l}</span>
                 </button>
               );
             })}
@@ -1249,7 +1253,7 @@ export default function App() {
 
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
-      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<641?"12px":"24px"} ${window.innerWidth<641?"90px":"48px"}`}}>
+      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<641?"12px":"24px"} ${window.innerWidth<641?"76px":"48px"}`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage} accounts={accounts}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet} allBets={bets} accounts={accounts}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
@@ -1383,10 +1387,10 @@ function AuthScreen({onRegister, onLogin, accounts}) {
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px",background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 40%,#2d6a4f 100%)"}}>
       <div style={{width:"100%",maxWidth:520}}>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{fontSize:"clamp(40px,10vw,60px)",marginBottom:8}}>🏇</div>
-          <h1 className="cg" style={{fontSize:"clamp(28px, 7vw, 48px)",fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
-          <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.9)",letterSpacing:".2em",textTransform:"uppercase",fontWeight:700}}>GROUP 1 COMPETITION</p>
-          <p className="sy" style={{fontSize:14,marginTop:8,color:"rgba(255,255,255,.8)",fontStyle:"italic"}}>May the best punter win</p>
+          <div style={{fontSize:"clamp(34px,9vw,52px)",marginBottom:6}}>🏇</div>
+          <h1 className="cg" style={{fontSize:"clamp(24px, 6.5vw, 42px)",fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
+          <p className="sy" style={{fontSize:12,marginTop:8,color:"rgba(255,255,255,.9)",letterSpacing:".18em",textTransform:"uppercase",fontWeight:700}}>GROUP 1 COMPETITION</p>
+          <p className="sy" style={{fontSize:13,marginTop:6,color:"rgba(255,255,255,.8)",fontStyle:"italic"}}>May the best punter win</p>
         </div>
         <div className="card fu">
           <div className="tog" style={{marginBottom:20}}>
@@ -1511,7 +1515,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
       <div>
 
         {/* ── Hero header ── */}
-        <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d6a4f 100%)",borderRadius:16,padding:isMobile?"18px 20px":"22px 28px",marginBottom:16,position:"relative",overflow:"hidden",boxShadow:"0 8px 28px rgba(15,32,16,.28), inset 0 1px 0 rgba(255,255,255,.06)"}}>
+        <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d6a4f 100%)",borderRadius:isMobile?14:16,padding:isMobile?"15px 16px":"22px 28px",marginBottom:isMobile?12:16,position:"relative",overflow:"hidden",boxShadow:"0 8px 28px rgba(15,32,16,.28), inset 0 1px 0 rgba(255,255,255,.06)"}}>
           <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,.04)",pointerEvents:"none"}}/>
           {/* Finish-line stripe, bottom edge */}
           <div style={{position:"absolute",left:0,right:0,bottom:0,height:6,pointerEvents:"none",opacity:.5,background:"repeating-linear-gradient(-45deg,rgba(255,255,255,.5) 0 6px,rgba(255,255,255,0) 6px 12px)",WebkitMaskImage:"linear-gradient(to top,#000,transparent)",maskImage:"linear-gradient(to top,#000,transparent)"}}/>
@@ -1519,10 +1523,10 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             <div>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                 <span style={{width:5,height:5,borderRadius:"50%",background:"#fcd34d",display:"inline-block",flexShrink:0}}/>
-                <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.65)",letterSpacing:".14em",textTransform:"uppercase"}}>Spring Carnival</span>
+                <span style={{fontSize:isMobile?10:11,fontWeight:700,color:"rgba(255,255,255,.65)",letterSpacing:".14em",textTransform:"uppercase"}}>Spring Carnival</span>
               </div>
-              <div className="cg" style={{fontSize:isMobile?22:28,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:account?6:0,textShadow:"0 2px 10px rgba(0,0,0,.2)",letterSpacing:"-.01em"}}>Group 1 Competition</div>
-              {account&&<div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:500}}>Welcome back, <strong style={{color:"#fff"}}>{account.name.split(" ")[0]}</strong> 👋</div>}
+              <div className="cg" style={{fontSize:isMobile?18:28,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:account?6:0,textShadow:"0 2px 10px rgba(0,0,0,.2)",letterSpacing:"-.01em"}}>Group 1 Competition</div>
+              {account&&<div style={{fontSize:isMobile?12:13,color:"rgba(255,255,255,.8)",fontWeight:500}}>Welcome back, <strong style={{color:"#fff"}}>{account.name.split(" ")[0]}</strong> 👋</div>}
             </div>
             {account&&(()=>{
               const myAllBets=bets.filter(b=>b.playerId===account.id);
@@ -1530,10 +1534,10 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const totalWon=parseFloat(account.totalWon.toFixed(2));
               return(
                 <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontSize:isMobile?24:30,fontWeight:900,color:totalWon>0?"#4ade80":totalWon<0?"#f87171":"#fcd34d",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>
+                  <div style={{fontSize:isMobile?19:30,fontWeight:900,color:totalWon>0?"#4ade80":totalWon<0?"#f87171":"#fcd34d",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>
                     {totalWon===0?"$0.00":<AnimatedMoney value={totalWon}/>}
                   </div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4,fontWeight:600,letterSpacing:".02em"}}>{racesNoBet>0?`${racesNoBet} race${racesNoBet!==1?"s":""} to bet`:"All bets in ✓"}</div>
+                  <div style={{fontSize:isMobile?9:10,color:"rgba(255,255,255,.6)",marginTop:4,fontWeight:600,letterSpacing:".02em"}}>{racesNoBet>0?`${racesNoBet} race${racesNoBet!==1?"s":""} to bet`:"All bets in ✓"}</div>
                 </div>
               );
             })()}
@@ -1566,17 +1570,17 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           const myWon=mySettled.filter(b=>b.won===true);
           const totalWon=parseFloat(account.totalWon.toFixed(2));
           return(
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:isMobile?6:8,marginBottom:isMobile?12:16}}>
               {[
                 {label:"My Return",icon:"💰",value:totalWon>0?`+${fmt(totalWon)}`:fmt(totalWon),col:totalWon>0?"#16a34a":totalWon<0?"#dc2626":"#555"},
                 {label:"Win Rate",icon:"🎯",value:mySettled.length?`${Math.round((myWon.length/mySettled.length)*100)}%`:"—",col:"#1a3a1a"},
                 {label:"Races Bet",icon:"🏇",value:`${myAllBets.filter((b,i,a)=>a.findIndex(x=>x.raceId===b.raceId)===i).length} / ${races.length}`,col:"#1a3a1a"},
               ].map(({label,icon,value,col})=>(
-                <div key={label} style={{background:"#fff",borderRadius:10,padding:"11px 10px 10px",border:`1px solid ${C.border}`,borderTop:`2.5px solid ${col}`,textAlign:"center",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-                  <div style={{fontSize:10,color:"#555",fontWeight:700,marginBottom:4,textTransform:"uppercase",letterSpacing:".05em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                    <span style={{fontSize:11}}>{icon}</span>{label}
+                <div key={label} style={{background:"#fff",borderRadius:10,padding:isMobile?"9px 6px 8px":"11px 10px 10px",border:`1px solid ${C.border}`,borderTop:`2.5px solid ${col}`,textAlign:"center",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+                  <div style={{fontSize:isMobile?9:10,color:"#555",fontWeight:700,marginBottom:4,textTransform:"uppercase",letterSpacing:".05em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                    <span style={{fontSize:isMobile?10:11}}>{icon}</span>{label}
                   </div>
-                  <div className="cg" style={{fontSize:isMobile?15:18,fontWeight:900,color:col,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{value}</div>
+                  <div className="cg" style={{fontSize:isMobile?14:18,fontWeight:900,color:col,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{value}</div>
                 </div>
               ))}
             </div>
@@ -1631,21 +1635,21 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           const dayUpcoming=dayRaces.filter(r=>r.status==="upcoming").length;
           const dayDone=dayRaces.filter(r=>r.status==="finished").length;
           return(
-          <div key={date} style={{marginBottom:24}}>
+          <div key={date} style={{marginBottom:isMobile?18:24}}>
 
             {/* Day header */}
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:isMobile?9:12}}>
               <div style={{
                 background:isToday?"#1a3a1a":"transparent",
                 border:isToday?"none":"1.5px solid #1a3a1a",
-                borderRadius:8,padding:"5px 14px",flexShrink:0,
+                borderRadius:8,padding:isMobile?"4px 11px":"5px 14px",flexShrink:0,
               }}>
-                <span style={{fontSize:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap",letterSpacing:".01em"}}>
+                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap",letterSpacing:".01em"}}>
                   {isToday?"🏇 ":""}{dateLabel}
                 </span>
               </div>
               <div style={{height:1,flex:1,background:"repeating-linear-gradient(to right,#d4dbd4 0 5px,transparent 5px 10px)"}}/>
-              <span style={{fontSize:12,fontWeight:700,color:"#555",whiteSpace:"nowrap"}}>
+              <span style={{fontSize:isMobile?11:12,fontWeight:700,color:"#555",whiteSpace:"nowrap"}}>
                 {dayRaces.length} race{dayRaces.length!==1?"s":""}
                 {dayDone>0?` · ${dayDone} done`:""}
                 {dayUpcoming>0?` · ${dayUpcoming} open`:""}
@@ -1653,7 +1657,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             </div>
 
             {/* Race cards — single column list */}
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",gap:isMobile?6:8}}>
             {dayRaces.sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||"")).map((race,raceIdx)=>{
               const rb=myBets.filter(b=>b.raceId===race.id);
               const raceBal=account?getRaceBalance(account.id,race.id):STARTING_BALANCE;
@@ -1705,19 +1709,19 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     </div>
                   )}
 
-                  <div style={{display:"flex",alignItems:"center",gap:14,padding:isMobile?"13px 14px":"14px 18px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:isMobile?10:14,padding:isMobile?"11px 12px":"14px 18px"}}>
 
                     {/* Left: race info */}
                     <div style={{flex:1,minWidth:0}}>
                       {/* Venue + race + distance */}
-                      <div style={{fontSize:11,fontWeight:600,color:"#777",textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>
+                      <div style={{fontSize:isMobile?10:11,fontWeight:600,color:"#777",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>
                         {[race.venue, race.raceNum?`R${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance].filter(Boolean).join("  ·  ")}
                       </div>
                       {/* Race name */}
-                      <div className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em",marginBottom:3}}>{race.name}</div>
+                      <div className="cg" style={{fontSize:isMobile?14:18,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em",marginBottom:2}}>{race.name}</div>
 
                       {/* One quiet line: just the countdown, or result */}
-                      <div style={{fontSize:12,color:"#666",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                      <div style={{fontSize:isMobile?11:12,color:"#666",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                         {isUpcoming&&minsUntil!==null&&minsUntil>=0&&(
                           <span style={{color:urgent?"#ea580c":"#888",fontWeight:urgent?700:400,fontVariantNumeric:"tabular-nums"}}>
                             {urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
@@ -2020,24 +2024,24 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         <div style={{borderRadius:16,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.12)"}}>
 
           {/* Top: dark green — all race info */}
-          <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:isMobile?"16px 18px":"22px 28px",position:"relative",overflow:"hidden"}}>
+          <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:isMobile?"13px 15px":"22px 28px",position:"relative",overflow:"hidden"}}>
             {/* Subtle texture */}
             <div style={{position:"absolute",top:-40,right:-40,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,.04)",pointerEvents:"none"}}/>
             <div style={{position:"absolute",bottom:-20,left:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,.03)",pointerEvents:"none"}}/>
 
             {/* Venue + race info line */}
-            <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:8}}>
+            <div style={{fontSize:isMobile?10:11,fontWeight:700,color:"rgba(255,255,255,.85)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:6}}>
               {[race.venue, race.raceNum?`Race ${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance, race.horses.filter(h=>!h.scratched).length+" runners"].filter(Boolean).join("  ·  ")}
             </div>
 
             {/* Race name + budget side by side */}
-            <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:12}}>
-              <h2 className="cg" style={{fontSize:isMobile?22:30,fontWeight:900,color:"#fff",lineHeight:1.1,margin:0,flex:1,minWidth:0}}>{race.name}</h2>
+            <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:10}}>
+              <h2 className="cg" style={{fontSize:isMobile?18:30,fontWeight:900,color:"#fff",lineHeight:1.1,margin:0,flex:1,minWidth:0}}>{race.name}</h2>
               <div style={{textAlign:"right",flexShrink:0}}>
-                <div style={{fontSize:isMobile?28:36,fontWeight:900,lineHeight:1,color:raceBalance===0?"#4ade80":"#fcd34d"}}>
+                <div style={{fontSize:isMobile?21:36,fontWeight:900,lineHeight:1,color:raceBalance===0?"#4ade80":"#fcd34d"}}>
                   {raceBalance===0?"✓":fmt(raceBalance)}
                 </div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,.85)",marginTop:3,fontWeight:600}}>
+                <div style={{fontSize:isMobile?9:11,color:"rgba(255,255,255,.85)",marginTop:3,fontWeight:600}}>
                   {raceBalance===0?"All in!":raceBalance===STARTING_BALANCE?"budget":"of $24 left"}
                 </div>
               </div>
@@ -2045,15 +2049,15 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
             {/* Race time + countdown */}
             {race.raceTime&&(
-              <div style={{marginTop:12,display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:15,fontWeight:700,color:"rgba(255,255,255,.9)"}}>{race.raceTime.substring(0,5)}</span>
+              <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:isMobile?13:15,fontWeight:700,color:"rgba(255,255,255,.9)"}}>{race.raceTime.substring(0,5)}</span>
                 {race.status==="upcoming"&&countdown&&!countdown.expired&&(()=>{
                   const r=countdown;
                   const totalMins=r.h*60+r.m;
                   const label=r.h>0?`${r.h}h ${r.m}m`:`${String(r.m).padStart(2,"0")}:${String(r.s).padStart(2,"0")}`;
                   const isUrgent=totalMins<5;
                   return(
-                    <span style={{fontSize:13,fontWeight:700,color:isUrgent?"#fcd34d":"#fff",animation:isUrgent?"pulse 1s infinite":"none"}}>
+                    <span style={{fontSize:isMobile?11:13,fontWeight:700,color:isUrgent?"#fcd34d":"#fff",animation:isUrgent?"pulse 1s infinite":"none"}}>
                       {isUrgent?"⚡ ":""}Closes in {label}{isUrgent?" — hurry!":""}
                     </span>
                   );
