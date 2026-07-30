@@ -2183,7 +2183,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span className="sy" style={{fontWeight:700,fontSize:isMobile?14:16,textDecoration:scr?"line-through":"",color:scr?"#9ca3af":"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}{h.barrier?<span style={{fontWeight:400,color:C.muted,fontSize:isMobile?12:14}}> ({h.barrier})</span>:""}</span>
                       {!scr&&h.number===fav?.number&&<span style={{fontSize:12,padding:"1px 6px",background:"#fffbeb",color:C.gold,border:`1px solid ${C.gold}`,borderRadius:20,fontWeight:800}}>⭐ FAV</span>}
                       {scr&&<span style={{fontSize:12,padding:"1px 6px",background:C.redBg,color:C.red,border:`1px solid ${C.redBd}`,borderRadius:20,fontWeight:700}}>SCR</span>}
-                      {!isMobile&&posLabels.length>0&&<span style={{fontSize:11,padding:"2px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>✓ Selected {posLabels.length>1?`(${posLabels.join(", ")})`:posLabels[0]!=="Selected"?`(${posLabels[0]})`:""}</span>}
+                      {!isMobile&&posLabels.length>0&&<span style={{fontSize:11,padding:"2px 9px",background:"#1a3a1a",color:"#fff",borderRadius:20,fontWeight:700}}>✓ Selected</span>}
                     </div>
                     <div className="sy" style={{fontSize:isMobile?12:13,color:"#000",lineHeight:1.4}}>
                       {h.jockey?.replace(/^J\s+/i,"").replace(/^J\./i,"")} · {h.trainer?.replace(/^T\s+/i,"").replace(/^T\./i,"")}{h.weight?` · ${h.weight}kg`:""}
