@@ -1676,7 +1676,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   {fav&&fav.winOdds&&(
                     <div style={{fontSize:isMobile?13:14,fontWeight:600,color:"#fff",marginBottom:8}}>
                       Fav: <strong>{fav.name}</strong> <span style={{color:"#fcd34d",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
-                      <span style={{fontSize:11,fontWeight:400,color:"rgba(255,255,255,.8)",marginLeft:6}}>{race.horses.filter(h=>!h.scratched).length} runners</span>
+                      
                     </div>
                   )}
 
@@ -1730,50 +1730,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     )}
                   </div>
 
-                  {/* Time + countdown — moved lower */}
-                  <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10}}>
-                    <span style={{fontSize:isMobile?18:20,fontWeight:800,color:"#fff",letterSpacing:"-.5px",lineHeight:1}}>{timeLabel}</span>
-                    {countdownLabel&&(
-                      <span style={{fontSize:isMobile?12:13,fontWeight:600,color:urgent?"#fcd34d":"#fff"}}>
-                        {urgent?"⚡ ":""}{countdownLabel} {urgent?"left":"to go"}
-                      </span>
-                    )}
-                    {isFinished&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Finished</span>}
-                    {isClosed&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Locked</span>}
-                  </div>
-
-                  {/* Result for finished */}
-                  {isFinished&&race.result&&(()=>{
-                    const first=race.horses.find(x=>x.number===race.result.first);
-                    const second=race.horses.find(x=>x.number===race.result.second);
-                    return first?<div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff",marginBottom:8}}>
-                      <span style={{fontWeight:700}}>1st</span> {first.name}{second?<span> · <span style={{fontWeight:700}}>2nd</span> {second.name}</span>:null}
-                    </div>:null;
-                  })()}
-
-                  {/* Bottom: bet status */}
-                  <div style={{borderTop:"1px solid rgba(255,255,255,.2)",marginTop:"auto",paddingTop:10}}>
-                    {myBetSummary?(
-                      <div>
-                        <div style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff"}}>
-                          {betWon?"✓ Won":betLost?"✗ Lost":hasScratched?"⚠️ Scratched":"✓ Bet placed"}
-                          {betWon&&<span style={{color:"#fcd34d"}}> +{fmt(isEW?myBetSummary.pairPayout:myBetSummary.payout)}</span>}
-                        </div>
-                        <div style={{fontSize:isMobile?11:12,fontWeight:500,color:"#fff",marginTop:3}}>
-                          {def2&&(isEW?"Each Way":def2.label)} · {hn?.name} · {fmt(myBetSummary.stake)}
-                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d",fontWeight:600}}> · ${raceBal} left</span>}
-                        </div>
-                      </div>
-                    ):isUpcoming&&account?(
-                      <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 12px",textAlign:"center",border:"1px solid rgba(255,255,255,.3)"}}>
-                        <span style={{fontSize:isMobile?13:14,fontWeight:700,color:"#fff"}}>Place Bet →</span>
-                      </div>
-                    ):(
-                      <div style={{fontSize:isMobile?12:13,fontWeight:500,color:"#fff"}}>
-                        {isFinished?"Race complete":isClosed?"Betting closed":""}
-                      </div>
-                    )}
-                  </div>
 
                 </div>
               );
