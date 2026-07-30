@@ -163,7 +163,7 @@ const sb = {
 
 // --- CONSTANTS ----------------------------------------------------------------
 const STARTING_BALANCE = 24.00;
-const ADMIN_PIN = "7379";
+const ADMIN_PASSWORD = "7379";
 
 // Each individual Group 1 race gets its own $24 budget per player.
 
@@ -422,6 +422,8 @@ export default function App() {
   const [showBetslip, setShowBetslip] = useState(false);
   const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
   const [seasonMessage, setSeasonMessage] = useState(() => {
     try {
       const saved = localStorage.getItem("sc_season_msg");
@@ -1081,12 +1083,20 @@ export default function App() {
 
   const selectedRace = races.find(r=>r.id===raceId);
 
+  useEffect(() => {
+    if (!loading) {
+      setSplashFading(true);
+      const t = setTimeout(() => setShowSplash(false), 320);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
+
   return (
     <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",width:"100%"}}>
       <style>{CSS}</style>
 
-      {loading&&(
-        <div style={{position:"fixed",inset:0,background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+      {showSplash&&(
+        <div style={{position:"fixed",inset:0,background:`linear-gradient(160deg,${C.header} 0%,#2d5a2d 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999,opacity:splashFading?0:1,transition:"opacity .32s ease"}}>
           <div style={{fontSize:64,marginBottom:16}}>🏇</div>
           <h2 className="cg" style={{fontSize:28,fontWeight:900,color:"#fff",marginBottom:6}}>Spring Carnival</h2>
           <p className="sy" style={{fontSize:12,color:"rgba(255,255,255,.5)",letterSpacing:".16em",textTransform:"uppercase",marginBottom:24}}>GROUP 1 COMPETITION</p>
@@ -1376,7 +1386,7 @@ function AuthScreen({onRegister, onLogin, accounts}) {
           <div style={{fontSize:"clamp(40px,10vw,60px)",marginBottom:8}}>🏇</div>
           <h1 className="cg" style={{fontSize:"clamp(28px, 7vw, 48px)",fontWeight:900,color:"#fff",lineHeight:1.05}}>Spring Carnival</h1>
           <p className="sy" style={{fontSize:13,marginTop:10,color:"rgba(255,255,255,.9)",letterSpacing:".2em",textTransform:"uppercase",fontWeight:700}}>GROUP 1 COMPETITION</p>
-          <p className="sy" style={{fontSize:13,marginTop:6,color:"rgba(255,255,255,.75)"}}>$24 per race · PIN login · Live leaderboard</p>
+          <p className="sy" style={{fontSize:14,marginTop:8,color:"rgba(255,255,255,.8)",fontStyle:"italic"}}>May the best punter win</p>
         </div>
         <div className="card fu">
           <div className="tog" style={{marginBottom:20}}>
@@ -4624,7 +4634,8 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [inputs, setInputs] = useState({});
-  const [adminPinEntry, setAdminPinEntry] = useState("");
+  const [adminPasswordEntry, setAdminPasswordEntry] = useState("");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminTab, setAdminTab] = useState("races");
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [resetPinFor, setResetPinFor] = useState(null);
@@ -4806,14 +4817,34 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
     <div className="fu" style={{maxWidth:360, margin:"60px auto"}}>
       <div className="card">
         <h2 className="cg" style={{fontSize:22, marginBottom:4}}>Admin Access</h2>
-        <p className="sy soft" style={{fontSize:12, marginBottom:20}}>Enter your admin PIN to manage races.</p>
-        <PinPad value={adminPinEntry} onChange={v => {
-          setAdminPinEntry(v);
-          if (v.length === 4) {
-            if (v === ADMIN_PIN) setAdminUnlocked(true);
-            else { toast("Incorrect PIN", "err"); setAdminPinEntry(""); }
-          }
-        }}/>
+        <p className="sy soft" style={{fontSize:12, marginBottom:20}}>Enter the admin password to manage races.</p>
+        <div style={{position:"relative", marginBottom:14}}>
+          <input
+            className="inp sy"
+            type={showAdminPassword?"text":"password"}
+            placeholder="Admin password"
+            value={adminPasswordEntry}
+            onChange={e=>setAdminPasswordEntry(e.target.value)}
+            onKeyDown={e=>{
+              if(e.key==="Enter"){
+                if(adminPasswordEntry===ADMIN_PASSWORD) setAdminUnlocked(true);
+                else { toast("Incorrect password", "err"); setAdminPasswordEntry(""); }
+              }
+            }}
+            style={{paddingRight:44}}
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={()=>setShowAdminPassword(s=>!s)}
+            style={{position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:16, color:C.muted, padding:4}}
+            aria-label={showAdminPassword?"Hide password":"Show password"}
+          >{showAdminPassword?"🙈":"👁️"}</button>
+        </div>
+        <button className="btn btn-gold" style={{width:"100%", padding:13, fontSize:14}} onClick={()=>{
+          if(adminPasswordEntry===ADMIN_PASSWORD) setAdminUnlocked(true);
+          else { toast("Incorrect password", "err"); setAdminPasswordEntry(""); }
+        }}>Unlock →</button>
       </div>
     </div>
   );
@@ -4824,7 +4855,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
         <h2 className="cg" style={{fontSize:26, fontWeight:700}}>Admin</h2>
         <div style={{display:"flex", gap:8}}>
           <span className="badge sy" style={{background:C.greenBg, color:C.green, border:`1px solid ${C.greenBd}`}}>🔓 Active</span>
-          <button className="btn btn-ghost sy" style={{fontSize:12}} onClick={() => setAdminUnlocked(false)}>Lock</button>
+          <button className="btn btn-ghost sy" style={{fontSize:12}} onClick={() => {setAdminUnlocked(false);setAdminPasswordEntry("");}}>Lock</button>
         </div>
       </div>
 
