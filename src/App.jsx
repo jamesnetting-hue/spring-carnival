@@ -2012,7 +2012,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:12}}>
               <h2 className="cg" style={{fontSize:isMobile?22:30,fontWeight:900,color:"#fff",lineHeight:1.1,margin:0,flex:1,minWidth:0}}>{race.name}</h2>
               <div style={{textAlign:"right",flexShrink:0}}>
-                <div style={{fontSize:isMobile?28:36,fontWeight:900,lineHeight:1,color:raceBalance===0?"#4ade80":raceBalance===STARTING_BALANCE?"#f87171":"#fcd34d"}}>
+                <div style={{fontSize:isMobile?28:36,fontWeight:900,lineHeight:1,color:raceBalance===0?"#4ade80":"#fcd34d"}}>
                   {raceBalance===0?"✓":fmt(raceBalance)}
                 </div>
                 <div style={{fontSize:11,color:"rgba(255,255,255,.85)",marginTop:3,fontWeight:600}}>
