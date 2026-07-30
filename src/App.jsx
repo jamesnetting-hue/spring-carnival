@@ -1611,7 +1611,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
             {dayRaces.sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||"")).map((race,raceIdx)=>{
               const rb=myBets.filter(b=>b.raceId===race.id);
               const raceBal=account?getRaceBalance(account.id,race.id):STARTING_BALANCE;
@@ -1734,7 +1733,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             })}
             </div>
 
-
+          </div>
           </div>
           );
         })}
