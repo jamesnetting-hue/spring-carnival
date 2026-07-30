@@ -1664,28 +1664,70 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 2px 10px rgba(0,0,0,.15)";}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
-                  {/* Venue + race num + distance top row */}
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                    <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)",textTransform:"uppercase",letterSpacing:".06em"}}>
-                      {race.venue}{race.raceNum?` · R${race.raceNum.replace(/[^0-9]/g,"")}`:""}</div>
-                    {race.distance&&<div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.85)"}}>{race.distance}</div>}
+                  {/* Line 1: Track · Race · Distance */}
+                  <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.9)",marginBottom:5,letterSpacing:".01em"}}>
+                    {[race.venue, race.raceNum?`Race ${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance].filter(Boolean).join(" · ")}
                   </div>
 
-                  {/* Race name */}
-                  <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:8}}>{race.name}</div>
+                  {/* Line 2: Race name */}
+                  <div className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:10}}>{race.name}</div>
 
-                  {/* Fav — prominent pill */}
+                  {/* Line 3: Fav */}
                   {fav&&fav.winOdds&&(
-                    <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.18)",borderRadius:8,padding:"5px 10px",marginBottom:6,border:"1px solid rgba(255,255,255,.25)"}}>
-                      <span style={{fontSize:13}}>⭐</span>
-                      <span style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff"}}>{fav.name}</span>
-                      <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fcd34d"}}>${fav.winOdds.toFixed(1)}</span>
+                    <div style={{fontSize:isMobile?13:14,fontWeight:600,color:"#fff",marginBottom:8}}>
+                      Fav: <strong>{fav.name}</strong> <span style={{color:"#fcd34d",fontWeight:700}}>${fav.winOdds.toFixed(1)}</span>
+                      <span style={{fontSize:11,fontWeight:400,color:"rgba(255,255,255,.8)",marginLeft:6}}>{race.horses.filter(h=>!h.scratched).length} runners</span>
                     </div>
                   )}
 
-                  {/* Runners */}
-                  <div style={{fontSize:isMobile?11:12,fontWeight:500,color:"rgba(255,255,255,.9)",marginBottom:10}}>
-                    {race.horses.filter(h=>!h.scratched).length} runners
+                  {/* Line 4: Time + countdown */}
+                  <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10}}>
+                    <span style={{fontSize:isMobile?17:19,fontWeight:800,color:"#fff",letterSpacing:"-.5px"}}>{timeLabel}</span>
+                    {countdownLabel&&(
+                      <span style={{fontSize:12,fontWeight:600,color:urgent?"#fcd34d":"#fff"}}>
+                        {urgent?"⚡ ":""}{countdownLabel} {urgent?"left":"to go"}
+                      </span>
+                    )}
+                    {isFinished&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Finished</span>}
+                    {isClosed&&<span style={{fontSize:12,fontWeight:600,color:"#fff"}}>Locked</span>}
+                  </div>
+
+                  {/* Result */}
+                  {isFinished&&race.result&&(()=>{
+                    const first=race.horses.find(x=>x.number===race.result.first);
+                    const second=race.horses.find(x=>x.number===race.result.second);
+                    return first?<div style={{fontSize:12,fontWeight:500,color:"#fff",marginBottom:8}}>
+                      <strong>1st</strong> {first.name}{second?<span> · <strong>2nd</strong> {second.name}</span>:null}
+                    </div>:null;
+                  })()}
+
+                  {/* Divider + bottom */}
+                  <div style={{borderTop:"1px solid rgba(255,255,255,.2)",marginTop:"auto",paddingTop:10}}>
+                    {myBetSummary?(
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>
+                          {betWon?"✓ Won":betLost?"✗ Lost":hasScratched?"⚠️ Scratched":"✓ Bet placed"}
+                          {betWon&&<span style={{color:"#fcd34d"}}> +{fmt(isEW?myBetSummary.pairPayout:myBetSummary.payout)}</span>}
+                        </div>
+                        <div style={{fontSize:11,fontWeight:500,color:"#fff",marginTop:2}}>
+                          {def2&&(isEW?"Each Way":def2.label)} · {hn?.name} · {fmt(myBetSummary.stake)}
+                          {raceBal>0&&isUpcoming&&<span style={{color:"#fcd34d",fontWeight:600}}> · ${raceBal} left</span>}
+                        </div>
+                        {isUpcoming&&raceBal>0&&(
+                          <div style={{marginTop:8,background:"#fff",borderRadius:8,padding:"8px 12px",textAlign:"center"}}>
+                            <span style={{fontSize:13,fontWeight:800,color:"#1a3a1a"}}>Add more →</span>
+                          </div>
+                        )}
+                      </div>
+                    ):isUpcoming&&account?(
+                      <div style={{background:"#fff",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+                        <span style={{fontSize:isMobile?14:15,fontWeight:800,color:"#1a3a1a"}}>Place Bet</span>
+                      </div>
+                    ):(
+                      <div style={{fontSize:12,fontWeight:500,color:"#fff"}}>
+                        {isFinished?"Race complete":isClosed?"Betting closed":""}
+                      </div>
+                    )}
                   </div>
 
                   {/* Time + countdown — moved lower */}
