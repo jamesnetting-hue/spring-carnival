@@ -3604,9 +3604,9 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         {/* Streak badges */}
         {(()=>{
           const badges=[];
-          if(streak.type==="win"&&streak.count>=3) badges.push({icon:"🔥",label:`${streak.count} race hot streak`,col:"#ea580c",bg:"rgba(234,88,12,.2)"});
-          if(streak.type==="win"&&streak.count>=2&&streak.count<3) badges.push({icon:"📈",label:"Building momentum",col:"#16a34a",bg:"rgba(22,163,74,.2)"});
-          if(streak.type==="loss"&&streak.count>=3) badges.push({icon:"🧊",label:`${streak.count} race cold run`,col:"#93c5fd",bg:"rgba(147,197,253,.2)"});
+          if(streak?.type==="win"&&streak.count>=3) badges.push({icon:"🔥",label:`${streak.count} race hot streak`,col:"#ea580c",bg:"rgba(234,88,12,.2)"});
+          if(streak?.type==="win"&&streak.count>=2&&streak.count<3) badges.push({icon:"📈",label:"Building momentum",col:"#16a34a",bg:"rgba(22,163,74,.2)"});
+          if(streak?.type==="loss"&&streak.count>=3) badges.push({icon:"🧊",label:`${streak.count} race cold run`,col:"#93c5fd",bg:"rgba(147,197,253,.2)"});
           if(longestWinStreak>=3) badges.push({icon:"💯",label:`Best: ${longestWinStreak} in a row`,col:"#fbbf24",bg:"rgba(251,191,36,.2)"});
           if(raceWinRate>=60&&totalSettledRaces>=3) badges.push({icon:"🎯",label:`${raceWinRate}% win rate`,col:"#c4b5fd",bg:"rgba(196,181,253,.2)"});
           if(!badges.length) return null;
