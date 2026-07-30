@@ -1703,9 +1703,14 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         <div style={{marginTop:2}}>
                           {betPlaced?(
                             /* All budget spent */
-                            <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"#f0fdf4",border:"1.5px solid #16a34a",borderRadius:8,padding:"7px 14px"}}>
-                              <span style={{fontSize:14}}>✅</span>
-                              <span style={{fontSize:13,fontWeight:700,color:"#16a34a"}}>Bets in — good luck!</span>
+                            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                              <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"#f0fdf4",border:"1.5px solid #16a34a",borderRadius:8,padding:"7px 14px"}}>
+                                <span style={{fontSize:14}}>✅</span>
+                                <span style={{fontSize:13,fontWeight:700,color:"#16a34a"}}>Bets in — good luck!</span>
+                              </div>
+                              <div style={{display:"inline-block",background:"#fff",border:"1.5px solid #e5e7eb",borderRadius:8,padding:"7px 14px",cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>
+                                <span style={{fontSize:13,fontWeight:600,color:"#000"}}>Change Bet</span>
+                              </div>
                             </div>
                           ):myBet?(
                             /* Has bet but budget remaining */
