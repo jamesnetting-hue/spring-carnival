@@ -2064,6 +2064,26 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
             )}
 
             {race.oddsAsOf&&<div style={{marginTop:6,fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:500}}>Odds as of {race.oddsAsOf}</div>}
+
+            {/* Results strip — 1st, 2nd, 3rd */}
+            {race.status==="finished"&&race.result&&(()=>{
+              const placings=[
+                ["1st",race.result.first,"#fcd34d"],
+                ["2nd",race.result.second,"#e5e7eb"],
+                ["3rd",race.result.third,"#dba463"],
+              ].filter(([,num])=>num!=null).map(([label,num,col])=>[label,race.horses.find(h=>h.number===num),col]).filter(([,h])=>h);
+              if(placings.length===0) return null;
+              return(
+                <div style={{marginTop:12,display:"flex",gap:isMobile?6:10,flexWrap:"wrap"}}>
+                  {placings.map(([label,h,col])=>(
+                    <div key={label} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.1)",borderRadius:20,padding:isMobile?"4px 10px":"5px 12px"}}>
+                      <span style={{fontSize:11,fontWeight:800,color:col}}>{label}</span>
+                      <span style={{fontSize:isMobile?12:13,fontWeight:700,color:"#fff"}}>#{h.number} {h.name}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Budget progress bar */}
