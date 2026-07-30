@@ -1029,10 +1029,15 @@ export default function App() {
   const scratchHorse = (raceId, num) => {
     const race = races.find(r=>r.id===raceId);
     const horse = race?.horses.find(h=>h.number===num);
-    const updatedHorses = race.horses.map(h=>h.number===num?{...h,scratched:true}:h);
+    const nowScratched = !horse?.scratched;
+    const updatedHorses = race.horses.map(h=>h.number===num?{...h,scratched:nowScratched}:h);
     setRaces(p=>p.map(r=>r.id!==raceId?r:{...r,horses:updatedHorses}));
     // Save to Supabase
     sb.update("races", raceId, { horses: updatedHorses });
+    if(!nowScratched){
+      showToast(`#${num} ${horse?.name} un-scratched`);
+      return;
+    }
     // Check if any active bets include this horse
     const affectedBets = bets.filter(b=>
       b.raceId===raceId && b.won===null && b.horses.includes(num)
@@ -5087,7 +5092,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           ? <p className="sy soft" style={{fontSize:12}}>No horses added yet. Click + Add Horse to build the field.</p>
                           : race.horses.map(h=>(
                             <button key={h.number} className="sy" style={{fontSize:12,padding:"3px 9px",borderRadius:6,border:`1px solid ${h.scratched?C.redBd:C.border}`,background:h.scratched?C.redBg:"#f4f5f7",color:h.scratched?C.red:C.soft,cursor:"pointer",textDecoration:h.scratched?"line-through":"",display:"inline-flex",alignItems:"center",gap:4}}>
-                              <span onClick={()=>!h.scratched&&onScratch(race.id,h.number)}>#{h.number} {h.name}{h.scratched?" SCR":""}</span>
+                              <span title={h.scratched?"Click to un-scratch":"Click to scratch"} onClick={()=>onScratch(race.id,h.number)}>#{h.number} {h.name}{h.scratched?" SCR ↺":""}</span>
                               {!h.scratched&&<span style={{color:C.accent,fontSize:12}} onClick={e=>{e.stopPropagation();setEditHorseFor({raceId:race.id,horseNum:h.number});setEditHorseForm({name:h.name,jockey:h.jockey||"",trainer:h.trainer||"",winOdds:String(h.winOdds),placeOdds:String(h.placeOdds),weight:h.weight||"",silkUrl:h.silkUrl||""});}}>✏️</span>}
                             </button>
                           ))
