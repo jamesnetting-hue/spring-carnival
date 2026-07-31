@@ -1691,8 +1691,18 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       <div style={{fontSize:isMobile?10:11,fontWeight:600,color:"#777",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>
                         {[race.venue, race.raceNum?`R${race.raceNum.replace(/[^0-9]/g,"")}`:null, race.distance].filter(Boolean).join("  ·  ")}
                       </div>
-                      {/* Race name */}
-                      <div className="cg" style={{fontSize:isMobile?14:18,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em",marginBottom:2}}>{race.name}</div>
+                      {/* Race name + grade badge */}
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
+                        <div className="cg" style={{fontSize:isMobile?14:18,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em"}}>{race.name}</div>
+                        {race.grade&&(
+                          <span style={{fontSize:isMobile?9:10,fontWeight:800,padding:isMobile?"1px 6px":"2px 7px",borderRadius:20,whiteSpace:"nowrap",flexShrink:0,
+                            background:race.grade==="Group 1"?"#fef3c7":"#eef2ff",
+                            color:race.grade==="Group 1"?"#92400e":"#3730a3",
+                            border:`1px solid ${race.grade==="Group 1"?"#fcd34d":"#c7d2fe"}`}}>
+                            {race.grade==="Group 1"?"🏆 GROUP 1":"⭐ FEATURE"}
+                          </span>
+                        )}
+                      </div>
 
                       {/* One quiet line: just the countdown, or result */}
                       <div style={{fontSize:isMobile?11:12,color:"#666",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
