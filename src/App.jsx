@@ -1841,6 +1841,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [showPopularity,setShowPopularity]=useState(false);
   const [sheetDragY,setSheetDragY]=useState(0);
   const sheetDragRef=useRef({startY:0,dragging:false});
+  const stakeInputRef=useRef(null);
 
   const closeBetPanel=()=>{setShowBetPanel(false);setSel({});setWinSel(null);setPlaceSel(null);setStakeStr("");setSheetDragY(0);};
   const onSheetTouchStart=e=>{sheetDragRef.current={startY:e.touches[0].clientY,dragging:true};};
@@ -1854,6 +1855,18 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     if(sheetDragY>90) closeBetPanel();
     else setSheetDragY(0);
   };
+
+  // Once a selection is complete on mobile, bring the stake input into view automatically
+  const selectionCount=Object.values(sel).reduce((n,arr)=>n+(arr?.length||0),0);
+  useEffect(()=>{
+    if(!isMobile||!showBetPanel) return;
+    const hasSelection = winSel!=null || placeSel!=null || selectionCount>0;
+    if(!hasSelection) return;
+    const t=setTimeout(()=>{
+      stakeInputRef.current?.scrollIntoView({behavior:"smooth",block:"center"});
+    },150);
+    return ()=>clearTimeout(t);
+  },[isMobile,showBetPanel,winSel,placeSel,selectionCount]);
 
   // Most popular horse calc — aggregate all bets on this race (no player names)
   const raceBets=allBets?allBets.filter(b=>b.raceId===race.id&&b.won===null):[];
@@ -2120,7 +2133,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   <div key={h.number} style={{marginBottom:7}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
                       <div style={{width:26,height:26,borderRadius:6,background:"#fff",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                        {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                        {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:20,height:20,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
                         <div className="silk-fb" style={{width:22,height:22,borderRadius:5,background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",position:"absolute"}}>{h.number}</div>
                       </div>
                       <span className="sy" style={{flex:1,fontSize:12,fontWeight:isBacked?700:500,color:"#111"}}>{h.name}</span>
@@ -2181,7 +2194,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       {isMobile&&race.status==="upcoming"&&(
         <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
           onClick={()=>setShowBetPanel(true)}>
-          + New Bet
+          Place Bet
         </button>
       )}
 
@@ -2223,7 +2236,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     {/* Silk image or colour circle */}
                     <div style={{width:isMobile?38:52,display:"flex",alignItems:"center",justifyContent:"center",padding:isMobile?"4px":"6px",background:"#fff"}}>
                       {h.silkUrl?(
-                        <img src={h.silkUrl} alt=""
+                        <img src={h.silkUrl} alt="" referrerPolicy="no-referrer"
                           style={{width:isMobile?28:38,height:isMobile?28:38,objectFit:"contain",display:"block"}}
                           onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>
                       ):null}
@@ -2443,7 +2456,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             }}>
                             {/* Silk */}
                             <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:`1px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                              {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                              {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
                               <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:isSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{isSel?"✓":h.number}</div>
                               {isSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                             </div>
@@ -2467,7 +2480,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           return(
                             <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:12,border:`2px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
                               <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:`1px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                                {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
                                 <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:inSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{inSel?"✓":h.number}</div>
                                 {inSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                               </div>
@@ -2483,7 +2496,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           <div key={h.number} style={{borderRadius:12,border:`2px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa",overflow:"hidden",marginBottom:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
                               <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                                {h.silkUrl?<img src={h.silkUrl} alt="" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
                                 <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{h.number}</div>
                               </div>
                               <div style={{flex:1}}>
@@ -2542,7 +2555,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                     <span style={{fontSize:13,fontWeight:700,color:"#000"}}>Stake</span>
                     <span style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>{fmt(raceBalance)} available</span>
                   </div>
-                  <div style={{position:"relative",marginBottom:10}}>
+                  <div ref={stakeInputRef} style={{position:"relative",marginBottom:10}}>
                     <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:20,fontWeight:700,color:"#000"}}>$</span>
                     <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
                       onWheel={e=>e.target.blur()}
@@ -2622,7 +2635,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             <span className="sy" style={{fontSize:12,fontWeight:700,color:"#fff"}}>✓ Selected</span>
                           </div>
                           <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                            {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:32,height:32,objectFit:"contain",position:"absolute"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>}
+                            {h.silkUrl&&<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:32,height:32,objectFit:"contain",position:"absolute"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>}
                             <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
                           </div>
                           <div style={{flex:1}}>
@@ -5212,7 +5225,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                                   if(slot>=0) { next[slot]=h.number; setInputs(p=>({...p,[race.id]:{...getInp(race.id),finishers:next}})); }
                                 }
                               }}>
-                                {h.silkUrl&&<img src={h.silkUrl} alt="" style={{width:28,height:28,objectFit:"contain",marginBottom:3}} onError={e=>{e.target.style.display="none";}}/>}
+                                {h.silkUrl&&<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:28,height:28,objectFit:"contain",marginBottom:3}} onError={e=>{e.target.style.display="none";}}/>}
                                 <div className="cg" style={{fontSize:13,fontWeight:700,color:posLabel?posColor:C.text}}>#{h.number}</div>
                                 <div className="sy" style={{fontSize:12,color:posLabel?posColor:C.soft,fontWeight:posLabel?700:400,marginTop:1}}>{h.name.split(" ")[0]}</div>
                               </button>
@@ -5358,7 +5371,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                   {bulkPreview.map((h,i)=>(
                     <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,fontSize:12,gap:8,alignItems:"center"}}>
                       <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
-                        {h.silkUrl&&<img src={h.silkUrl} alt="silk" style={{width:24,height:24,objectFit:"contain",borderRadius:3}} onError={e=>{e.target.style.display="none";}}/>}
+                        {h.silkUrl&&<img src={h.silkUrl} alt="silk" referrerPolicy="no-referrer" style={{width:24,height:24,objectFit:"contain",borderRadius:3}} onError={e=>{e.target.style.display="none";}}/>}
                         <span className="sy"><strong>#{h.number} {h.name}</strong> <span style={{color:C.soft}}>· {h.jockey} · {h.trainer}</span></span>
                       </div>
                       <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
