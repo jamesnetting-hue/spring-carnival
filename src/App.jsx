@@ -1933,6 +1933,16 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       return{...prev,[posIdx]:[...cur,num]};
     });
   };
+  // Unboxed exotic bets: one horse per position only, so a bet is always exactly
+  // one combo (tap the same horse again to deselect, tap a different one to swap).
+  const selectPosition=(posIdx,num)=>{
+    if(race.horses.find(h=>h.number===num)?.scratched) return;
+    setSel(prev=>{
+      const cur=prev[posIdx]||[];
+      if(cur.length===1&&cur[0]===num) return{...prev,[posIdx]:[]};
+      return{...prev,[posIdx]:[num]};
+    });
+  };
 
   // Cartesian product filtering duplicate horses across positions
   const canShowBoxed=betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella";
@@ -2325,7 +2335,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                                   display:"flex",alignItems:"center",justifyContent:"center",
                                   boxShadow:isThis?"0 2px 8px rgba(26,58,26,.3)":"none",
                                   whiteSpace:"nowrap",
-                                }} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>
+                                }} onClick={e=>{e.stopPropagation();selectPosition(pi,h.number);}}>
                                   {pos.label}
                                 </button>
                               );
@@ -2349,7 +2359,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           <div style={{display:"flex",gap:4}}>
                             {def.positions.map((pos,pi)=>{
                               const isThis=(sel[pi]||[]).includes(h.number);
-                              return <button key={pi} className="sy" style={{width:def.positions.length>3?46:52,height:44,borderRadius:9,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:800,fontSize:def.positions.length>3?11:13,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isThis?"0 2px 8px rgba(26,58,26,.25)":"none"}} onClick={e=>{e.stopPropagation();toggleHorse(pi,h.number);}}>{pos.label}</button>;
+                              return <button key={pi} className="sy" style={{width:def.positions.length>3?46:52,height:44,borderRadius:9,border:`2px solid ${isThis?"#1a3a1a":"#d1d5db"}`,background:isThis?"#1a3a1a":"#fff",color:isThis?"#fff":"#374151",cursor:"pointer",fontWeight:800,fontSize:def.positions.length>3?11:13,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isThis?"0 2px 8px rgba(26,58,26,.25)":"none"}} onClick={e=>{e.stopPropagation();selectPosition(pi,h.number);}}>{pos.label}</button>;
                             })}
                           </div>
                         </div>
@@ -2510,7 +2520,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                                 const inPos=(sel[pi]||[]).includes(h.number);
                                 return(
                                   <button key={pi} className="sy" style={{flex:1,padding:"9px 4px",background:inPos?"#1a3a1a":"transparent",color:inPos?"#fff":"#000",border:"none",borderRight:pi<def.positions.length-1?"1px solid #e5e7eb":"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
-                                    onClick={()=>toggleHorse(pi,h.number)}>{inPos?"✓ ":""}{pos.label}</button>
+                                    onClick={()=>selectPosition(pi,h.number)}>{inPos?"✓ ":""}{pos.label}</button>
                                 );
                               })}
                             </div>
