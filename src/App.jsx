@@ -1856,18 +1856,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     else setSheetDragY(0);
   };
 
-  // Once a selection is complete on mobile, bring the stake input into view automatically
-  const selectionCount=Object.values(sel).reduce((n,arr)=>n+(arr?.length||0),0);
-  useEffect(()=>{
-    if(!isMobile||!showBetPanel) return;
-    const hasSelection = winSel!=null || placeSel!=null || selectionCount>0;
-    if(!hasSelection) return;
-    const t=setTimeout(()=>{
-      stakeInputRef.current?.scrollIntoView({behavior:"smooth",block:"center"});
-    },150);
-    return ()=>clearTimeout(t);
-  },[isMobile,showBetPanel,winSel,placeSel,selectionCount]);
-
   // Most popular horse calc — aggregate all bets on this race (no player names)
   const raceBets=allBets?allBets.filter(b=>b.raceId===race.id&&b.won===null):[];
   const horsePopularity={};
@@ -2541,41 +2529,39 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   </div>
                 )}
 
+              </div>
+
+              {/* Fixed footer — stake + confirm, always visible, never needs scrolling to reach */}
+              <div style={{flexShrink:0,padding:"10px 16px 4px",borderTop:"1px solid #f3f4f6",background:"#fff"}}>
+
                 {/* Each Way breakdown */}
                 {betType==="eachway"&&stake>0&&(
-                  <div style={{background:"#fef3c7",borderRadius:10,padding:"10px 14px",marginBottom:14,border:"1.5px solid #fcd34d"}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#000"}}>Each Way breakdown</div>
-                    <div style={{fontSize:12,color:"#555",marginTop:3}}>Win {fmt(stake)} + Place {fmt(stake)} = <strong style={{color:"#000"}}>{fmt(totalCost)} total</strong></div>
+                  <div style={{background:"#fef3c7",borderRadius:10,padding:"8px 12px",marginBottom:8,border:"1.5px solid #fcd34d"}}>
+                    <div style={{fontSize:12,color:"#555"}}>Win {fmt(stake)} + Place {fmt(stake)} = <strong style={{color:"#000"}}>{fmt(totalCost)} total</strong></div>
                   </div>
                 )}
 
-                {/* Stake */}
-                <div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <span style={{fontSize:13,fontWeight:700,color:"#000"}}>Stake</span>
-                    <span style={{fontSize:13,fontWeight:700,color:"#1a3a1a"}}>{fmt(raceBalance)} available</span>
-                  </div>
-                  <div ref={stakeInputRef} style={{position:"relative",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <span style={{fontSize:13,fontWeight:700,color:"#000"}}>Stake</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>{fmt(raceBalance)} available</span>
+                </div>
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <div ref={stakeInputRef} style={{position:"relative",flex:1}}>
                     <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:20,fontWeight:700,color:"#000"}}>$</span>
                     <input className="inp sy" type="number" min="0.5" step="0.5" placeholder="0.00" value={stakeStr} onChange={e=>setStakeStr(e.target.value)}
                       onWheel={e=>e.target.blur()}
-                      style={{paddingLeft:32,fontSize:22,fontWeight:700,padding:"13px 14px 13px 32px",width:"100%",borderRadius:12,border:"2px solid #e5e7eb",boxSizing:"border-box"}}/>
+                      style={{paddingLeft:32,fontSize:22,fontWeight:700,padding:"11px 14px 11px 32px",width:"100%",borderRadius:12,border:"2px solid #e5e7eb",boxSizing:"border-box"}}/>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:6}}>
-                    {[5,10,15,raceBalance].filter((v,i,a)=>v>0&&a.indexOf(v)===i).slice(0,4).map(v=>(
-                      <button key={v} className="sy" style={{padding:"12px 4px",borderRadius:10,border:`2px solid ${Number(stakeStr)===v?"#1a3a1a":"#e5e7eb"}`,background:Number(stakeStr)===v?"#1a3a1a":"#fff",color:Number(stakeStr)===v?"#fff":"#000",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>setStakeStr(String(v))}>
-                        ${v}
-                      </button>
-                    ))}
-                  </div>
-                  {totalCost>raceBalance&&stake>0&&<div style={{padding:"8px 12px",background:"#fee2e2",borderRadius:8,fontSize:13,fontWeight:700,color:"#dc2626"}}>⚠ Over budget — max {fmt(raceBalance)}</div>}
+                  {[5,10,15,raceBalance].filter((v,i,a)=>v>0&&a.indexOf(v)===i).slice(0,3).map(v=>(
+                    <button key={v} className="sy" style={{flexShrink:0,width:48,borderRadius:10,border:`2px solid ${Number(stakeStr)===v?"#1a3a1a":"#e5e7eb"}`,background:Number(stakeStr)===v?"#1a3a1a":"#fff",color:Number(stakeStr)===v?"#fff":"#000",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>setStakeStr(String(v))}>
+                      ${v}
+                    </button>
+                  ))}
                 </div>
-              </div>
+                {totalCost>raceBalance&&stake>0&&<div style={{padding:"7px 12px",background:"#fee2e2",borderRadius:8,fontSize:12,fontWeight:700,color:"#dc2626",marginBottom:8}}>⚠ Over budget — max {fmt(raceBalance)}</div>}
 
-              {/* Confirm button */}
-              <div style={{flexShrink:0,padding:"10px 16px 4px",borderTop:"1px solid #f3f4f6"}}>
                 <button className="sy" disabled={!isReady()} onClick={()=>{handleAdd();closeBetPanel();}}
-                  style={{width:"100%",padding:"15px",borderRadius:14,background:isReady()?"#1a3a1a":"#f3f4f6",color:isReady()?"#fff":"#9ca3af",fontSize:15,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",boxShadow:isReady()?"0 4px 16px rgba(26,58,26,.35)":"none"}}>
+                  style={{width:"100%",padding:"15px",borderRadius:14,background:isReady()?"#1a3a1a":"#f3f4f6",color:isReady()?"#fff":"#9ca3af",fontSize:15,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",boxShadow:isReady()?"0 4px 16px rgba(26,58,26,.35)":"none",marginBottom:8}}>
                   {!isReady()
                     ?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget")
                     :`Confirm Bet — ${fmt(totalCost)}`}
