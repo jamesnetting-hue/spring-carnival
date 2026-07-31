@@ -4128,7 +4128,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {settled.length>0&&(()=>{
               const achievements=[
                 {icon:"🎯",name:"First Bet",desc:"You're on the board!",hint:"Place your first bet",unlocked:settled.length>=1},
-                {icon:"✅",name:"Winner!",desc:"First winning bet!",hint:"Win your first bet",unlocked:won.length>=1},
+                {icon:"💸",name:"Full Send",desc:"Spent your whole $24 in one race!",hint:"Use your entire budget in a single race",unlocked:allRaces.some(r=>getRaceBalance(account.id,r.id)===0)},
                 {icon:"🔥",name:"On a Roll",desc:"2 wins in a row!",hint:"Win 2 races in a row",unlocked:longestWinStreak>=2},
                 {icon:"🏆",name:"Hat Trick",desc:"3 wins in a row!",hint:"Win 3 races in a row",unlocked:longestWinStreak>=3},
                 {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
