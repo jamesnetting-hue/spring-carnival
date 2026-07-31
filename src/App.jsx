@@ -4685,6 +4685,38 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [editRaceForm, setEditRaceForm] = useState({});
   const [editHorseFor, setEditHorseFor] = useState(null); // {raceId, horseNum}
   const [editHorseForm, setEditHorseForm] = useState({});
+  const [silkCheckOpen, setSilkCheckOpen] = useState(false);
+  const [silkCheckResults, setSilkCheckResults] = useState(null); // null=not run, [] while running, array when done
+  const [silkCheckProgress, setSilkCheckProgress] = useState({done:0,total:0});
+
+  const runSilkCheck = () => {
+    const items = [];
+    races.filter(r=>r.status!=="archived"&&r.status!=="deleted").forEach(race=>{
+      race.horses.forEach(h=>{
+        if(h.scratched) return;
+        items.push({raceId:race.id, raceName:`${race.venue} · ${race.name}`, horseNum:h.number, horseName:h.name, silkUrl:h.silkUrl||"", status: h.silkUrl?"checking":"missing"});
+      });
+    });
+    setSilkCheckResults(items);
+    setSilkCheckProgress({done:items.filter(i=>i.status!=="checking").length,total:items.length});
+    items.forEach((item,idx)=>{
+      if(item.status!=="checking") return;
+      const img=new Image();
+      img.onload=()=>{
+        setSilkCheckResults(prev=>{
+          const next=[...prev]; next[idx]={...next[idx],status:"ok"}; return next;
+        });
+        setSilkCheckProgress(p=>({...p,done:p.done+1}));
+      };
+      img.onerror=()=>{
+        setSilkCheckResults(prev=>{
+          const next=[...prev]; next[idx]={...next[idx],status:"broken"}; return next;
+        });
+        setSilkCheckProgress(p=>({...p,done:p.done+1}));
+      };
+      img.src=item.silkUrl;
+    });
+  };
 
   const handleAddRace = () => {
     if (!newRace.name.trim()) return setNewRaceErr("Race name is required.");
@@ -4991,9 +5023,12 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
 
       {adminTab === "races" && (
         <div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8,flexWrap:"wrap"}}>
             <p className="sy" style={{fontSize:13,color:"#000"}}>Click horses into finishing order, enter TAB dividends, then settle.</p>
-            <button className="btn btn-gold sy" style={{fontSize:12,padding:"8px 16px",flexShrink:0}} onClick={()=>setShowAddRace(true)}>+ Add Race</button>
+            <div style={{display:"flex",gap:8,flexShrink:0}}>
+              <button className="btn btn-ghost sy" style={{fontSize:12,padding:"8px 14px"}} onClick={()=>{setSilkCheckOpen(true);setSilkCheckResults(null);runSilkCheck();}}>🔍 Check Silks</button>
+              <button className="btn btn-gold sy" style={{fontSize:12,padding:"8px 16px"}} onClick={()=>setShowAddRace(true)}>+ Add Race</button>
+            </div>
           </div>
 
           {/* Race day checklist */}
@@ -5316,6 +5351,68 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Silk Checker modal */}
+      {silkCheckOpen&&(
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setSilkCheckOpen(false)}>
+          <div className="modal sr" style={{maxWidth:600}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <h3 className="cg" style={{fontSize:20,fontWeight:700}}>🔍 Silk Checker</h3>
+              <button className="btn btn-ghost sy" style={{fontSize:12,padding:"5px 10px"}} onClick={()=>setSilkCheckOpen(false)}>Close</button>
+            </div>
+            <p className="sy soft" style={{fontSize:12,marginBottom:14}}>Checks every active (non-scratched) horse across all races for a missing or broken silk image.</p>
+
+            {!silkCheckResults ? (
+              <p className="sy" style={{fontSize:13,color:C.soft}}>Starting…</p>
+            ) : (()=>{
+              const missing = silkCheckResults.filter(i=>i.status==="missing");
+              const broken = silkCheckResults.filter(i=>i.status==="broken");
+              const ok = silkCheckResults.filter(i=>i.status==="ok");
+              const checking = silkCheckResults.filter(i=>i.status==="checking");
+              return (
+                <>
+                  <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:90,textAlign:"center",padding:"10px 6px",borderRadius:10,background:"#dcfce7",border:"1px solid #86efac"}}>
+                      <div style={{fontSize:20,fontWeight:900,color:"#15803d"}}>{ok.length}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:"#15803d"}}>OK</div>
+                    </div>
+                    <div style={{flex:1,minWidth:90,textAlign:"center",padding:"10px 6px",borderRadius:10,background:"#fef3c7",border:"1px solid #fcd34d"}}>
+                      <div style={{fontSize:20,fontWeight:900,color:"#92400e"}}>{missing.length}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:"#92400e"}}>Missing</div>
+                    </div>
+                    <div style={{flex:1,minWidth:90,textAlign:"center",padding:"10px 6px",borderRadius:10,background:"#fee2e2",border:"1px solid #fca5a5"}}>
+                      <div style={{fontSize:20,fontWeight:900,color:"#b91c1c"}}>{broken.length}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:"#b91c1c"}}>Broken link</div>
+                    </div>
+                    {checking.length>0&&(
+                      <div style={{flex:1,minWidth:90,textAlign:"center",padding:"10px 6px",borderRadius:10,background:"#f3f4f6",border:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:20,fontWeight:900,color:"#555"}}>{checking.length}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:"#555"}}>Checking…</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {(missing.length>0||broken.length>0) ? (
+                    <div style={{maxHeight:340,overflowY:"auto"}}>
+                      {[...broken,...missing].map((item,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,background:item.status==="broken"?"#fef2f2":"#fffbeb",marginBottom:6}}>
+                          <span style={{fontSize:11,fontWeight:800,color:item.status==="broken"?"#b91c1c":"#92400e",flexShrink:0,width:60}}>{item.status==="broken"?"Broken":"Missing"}</span>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:700,color:"#111"}}>#{item.horseNum} {item.horseName}</div>
+                            <div style={{fontSize:11,color:"#666",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.raceName}{item.silkUrl?` · ${item.silkUrl}`:""}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    checking.length===0&&<p className="sy" style={{fontSize:13,color:"#15803d",fontWeight:600}}>✓ Every active horse has a working silk image.</p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
