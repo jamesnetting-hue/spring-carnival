@@ -382,7 +382,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 .modal{background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;width:100%;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
 
 /* -- RESPONSIVE -- */
-@media(max-width:640px){
+@media(max-width:699px){
   body{font-size:15px}
   .desktop-nav{display:none!important}
   .mobile-nav{display:flex!important}
@@ -402,13 +402,13 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
   .tab{padding:7px 12px;font-size:13px}
   .topt{padding:8px;font-size:12px}
 }
-@media(min-width:641px){
+@media(min-width:700px){
   .desktop-nav{display:flex!important}
   .mobile-nav{display:none!important}
   .modal-bg{align-items:center;padding:16px}
   .modal{border-radius:16px;padding:28px;max-width:540px;max-height:90vh}
 }
-@media(min-width:641px) and (max-width:900px){
+@media(min-width:700px) and (max-width:900px){
   .card{padding:16px}
 }
 input[type=number]::-webkit-inner-spin-button,
@@ -1179,7 +1179,7 @@ export default function App() {
       )}
 
       {toast&&(
-        <div style={{position:"fixed",top:window.innerWidth<641?62:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
+        <div style={{position:"fixed",top:window.innerWidth<700?62:72,right:16,left:16,zIndex:9999,padding:"14px 18px",borderRadius:12,background:toast.type==="err"?"rgba(254,242,242,.98)":"rgba(240,253,244,.98)",border:`1px solid ${toast.type==="err"?C.redBd:C.greenBd}`,color:toast.type==="err"?C.red:C.green,animation:"notif .28s ease",fontSize:14,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",backdropFilter:"blur(16px)",boxShadow:"0 8px 40px rgba(0,0,0,.15)",fontWeight:600,maxWidth:480,margin:"0 auto"}}>
           {toast.msg}
         </div>
       )}
@@ -1187,9 +1187,9 @@ export default function App() {
       {screen!=="auth"&&(
         <>
           {/* -- HEADER -- */}
-          <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:window.innerWidth<641?"0 12px":"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:window.innerWidth<641?52:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
+          <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:window.innerWidth<700?"0 12px":"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:window.innerWidth<700?52:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span className="cg" style={{fontSize:window.innerWidth<641?15:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
+              <span className="cg" style={{fontSize:window.innerWidth<700?15:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
                 {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
@@ -1259,7 +1259,7 @@ export default function App() {
 
       {screen==="auth"&&<AuthScreen onRegister={doRegister} onLogin={doLogin} accounts={accounts}/>}
 
-      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<641?"12px":"24px"} ${window.innerWidth<641?"76px":"48px"}`}}>
+      {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<700?"12px":"24px"} ${window.innerWidth<700?"76px":"48px"}`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage} accounts={accounts}/>}
         {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet} allBets={bets} accounts={accounts}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
