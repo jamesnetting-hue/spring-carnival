@@ -239,9 +239,28 @@ const BET_TYPES = [
 // for the most common boxed size: exactly N horses for N positions) or
 // recomputing a full-box combo count (which is wrong for partial "multi" bets
 // like a banker horse + a couple of backup runners in one position).
-const BASE_TYPE = t => (t || "").replace(/_boxed\d*$/, "");
-const IS_BOXED_TYPE = t => /_boxed\d*$/.test(t || "");
-const STORED_COMBOS = t => { const m = /_boxed(\d+)$/.exec(t || ""); return m ? parseInt(m[1], 10) : null; };
+// Two distinct tags for "covers more than one combination":
+//  "_boxedN"      — placed via the Boxed toggle: EVERY horse can be in ANY
+//                   position, no order to show.
+//  "_multiCxSHAPE" — placed unboxed, but >1 horse picked for at least one
+//                   position (e.g. a banker + backup runners). C = combos,
+//                   SHAPE = hyphen-separated counts of how many horses were
+//                   picked per position (e.g. "1-1-2" = 1 for 1st, 1 for 2nd,
+//                   2 for 3rd) — hyphenated so a position with 10+ horses
+//                   picked doesn't corrupt the digit boundaries — so the
+//                   exact order/grouping can still be displayed.
+const BASE_TYPE = t => (t || "").replace(/_(boxed\d*|multi\d+x[\d-]+)$/, "");
+const IS_BOXED_TYPE = t => /_(boxed\d*|multi\d+x[\d-]+)$/.test(t || "");
+const IS_TRUE_BOX = t => /_boxed\d*$/.test(t || "");
+const STORED_COMBOS = t => {
+  let m = /_boxed(\d+)$/.exec(t || ""); if (m) return parseInt(m[1], 10);
+  m = /_multi(\d+)x[\d-]+$/.exec(t || ""); if (m) return parseInt(m[1], 10);
+  return null;
+};
+const MULTI_SHAPE = t => {
+  const m = /_multi\d+x([\d-]+)$/.exec(t || "");
+  return m ? m[1].split("-").map(Number) : null;
+};
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
 // Local calendar date as YYYY-MM-DD — NOT toISOString(), which is UTC and can be
@@ -1113,8 +1132,9 @@ export default function App() {
                     <div className="sy" style={{fontSize:14,fontWeight:700,color:C.red,marginBottom:4}}>🚨 {name}</div>
                     {playerBets.map(b=>{
                       const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
-                      const isBoxedStyle = IS_BOXED_TYPE(b.type);
-                      return <div key={b.id} className="sy" style={{fontSize:13,color:"#000"}}>{td?.label} · {isBoxedStyle?"🎲 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</div>;
+                      const isTrueBox = IS_TRUE_BOX(b.type);
+                      const isMulti = IS_BOXED_TYPE(b.type) && !isTrueBox;
+                      return <div key={b.id} className="sy" style={{fontSize:13,color:"#000"}}>{td?.label} · {isTrueBox?"🎲 ":isMulti?"🎯 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</div>;
                     })}
                   </div>
                 );
@@ -1975,15 +1995,23 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         onQueue(race.id,"win",h,stake);
         onQueue(race.id,"place",h,stake);
       });
-    } else if((boxed&&canShowBoxed)||combos>1) {
-      // Boxed, OR multiple horses picked across positions (unboxed "multi"):
-      // store the FULL stake as one bet (this is what gets deducted from budget
-      // and shown to the player) — the per-combo split is only used internally
-      // at settlement time to calculate the correct flexi-style payout.
-      // Tagged with "_boxedN" so the app KNOWS this bet is boxed AND exactly
-      // how many combinations it covers, instead of guessing from horse count.
+    } else if(boxed&&canShowBoxed) {
+      // Boxed toggle: every selected horse can be in ANY position — no order to
+      // preserve. Store the FULL stake as one bet; tagged "_boxedN" (N = combos)
+      // so the app KNOWS it's boxed instead of guessing from horse count.
       const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
       onQueue(race.id,betType+"_boxed"+combos,allSel,stake,combos);
+    } else if(combos>1) {
+      // Unboxed, but more than one horse picked for at least one position
+      // (e.g. a banker + a couple of backup runners). Store horses in
+      // position order (duplicates across positions kept) plus a "shape" —
+      // how many horses were picked per position — so the exact grouping
+      // can still be shown later, instead of collapsing into an undifferentiated
+      // "boxed" list.
+      const posArrays = def.positions.map((_,i)=>effectiveSel[i]||[]);
+      const horsesInOrder = posArrays.flat();
+      const shape = posArrays.map(a=>a.length).join("-");
+      onQueue(race.id,`${betType}_multi${combos}x${shape}`,horsesInOrder,stake,combos);
     } else {
       allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
     }
@@ -1994,16 +2022,27 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   };
 
   // Describes a bet's horses for display — shows ordinal order (1st/2nd/3rd...)
-  // for straight unboxed picks, or a plain "boxed" list when order doesn't apply.
+  // for straight unboxed picks, per-position groups for "multi" bets (unboxed
+  // but >1 horse in a position), or a plain "any order" list for a true box.
   const describeBetHorses = (b) => {
     const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
-    const names = b.horses.map(n=>{
-      const h = race.horses.find(x=>x.number===n);
-      return h ? `#${n} ${h.name}` : `#${n}`;
-    });
+    const nameFor = n => { const h = race.horses.find(x=>x.number===n); return h ? `#${n} ${h.name}` : `#${n}`; };
+    const isTrueBox = IS_TRUE_BOX(b.type);
     const isBoxedStyle = IS_BOXED_TYPE(b.type);
     const isOrdered = d && d.positions.length>1 && !isBoxedStyle && BASE_TYPE(b.type)!=="quinella";
-    return { names, isBoxedStyle, isOrdered, positions: d?.positions||[] };
+    const shape = MULTI_SHAPE(b.type);
+    let groups = null;
+    if (shape && d) {
+      let idx = 0;
+      groups = d.positions.map((pos,i)=>{
+        const count = shape[i]||0;
+        const names = b.horses.slice(idx, idx+count).map(nameFor);
+        idx += count;
+        return { label: pos.label, names };
+      }).filter(g=>g.names.length>0);
+    }
+    const names = [...new Set(b.horses)].map(nameFor);
+    return { names, isBoxedStyle, isTrueBox, isOrdered, groups, positions: d?.positions||[] };
   };
 
   // Which positions each horse is selected for
@@ -2146,7 +2185,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 {myBets.map(b=>{
                   const d=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                   const canCancel=b.won===null&&race.status==="upcoming";
-                  const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
+                  const {names:horseNames,isTrueBox,isOrdered,groups,positions}=describeBetHorses(b);
                   return(
                     <div key={b.id} style={{padding:"9px 12px",borderRadius:8,background:b.won===true?C.greenBg:b.won===false?C.redBg:"rgba(26,58,26,.06)",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:"#1a3a1a"}`}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,marginBottom:horseNames.length>1?4:0}}>
@@ -2172,9 +2211,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             </Fragment>
                           ))}
                         </div>
+                      ):groups?(
+                        <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:4,marginTop:2}}>
+                          <span style={{fontSize:9,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:".04em",width:"100%",marginBottom:1}}>🎯 Multi — any of these combos</span>
+                          {groups.map((g,i)=>(
+                            <Fragment key={i}>
+                              <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:700}}>
+                                {g.label} {g.names.join(" / ")}
+                              </span>
+                              {i<groups.length-1&&<span style={{fontSize:11,color:"#888"}}>→</span>}
+                            </Fragment>
+                          ))}
+                        </div>
                       ):(
                         <div style={{marginTop:2}}>
-                          {isBoxedStyle&&<div className="sy" style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:3,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
+                          {isTrueBox&&<div className="sy" style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:3,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
                           <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                             {horseNames.map((name,i)=>(
                               <span key={i} style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:600}}>
@@ -2779,7 +2830,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   {myBets.map(b=>{
                     const d=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                     const canCancel = b.won===null && race.status==="upcoming";
-                    const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
+                    const {names:horseNames,isTrueBox,isOrdered,groups,positions}=describeBetHorses(b);
                     return(
                       <div key={b.id} style={{padding:"10px 12px",background:b.won===true?C.greenBg:b.won===false?C.redBg:"#f8fffe",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.greenBd}`,borderRadius:8}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
@@ -2800,9 +2851,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               </Fragment>
                             ))}
                           </div>
+                        ):groups?(
+                          <div>
+                            <div className="sy" style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2,textTransform:"uppercase",letterSpacing:".04em"}}>🎯 Multi — any of these combos</div>
+                            <div className="sy" style={{fontSize:13,color:"#000",display:"flex",flexWrap:"wrap",alignItems:"center",gap:5}}>
+                              {groups.map((g,i)=>(
+                                <Fragment key={i}>
+                                  <span><strong>{g.label}</strong> {g.names.join(" / ")}</span>
+                                  {i<groups.length-1&&<span style={{color:"#888"}}>→</span>}
+                                </Fragment>
+                              ))}
+                            </div>
+                          </div>
                         ):(
                           <div>
-                            {isBoxedStyle&&<div className="sy" style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
+                            {isTrueBox&&<div className="sy" style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
                             <div className="sy" style={{fontSize:13,color:"#000"}}>{horseNames.join(" · ")}</div>
                           </div>
                         )}
@@ -3496,8 +3559,20 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           {(tab==="active"?active:settled).map(bet=>{
             const race=races.find(r=>r.id===bet.raceId), td=BET_TYPES.find(t=>t.id===BASE_TYPE(bet.type));
             const canCancel = bet.won===null && race?.status==="upcoming";
+            const isTrueBox = IS_TRUE_BOX(bet.type);
             const isBoxedStyle = IS_BOXED_TYPE(bet.type);
             const isOrdered = td && td.positions.length>1 && !isBoxedStyle && BASE_TYPE(bet.type)!=="quinella";
+            const shape = MULTI_SHAPE(bet.type);
+            let groups = null;
+            if (shape && td) {
+              let idx=0;
+              groups = td.positions.map((pos,i)=>{
+                const count=shape[i]||0;
+                const nums=bet.horses.slice(idx,idx+count);
+                idx+=count;
+                return {label:pos.label, nums};
+              }).filter(g=>g.nums.length>0);
+            }
             return(
               <div key={bet.id} className="surface" style={{borderLeft:`3px solid ${bet.won===true?C.green:bet.won===false?C.red:C.accent}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -3507,7 +3582,9 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
                       {td?.label}
                       {isOrdered
                         ?bet.horses.map((n,i)=><span key={i}> · <strong>{td.positions[i]?.label||`${i+1}th`}</strong> #{n}</span>)
-                        :<> · {isBoxedStyle?"🎲 Boxed: ":""}#{bet.horses.join(", #")}</>
+                        :groups
+                        ?<> · 🎯 {groups.map((g,i)=><span key={i}>{i>0?" → ":""}<strong>{g.label}</strong> #{g.nums.join("/#")}</span>)}</>
+                        :<> · {isTrueBox?"🎲 Boxed: ":""}#{bet.horses.join(", #")}</>
                       }
                       {" · "}{new Date(bet.placedAt).toLocaleDateString("en-AU",{day:"numeric",month:"short"})}
                     </div>
@@ -3686,7 +3763,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               <div className="sy" style={{fontSize:12,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🌟 Best Single Win</div>
               <div className="cg" style={{fontSize:20,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</div>
               <div className="sy" style={{fontSize:12,color:"#000",marginTop:3}}>{BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type))?.label} · {bestWinRace?.name}</div>
-              <div className="sy" style={{fontSize:13,color:"#000",marginTop:1}}>{IS_BOXED_TYPE(bestWin.type)?"🎲 ":""}#{bestWin.horses.join(" → #")}</div>
+              <div className="sy" style={{fontSize:13,color:"#000",marginTop:1}}>{IS_TRUE_BOX(bestWin.type)?"🎲 ":IS_BOXED_TYPE(bestWin.type)?"🎯 ":""}#{bestWin.horses.join(" → #")}</div>
             </div>
           )}
           {streak&&streak.count>1&&(
@@ -4547,8 +4624,20 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     <div style={{display:"flex",flexDirection:"column",gap:4}}>
                       {rb.map(b=>{
                         const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                        const isTrueBox = IS_TRUE_BOX(b.type);
                         const isBoxedStyle = IS_BOXED_TYPE(b.type);
                         const isOrdered = td && td.positions.length>1 && !isBoxedStyle && BASE_TYPE(b.type)!=="quinella";
+                        const shape = MULTI_SHAPE(b.type);
+                        let groups = null;
+                        if (shape && td) {
+                          let idx=0;
+                          groups = td.positions.map((pos,i)=>{
+                            const count=shape[i]||0;
+                            const nums=b.horses.slice(idx,idx+count);
+                            idx+=count;
+                            return {label:pos.label, nums};
+                          }).filter(g=>g.nums.length>0);
+                        }
                         return(
                           <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:7,gap:8}}>
                             <div style={{minWidth:0}}>
@@ -4561,8 +4650,17 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                                     </span>
                                   ))}
                                 </div>
+                              ) : groups ? (
+                                <div className="sy" style={{fontSize:12,color:"#000",marginTop:2,display:"flex",flexWrap:"wrap",gap:4}}>
+                                  <span style={{fontSize:10,fontWeight:700,color:"#888",textTransform:"uppercase",width:"100%"}}>🎯 Multi — any combo</span>
+                                  {groups.map((g,i)=>(
+                                    <span key={i}>
+                                      <strong>{g.label}</strong> #{g.nums.join("/#")}{i<groups.length-1?" → ":""}
+                                    </span>
+                                  ))}
+                                </div>
                               ) : (
-                                <span className="sy" style={{fontSize:13,color:"#000"}}> · {isBoxedStyle?"🎲 Boxed: ":""}#{b.horses.join(", #")}</span>
+                                <span className="sy" style={{fontSize:13,color:"#000"}}> · {isTrueBox?"🎲 Boxed: ":""}#{b.horses.join(", #")}</span>
                               )}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
@@ -4611,10 +4709,11 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     <div style={{display:"flex",flexDirection:"column",gap:3}}>
                       {rb.map(b=>{
                         const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
-                        const isBoxedStyle = IS_BOXED_TYPE(b.type);
+                        const isTrueBox = IS_TRUE_BOX(b.type);
+                        const isMulti = IS_BOXED_TYPE(b.type) && !isTrueBox;
                         return(
                           <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
-                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · {isBoxedStyle?"🎲 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</span>
+                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · {isTrueBox?"🎲 ":isMulti?"🎯 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</span>
                             <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0,marginLeft:8}}>
                               {b.won===true?`+${fmt(b.payout)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
                             </span>
