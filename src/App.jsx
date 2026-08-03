@@ -233,6 +233,15 @@ const BET_TYPES = [
 ];
 
 // --- HELPERS ------------------------------------------------------------------
+// Boxed/multi bets are tagged with a "_boxedN" suffix on the stored bet type
+// (e.g. "trifecta_boxed6") so the app KNOWS a bet is boxed AND exactly how many
+// combinations it covers — rather than guessing from horse count (which breaks
+// for the most common boxed size: exactly N horses for N positions) or
+// recomputing a full-box combo count (which is wrong for partial "multi" bets
+// like a banker horse + a couple of backup runners in one position).
+const BASE_TYPE = t => (t || "").replace(/_boxed\d*$/, "");
+const IS_BOXED_TYPE = t => /_boxed\d*$/.test(t || "");
+const STORED_COMBOS = t => { const m = /_boxed(\d+)$/.exec(t || ""); return m ? parseInt(m[1], 10) : null; };
 const getOddsMap = horses => Object.fromEntries(horses.map(h=>[h.number,h]));
 const fmt = v => `$${Math.abs(parseFloat(v)).toFixed(2)}`;
 // Local calendar date as YYYY-MM-DD — NOT toISOString(), which is UTC and can be
@@ -709,7 +718,7 @@ export default function App() {
       return;
     }
     const om = getOddsMap(race.horses);
-    const def = BET_TYPES.find(t=>t.id===type);
+    const def = BET_TYPES.find(t=>t.id===BASE_TYPE(type));
     const mult = def.multiplier(horses,om);
     const potential = parseFloat((stake*mult).toFixed(2));
     const now = Date.now();
@@ -774,8 +783,8 @@ export default function App() {
     }
 
     // How many combinations a boxed/multi bet of N unique horses covers for a given bet type
-    const comboCount = (type, n, r) => {
-      if (type === "quinella") return n*(n-1)/2;
+    const comboCount = (baseType, n, r) => {
+      if (baseType === "quinella") return n*(n-1)/2;
       let c = 1;
       for (let i=0; i<r; i++) c *= (n-i);
       return c;
@@ -784,28 +793,30 @@ export default function App() {
     // Payout calculator using real dividends
     const calcDividendPayout = (bet) => {
       const { type, horses } = bet;
-      const def = BET_TYPES.find(t=>t.id===type);
+      const baseType = BASE_TYPE(type);
+      const def = BET_TYPES.find(t=>t.id===baseType);
       // Boxed/multi bets store the FULL stake — divide by the number of combos
       // covered to get the correct per-combo (flexi) unit before applying the dividend.
-      const isBoxedStyle = def && horses.length > def.positions.length;
-      const stake = isBoxedStyle ? bet.stake / comboCount(type, horses.length, def.positions.length) : bet.stake;
+      const isBoxedStyle = IS_BOXED_TYPE(type);
+      const actualCombos = STORED_COMBOS(type) || comboCount(baseType, horses.length, def.positions.length);
+      const stake = isBoxedStyle ? bet.stake / actualCombos : bet.stake;
       const { first, second, third } = result;
       const d = dividends;
-      if (type === "win")   return parseFloat((stake * (d.win || 0)).toFixed(2));
-      if (type === "place") {
+      if (baseType === "win")   return parseFloat((stake * (d.win || 0)).toFixed(2));
+      if (baseType === "place") {
         const placeDiv = horses[0]===first ? d.place1 : horses[0]===second ? d.place2 : horses[0]===third ? d.place3 : 0;
         return parseFloat((stake * (placeDiv || 0)).toFixed(2));
       }
-      if (type === "eachway") {
+      if (baseType === "eachway") {
         const winDiv   = horses[0]===first ? (d.win || 0) : 0;
         const placeDiv = horses[0]===first ? d.place1 : horses[0]===second ? d.place2 : horses[0]===third ? d.place3 : 0;
         return parseFloat((stake * (winDiv + (placeDiv || 0))).toFixed(2));
       }
-      if (type === "exacta")    return parseFloat((stake * (d.exacta    || 0)).toFixed(2));
-      if (type === "trifecta")  return parseFloat((stake * (d.trifecta  || 0)).toFixed(2));
-      if (type === "firstfour") return parseFloat((stake * (d.firstfour || 0)).toFixed(2));
+      if (baseType === "exacta")    return parseFloat((stake * (d.exacta    || 0)).toFixed(2));
+      if (baseType === "trifecta")  return parseFloat((stake * (d.trifecta  || 0)).toFixed(2));
+      if (baseType === "firstfour") return parseFloat((stake * (d.firstfour || 0)).toFixed(2));
       // quinella - use exacta div / 2 as fallback if no quinella div entered
-      if (type === "quinella")  return parseFloat((stake * (d.quinella  || (d.exacta ? d.exacta/2 : 0))).toFixed(2));
+      if (baseType === "quinella")  return parseFloat((stake * (d.quinella  || (d.exacta ? d.exacta/2 : 0))).toFixed(2));
       return 0;
     };
 
@@ -813,10 +824,10 @@ export default function App() {
     const allBetsForRace = [...bets, ...autoBets];
     const settled = allBetsForRace.map(b=>{
       if (b.raceId!==raceId||b.won!==null) return b;
-      const def = BET_TYPES.find(t=>t.id===b.type);
+      const def = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
       let won;
-      if(b.horses.length>def.positions.length) {
-        // Boxed bet - check if the result positions are all covered by selected horses
+      if(IS_BOXED_TYPE(b.type)) {
+        // Boxed/multi bet - check if the result positions are all covered by selected horses
         const resultPositions=[result.first,result.second,result.third,result.fourth].slice(0,def.positions.length);
         won = resultPositions.every(pos=>b.horses.includes(pos));
       } else {
@@ -868,9 +879,10 @@ export default function App() {
         const totalWon    = winningBets.reduce((s,b)=>s+b.payout,0);
         const totalLost   = losingBets.reduce((s,b)=>s+b.stake,0);
         const betLines = playerBets.map(b=>{
-          const def = BET_TYPES.find(t=>t.id===b.type);
+          const def = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
           const horseLine = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`; }).join(" → ");
-          return `${b.won?"WIN":"LOSS"} ${def?.label}: ${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
+          const boxedTag = IS_BOXED_TYPE(b.type) ? "[Boxed] " : "";
+          return `${b.won?"WIN":"LOSS"} ${def?.label}: ${boxedTag}${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
         }).join("\n");
 
         emailjs.send(
@@ -1100,8 +1112,9 @@ export default function App() {
                   <div key={name} style={{padding:"10px 14px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:8}}>
                     <div className="sy" style={{fontSize:14,fontWeight:700,color:C.red,marginBottom:4}}>🚨 {name}</div>
                     {playerBets.map(b=>{
-                      const td=BET_TYPES.find(t=>t.id===b.type);
-                      return <div key={b.id} className="sy" style={{fontSize:13,color:"#000"}}>{td?.label} · #{b.horses.join(" → #")} · {fmt(b.stake)}</div>;
+                      const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                      const isBoxedStyle = IS_BOXED_TYPE(b.type);
+                      return <div key={b.id} className="sy" style={{fontSize:13,color:"#000"}}>{td?.label} · {isBoxedStyle?"🎲 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</div>;
                     })}
                   </div>
                 );
@@ -1620,7 +1633,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               });
               const myBet=displayed[0]||null;
               const hn=myBet?race.horses.find(h=>h.number===myBet.horses[0]):null;
-              const def2=myBet?BET_TYPES.find(t=>t.id===myBet.type):null;
+              const def2=myBet?BET_TYPES.find(t=>t.id===BASE_TYPE(myBet.type)):null;
               const isEW=myBet?.type==="eachway"&&myBet.pairPayout!==undefined;
               const betWon=myBet?(isEW?myBet.pairWon:myBet.won===true):false;
               const betLost=myBet?(isEW?myBet.bothLost:myBet.won===false):false;
@@ -1871,7 +1884,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   // Bet lock countdown - always called at top level (not inside callback)
   const countdown = useCountdown(race.date, race.raceTime);
 
-  const def=BET_TYPES.find(t=>t.id===betType);
+  const def=BET_TYPES.find(t=>t.id===BASE_TYPE(betType));
   const om=getOddsMap(race.horses);
   const activeHorses=race.horses.filter(h=>!h.scratched);
   const fav=activeHorses.sort((a,b)=>a.winOdds-b.winOdds)[0];
@@ -1967,8 +1980,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       // store the FULL stake as one bet (this is what gets deducted from budget
       // and shown to the player) — the per-combo split is only used internally
       // at settlement time to calculate the correct flexi-style payout.
+      // Tagged with "_boxedN" so the app KNOWS this bet is boxed AND exactly
+      // how many combinations it covers, instead of guessing from horse count.
       const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
-      onQueue(race.id,betType,allSel,stake,combos);
+      onQueue(race.id,betType+"_boxed"+combos,allSel,stake,combos);
     } else {
       allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
     }
@@ -1981,13 +1996,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   // Describes a bet's horses for display — shows ordinal order (1st/2nd/3rd...)
   // for straight unboxed picks, or a plain "boxed" list when order doesn't apply.
   const describeBetHorses = (b) => {
-    const d = BET_TYPES.find(t=>t.id===b.type);
+    const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
     const names = b.horses.map(n=>{
       const h = race.horses.find(x=>x.number===n);
       return h ? `#${n} ${h.name}` : `#${n}`;
     });
-    const isBoxedStyle = d && b.horses.length > d.positions.length;
-    const isOrdered = d && d.positions.length>1 && !isBoxedStyle && b.type!=="quinella";
+    const isBoxedStyle = IS_BOXED_TYPE(b.type);
+    const isOrdered = d && d.positions.length>1 && !isBoxedStyle && BASE_TYPE(b.type)!=="quinella";
     return { names, isBoxedStyle, isOrdered, positions: d?.positions||[] };
   };
 
@@ -2129,7 +2144,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               <p className="sy" style={{fontSize:12,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Your Bets on This Race</p>
               <div style={{display:"flex",flexDirection:"column",gap:5}}>
                 {myBets.map(b=>{
-                  const d=BET_TYPES.find(t=>t.id===b.type);
+                  const d=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                   const canCancel=b.won===null&&race.status==="upcoming";
                   const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
                   return(
@@ -2383,33 +2398,33 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
               {/* Handle + header — swipe down to dismiss */}
               <div
-                style={{flexShrink:0,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:"20px 20px 0 0",padding:"10px 16px 14px",touchAction:"none",cursor:"grab"}}
+                style={{flexShrink:0,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderRadius:"20px 20px 0 0",padding:"8px 14px 10px",touchAction:"none",cursor:"grab"}}
                 onTouchStart={onSheetTouchStart}
                 onTouchMove={onSheetTouchMove}
                 onTouchEnd={onSheetTouchEnd}
               >
-                <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,.3)",margin:"0 auto 10px"}}/>
+                <div style={{width:32,height:4,borderRadius:2,background:"rgba(255,255,255,.3)",margin:"0 auto 8px"}}/>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,.65)",fontWeight:500,marginBottom:2}}>Placing a bet</div>
-                    <div style={{fontSize:16,fontWeight:800,color:"#fff"}}>{race.name}</div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,.65)",fontWeight:600,marginBottom:1,textTransform:"uppercase",letterSpacing:".05em"}}>{def?.label}{canShowBoxed?(boxed?" · Boxed":" · Unboxed"):""}</div>
+                    <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{race.name}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:18,fontWeight:900,color:"#fcd34d"}}>{fmt(raceBalance)}</div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,.6)"}}>budget left</div>
+                    <div style={{fontSize:17,fontWeight:900,color:"#fcd34d"}}>{fmt(raceBalance)}</div>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,.6)"}}>budget left</div>
                   </div>
                 </div>
               </div>
 
               {/* Scrollable content */}
-              <div style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
+              <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
 
                 {/* Bet type pills */}
-                <div style={{marginBottom:14}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Bet Type</div>
-                  <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>Bet Type</div>
+                  <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
                     {BET_TYPES.map(t=>(
-                      <button key={t.id} className="sy" style={{flexShrink:0,padding:"8px 14px",borderRadius:20,border:`2px solid ${betType===t.id?"#1a3a1a":"#e5e7eb"}`,background:betType===t.id?"#1a3a1a":"#fff",color:betType===t.id?"#fff":"#000",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}
+                      <button key={t.id} className="sy" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,border:`2px solid ${betType===t.id?"#1a3a1a":"#e5e7eb"}`,background:betType===t.id?"#1a3a1a":"#fff",color:betType===t.id?"#fff":"#000",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}
                         onClick={()=>changeType(t.id)}>{t.label}</button>
                     ))}
                   </div>
@@ -2417,39 +2432,39 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
                 {/* Boxed/Unboxed toggle for exotics */}
                 {canShowBoxed&&(
-                  <div style={{display:"flex",gap:6,marginBottom:14}}>
-                    <button className="sy" style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${!boxed?"#1a3a1a":"#e5e7eb"}`,background:!boxed?"#1a3a1a":"#fff",color:!boxed?"#fff":"#000",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
-                    <button className="sy" style={{flex:1,padding:"10px",borderRadius:10,border:`2px solid ${boxed?"#1a3a1a":"#e5e7eb"}`,background:boxed?"#1a3a1a":"#fff",color:boxed?"#fff":"#000",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
+                  <div style={{display:"flex",gap:5,marginBottom:10}}>
+                    <button className="sy" style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${!boxed?"#1a3a1a":"#e5e7eb"}`,background:!boxed?"#1a3a1a":"#fff",color:!boxed?"#fff":"#000",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(false);setSel({});}}>Unboxed</button>
+                    <button className="sy" style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${boxed?"#1a3a1a":"#e5e7eb"}`,background:boxed?"#1a3a1a":"#fff",color:boxed?"#fff":"#000",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>{setBoxed(true);setSel({});}}>Boxed</button>
                   </div>
                 )}
 
                 {/* Horse picker */}
-                <div style={{marginBottom:14}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>
                     {betType==="win"||betType==="place"||betType==="eachway"?"Select Horse":boxed?`Select ${numPositions}+ Horses`:"Select Positions"}
                   </div>
 
                   {/* Win/Place/EW horse picker */}
                   {(betType==="win"||betType==="place"||betType==="eachway")&&(
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
                       {race.horses.filter(h=>!h.scratched).map(h=>{
                         const isSel=winSel===h.number||placeSel===h.number;
                         return(
-                          <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:12,border:`2px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,background:isSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit",transition:"all .1s"}}
+                          <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:11,border:`2px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,background:isSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit",transition:"all .1s"}}
                             onClick={()=>{
                               if(betType==="win"){setWinSel(h.number);setSel({0:[h.number]});}
                               else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}
                               else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}
                             }}>
                             {/* Silk */}
-                            <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:`1px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                              {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                              <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:isSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{isSel?"✓":h.number}</div>
+                            <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:`1px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
+                              {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                              <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:isSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{isSel?"✓":h.number}</div>
                               {isSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                             </div>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:15,fontWeight:700,color:"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
-                              <div style={{fontSize:12,color:"#555",marginTop:1}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
+                              <div style={{fontSize:14,fontWeight:700,color:"#000",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
+                              <div style={{fontSize:11,color:"#555",marginTop:1}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
                             </div>
                             {isSel&&<span style={{fontSize:14,fontWeight:800,color:"#1a3a1a",flexShrink:0}}>✓</span>}
                           </button>
@@ -2465,10 +2480,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         if(boxed){
                           const inSel=(sel[0]||[]).includes(h.number);
                           return(
-                            <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:12,border:`2px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
-                              <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:`1px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                                <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:inSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{inSel?"✓":h.number}</div>
+                            <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:11,border:`2px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
+                              <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:`1px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
+                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:inSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{inSel?"✓":h.number}</div>
                                 {inSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                               </div>
                               <div style={{flex:1}}>
@@ -2481,16 +2496,16 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         const myPos=def.positions.map((p,pi)=>(sel[pi]||[]).includes(h.number)?p.label:null).filter(Boolean);
                         return(
                           <div key={h.number} style={{borderRadius:12,border:`2px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa",overflow:"hidden",marginBottom:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
-                              <div style={{width:38,height:38,borderRadius:8,background:"#fff",border:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                                <div className="silk-fb" style={{width:32,height:32,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:9,padding:"8px 12px"}}>
+                              <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+                                {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
+                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
                               </div>
                               <div style={{flex:1}}>
-                                <div style={{fontSize:15,fontWeight:700,color:"#000"}}>{h.name}</div>
+                                <div style={{fontSize:14,fontWeight:700,color:"#000"}}>{h.name}</div>
                                 {myPos.length>0
-                                  ?<div style={{fontSize:12,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(" · ")}</div>
-                                  :<div style={{fontSize:12,color:"#555"}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
+                                  ?<div style={{fontSize:11,color:"#1a3a1a",fontWeight:700}}>✓ {myPos.join(" · ")}</div>
+                                  :<div style={{fontSize:11,color:"#555"}}>Win <strong style={{color:"#000"}}>${h.winOdds?.toFixed(2)}</strong> · Place <strong style={{color:"#000"}}>${h.placeOdds?.toFixed(2)}</strong></div>
                                 }
                               </div>
                             </div>
@@ -2498,7 +2513,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               {def.positions.map((pos,pi)=>{
                                 const inPos=(sel[pi]||[]).includes(h.number);
                                 return(
-                                  <button key={pi} className="sy" style={{flex:1,padding:"9px 4px",background:inPos?"#1a3a1a":"transparent",color:inPos?"#fff":"#000",border:"none",borderRight:pi<def.positions.length-1?"1px solid #e5e7eb":"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
+                                  <button key={pi} className="sy" style={{flex:1,padding:"7px 4px",background:inPos?"#1a3a1a":"transparent",color:inPos?"#fff":"#000",border:"none",borderRight:pi<def.positions.length-1?"1px solid #e5e7eb":"none",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}
                                     onClick={()=>toggleHorse(pi,h.number)}>{inPos?"✓ ":""}{pos.label}</button>
                                 );
                               })}
@@ -2512,12 +2527,12 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
                 {/* Combinations + Flexi info — shown for ALL exotic bet types */}
                 {combos>0&&(betType==="trifecta"||betType==="firstfour"||betType==="exacta"||betType==="quinella")&&(
-                  <div style={{background:"#f0fdf4",borderRadius:10,padding:"12px 14px",marginBottom:14,border:"1.5px solid #bbf7d0"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                      <span style={{fontSize:14,fontWeight:700,color:"#000"}}>✓ {combos} combination{combos!==1?"s":""}</span>
-                      <span style={{fontSize:14,fontWeight:800,color:flexiPct>=100?"#16a34a":"#92400e"}}>{flexiPct}% flexi</span>
+                  <div style={{background:"#f0fdf4",borderRadius:10,padding:"10px 12px",marginBottom:10,border:"1.5px solid #bbf7d0"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                      <span style={{fontSize:13,fontWeight:700,color:"#000"}}>✓ {combos} combination{combos!==1?"s":""}</span>
+                      <span style={{fontSize:13,fontWeight:800,color:flexiPct>=100?"#16a34a":"#92400e"}}>{flexiPct}% flexi</span>
                     </div>
-                    <div style={{fontSize:12,color:"#555"}}>
+                    <div style={{fontSize:11,color:"#555"}}>
                       ${stake} total · {combos} bets · {fmt(unitStake)} each
                     </div>
                     {flexiPct<100&&(
@@ -2531,7 +2546,36 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               </div>
 
               {/* Fixed footer — stake + confirm, always visible, never needs scrolling to reach */}
-              <div style={{flexShrink:0,padding:"10px 16px 4px",borderTop:"1px solid #f3f4f6",background:"#fff"}}>
+              <div style={{flexShrink:0,padding:"8px 14px 4px",borderTop:"1px solid #f3f4f6",background:"#fff"}}>
+
+                {/* Live "your bet" summary — always visible, updates as you pick */}
+                {(()=>{
+                  const isSingleType = betType==="win"||betType==="place"||betType==="eachway";
+                  const selNum = isSingleType ? (winSel||placeSel) : null;
+                  const selName = selNum ? race.horses.find(h=>h.number===selNum)?.name : null;
+                  const poolNames = !isSingleType ? [...new Set(Object.values(effectiveSel||{}).flat())].map(n=>race.horses.find(h=>h.number===n)?.name).filter(Boolean) : [];
+                  const posSummary = !isSingleType && boxed===false && def ? def.positions.map((pos,i)=>{
+                    const names=(effectiveSel[i]||[]).map(n=>race.horses.find(h=>h.number===n)?.name).filter(Boolean);
+                    return names.length?`${pos.label} ${names.join("/")}`:null;
+                  }).filter(Boolean) : [];
+                  const hasSel = selName || poolNames.length>0;
+                  return(
+                    <div style={{marginBottom:10,padding:"10px 12px",borderRadius:10,background:hasSel?"#eef4ea":"#f3f4f6",border:"1.5px solid #e5e7eb",borderLeft:`4px solid ${hasSel?"#1a3a1a":"#d1d5db"}`}}>
+                      <div style={{fontSize:9,fontWeight:800,color:hasSel?"#1a3a1a":"#888",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3,display:"flex",alignItems:"center",gap:4}}>
+                        <span>{hasSel?"🎯":"👇"}</span> Your Bet
+                      </div>
+                      {!hasSel ? (
+                        <div style={{fontSize:13,color:"#999",fontWeight:600}}>{def?.label} — select {isSingleType?"a horse":"your runners"} above</div>
+                      ) : isSingleType ? (
+                        <div style={{fontSize:14,fontWeight:800,color:"#000"}}>{def?.label} — {selName}</div>
+                      ) : boxed ? (
+                        <div style={{fontSize:14,fontWeight:800,color:"#000"}}>{def?.label} <span style={{fontWeight:600,color:"#666"}}>(Boxed{combos>1?`, ${combos} combos`:""})</span> — {poolNames.join(", ")}</div>
+                      ) : (
+                        <div style={{fontSize:14,fontWeight:800,color:"#000"}}>{def?.label}{combos>1?<span style={{fontWeight:600,color:"#666"}}> ({combos} combos)</span>:null} — {posSummary.join(" · ")}</div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Each Way breakdown */}
                 {betType==="eachway"&&stake>0&&(
@@ -2563,7 +2607,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   style={{width:"100%",padding:"15px",borderRadius:14,background:isReady()?"#1a3a1a":"#f3f4f6",color:isReady()?"#fff":"#9ca3af",fontSize:15,fontWeight:800,border:"none",cursor:isReady()?"pointer":"not-allowed",fontFamily:"inherit",boxShadow:isReady()?"0 4px 16px rgba(26,58,26,.35)":"none",marginBottom:8}}>
                   {!isReady()
                     ?(stake<=0?"Enter a stake":combos===0?"Select a horse":"Over budget")
-                    :`Confirm Bet — ${fmt(totalCost)}`}
+                    :`Confirm ${def?.label} — ${fmt(totalCost)}`}
                 </button>
               </div>
             </div>
@@ -2733,7 +2777,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 <p className="sy" style={{fontSize:12,fontWeight:800,color:"#000",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>Your Bets on This Race</p>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {myBets.map(b=>{
-                    const d=BET_TYPES.find(t=>t.id===b.type);
+                    const d=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                     const canCancel = b.won===null && race.status==="upcoming";
                     const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
                     return(
@@ -2814,10 +2858,10 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const roughieAcc=biggestRoughie?accounts.find(a=>a.id===biggestRoughie.playerId):null;
   const roughieRace=biggestRoughie?races.find(r=>r.id===biggestRoughie.raceId):null;
   const roughieHorse=biggestRoughie?roughieRace?.horses?.find(h=>h.number===biggestRoughie.horses?.[0]):null;
-  const bigTri=settled.filter(b=>b.won===true&&b.type==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+  const bigTri=settled.filter(b=>b.won===true&&BASE_TYPE(b.type)==="trifecta").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
   const bigTriAcc=bigTri?accounts.find(a=>a.id===bigTri.playerId):null;
   const bigTriRace=bigTri?races.find(r=>r.id===bigTri.raceId):null;
-  const bigFF=settled.filter(b=>b.won===true&&b.type==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
+  const bigFF=settled.filter(b=>b.won===true&&BASE_TYPE(b.type)==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
   const bigFFAcc=bigFF?accounts.find(a=>a.id===bigFF.playerId):null;
   const hotStreak=accounts.map(a=>{
     const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);return p;}).filter(x=>x!==null);
@@ -2953,7 +2997,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         const ab=bets.filter(b=>b.playerId===a.id&&b.won!==null);
                         if(ab.length<3) return null;
                         const abWon=ab.filter(b=>b.won===true);
-                        const ep=Math.round((ab.filter(b=>['trifecta','firstfour','exacta','quinella'].includes(b.type)).length/ab.length)*100);
+                        const ep=Math.round((ab.filter(b=>['trifecta','firstfour','exacta','quinella'].includes(BASE_TYPE(b.type))).length/ab.length)*100);
                         const bbp=Math.round((ab.filter(b=>b.stake>=15).length/ab.length)*100);
                         const ls=ab.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
                         const hr=Math.round((abWon.length/ab.length)*100);
@@ -3055,7 +3099,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                             <>
                               <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(bestWin.payout||0)}</div>
                               {bestWinHorse&&<div className="sy" style={{fontSize:13,fontWeight:700,color:"#111",marginTop:2}}>{bestWinHorse.name}</div>}
-                              <div className="sy" style={{fontSize:12,color:"#000"}}>{BET_TYPES.find(t=>t.id===bestWin.type)?.label} · {bestWinRace?.name}</div>
+                              <div className="sy" style={{fontSize:12,color:"#000"}}>{BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type))?.label} · {bestWinRace?.name}</div>
                             </>
                           ):<span className="sy" style={{fontSize:12,color:"#000",fontStyle:"italic"}}>No wins yet</span>}
                         </div>
@@ -3200,7 +3244,7 @@ function SeasonScreen({accounts, bets, races}) {
         const bestBet = bets.filter(b=>b.won===true).sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
         const bestPlayer = bestBet ? accounts.find(a=>a.id===bestBet.playerId) : null;
         const bestRace = bestBet ? races.find(r=>r.id===bestBet.raceId) : null;
-        const bestType = bestBet ? BET_TYPES.find(t=>t.id===bestBet.type) : null;
+        const bestType = bestBet ? BET_TYPES.find(t=>t.id===BASE_TYPE(bestBet.type)) : null;
         if (!bestPlayer) return null;
         return (
           <div className="card" style={{marginBottom:24,background:"linear-gradient(135deg,#fffbeb,#fef9e7)",border:`2px solid ${C.gold}`,textAlign:"center",padding:"20px 24px"}}>
@@ -3304,7 +3348,7 @@ function SeasonScreen({accounts, bets, races}) {
                     <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",flexWrap:"wrap",gap:6}}>
                       {raceWinners.map(b=>{
                         const pl=accounts.find(a=>a.id===b.playerId);
-                        const td=BET_TYPES.find(t=>t.id===b.type);
+                        const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                         return(
                           <span key={b.id} className="sy" style={{fontSize:12,padding:"4px 10px",background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:20,color:C.green}}>
                             🎉 {pl?.name} - {td?.label} +{fmt(b.payout||0)}
@@ -3450,14 +3494,23 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
       {(tab==="active"?active:settled).length===0?<p className="sy soft">{tab==="active"?"No active bets.":"No settled bets yet."}</p>:(
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {(tab==="active"?active:settled).map(bet=>{
-            const race=races.find(r=>r.id===bet.raceId), td=BET_TYPES.find(t=>t.id===bet.type);
+            const race=races.find(r=>r.id===bet.raceId), td=BET_TYPES.find(t=>t.id===BASE_TYPE(bet.type));
             const canCancel = bet.won===null && race?.status==="upcoming";
+            const isBoxedStyle = IS_BOXED_TYPE(bet.type);
+            const isOrdered = td && td.positions.length>1 && !isBoxedStyle && BASE_TYPE(bet.type)!=="quinella";
             return(
               <div key={bet.id} className="surface" style={{borderLeft:`3px solid ${bet.won===true?C.green:bet.won===false?C.red:C.accent}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div className="cg" style={{fontSize:17,fontWeight:700}}>{race?.name}</div>
-                    <div className="sy soft" style={{fontSize:12,marginTop:2}}>{td?.label} · #{bet.horses.join(" → #")} · {new Date(bet.placedAt).toLocaleDateString("en-AU",{day:"numeric",month:"short"})}</div>
+                    <div className="sy soft" style={{fontSize:12,marginTop:2}}>
+                      {td?.label}
+                      {isOrdered
+                        ?bet.horses.map((n,i)=><span key={i}> · <strong>{td.positions[i]?.label||`${i+1}th`}</strong> #{n}</span>)
+                        :<> · {isBoxedStyle?"🎲 Boxed: ":""}#{bet.horses.join(", #")}</>
+                      }
+                      {" · "}{new Date(bet.placedAt).toLocaleDateString("en-AU",{day:"numeric",month:"short"})}
+                    </div>
                     <div className="sy" style={{fontSize:12,marginTop:3,fontWeight:600,color:bet.won===true?C.green:bet.won===false?C.red:C.accent}}>
                       {bet.won===null&&bet.potential?`Potential: ${fmt(bet.potential)}`:bet.won===true?`Won ${fmt(bet.payout)}! `:bet.won===false?"Lost":"Pending"}
                     </div>
@@ -3632,8 +3685,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             <div style={{background:"#f0fdf4",border:`1px solid ${C.greenBd}`,borderRadius:12,padding:"14px 16px"}}>
               <div className="sy" style={{fontSize:12,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>🌟 Best Single Win</div>
               <div className="cg" style={{fontSize:20,fontWeight:800,color:C.green}}>+{fmt(bestWin.payout||0)}</div>
-              <div className="sy" style={{fontSize:12,color:"#000",marginTop:3}}>{BET_TYPES.find(t=>t.id===bestWin.type)?.label} · {bestWinRace?.name}</div>
-              <div className="sy" style={{fontSize:13,color:"#000",marginTop:1}}>#{bestWin.horses.join(" → #")}</div>
+              <div className="sy" style={{fontSize:12,color:"#000",marginTop:3}}>{BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type))?.label} · {bestWinRace?.name}</div>
+              <div className="sy" style={{fontSize:13,color:"#000",marginTop:1}}>{IS_BOXED_TYPE(bestWin.type)?"🎲 ":""}#{bestWin.horses.join(" → #")}</div>
             </div>
           )}
           {streak&&streak.count>1&&(
@@ -3891,16 +3944,16 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
             {/* ⑨ PUNTER PERSONALITY ───────────────────────────────── */}
             {(()=>{
-              const exoticBets=settled.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(b.type));
+              const exoticBets=settled.filter(b=>["trifecta","firstfour","exacta","quinella"].includes(BASE_TYPE(b.type)));
               const exoticPct=settled.length?Math.round((exoticBets.length/settled.length)*100):0;
               const avgStakeP=settled.length?parseFloat((settled.reduce((s,b)=>s+b.stake,0)/settled.length).toFixed(1)):0;
               const bigBets=settled.filter(b=>b.stake>=15).length;
               const bigBetPct=settled.length?Math.round((bigBets/settled.length)*100):0;
               const highOddsBets=settled.filter(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10).length;
-              const trifectaBets=settled.filter(b=>b.type==="trifecta");
-              const firstFourBets=settled.filter(b=>b.type==="firstfour");
+              const trifectaBets=settled.filter(b=>BASE_TYPE(b.type)==="trifecta");
+              const firstFourBets=settled.filter(b=>BASE_TYPE(b.type)==="firstfour");
               const bigExoticBets=trifectaBets.length+firstFourBets.length;
-              const bigExoticWins=won.filter(b=>b.type==="trifecta"||b.type==="firstfour");
+              const bigExoticWins=won.filter(b=>BASE_TYPE(b.type)==="trifecta"||BASE_TYPE(b.type)==="firstfour");
               const bestBigPayout=bigExoticWins.length?Math.max(...bigExoticWins.map(b=>b.payout||0)):0;
               const ewBets=settled.filter(b=>b.type==="eachway");
               const ewPct=settled.length?Math.round((ewBets.length/settled.length)*100):0;
@@ -4074,7 +4127,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
                 {icon:"💎",name:"High Roller",desc:"Living large!",hint:"Place a single bet of $20+",unlocked:settled.some(b=>b.stake>=20)},
                 {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
-                {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>b.type==="trifecta"||b.type==="firstfour")},
+                {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>BASE_TYPE(b.type)==="trifecta"||BASE_TYPE(b.type)==="firstfour")},
                 {icon:"🌟",name:"Big Winner",desc:"Massive payout!",hint:"Win $50+ in a single bet",unlocked:won.some(b=>(b.payout||0)>=50)},
                 {icon:"📈",name:"Consistent",desc:"5 profitable races!",hint:"Be profitable in 5+ races",unlocked:racesWon>=5},
               ];
@@ -4193,7 +4246,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 <div className="sy" style={{fontSize:11,color:"#000",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Biggest Win</div>
                 <div className="cg" style={{fontSize:20,fontWeight:900,color:C.green}}>+{fmt(biggestPayout?.payout||0)}</div>
                 <div className="sy" style={{fontSize:12,color:"#000",marginTop:2}}>{biggestPayoutRace?.name||"-"}</div>
-                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>{BET_TYPES.find(t=>t.id===biggestPayout?.type)?.label||""}</div>
+                <div className="sy" style={{fontSize:12,fontWeight:700,color:C.accent,marginTop:2}}>{BET_TYPES.find(t=>t.id===BASE_TYPE(biggestPayout?.type))?.label||""}</div>
               </div>
             </div>
 
@@ -4493,9 +4546,9 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   {rb.length>0?(
                     <div style={{display:"flex",flexDirection:"column",gap:4}}>
                       {rb.map(b=>{
-                        const td=BET_TYPES.find(t=>t.id===b.type);
-                        const isBoxedStyle = td && b.horses.length > td.positions.length;
-                        const isOrdered = td && td.positions.length>1 && !isBoxedStyle && b.type!=="quinella";
+                        const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                        const isBoxedStyle = IS_BOXED_TYPE(b.type);
+                        const isOrdered = td && td.positions.length>1 && !isBoxedStyle && BASE_TYPE(b.type)!=="quinella";
                         return(
                           <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:7,gap:8}}>
                             <div style={{minWidth:0}}>
@@ -4557,10 +4610,11 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                   {rb.length>0&&(
                     <div style={{display:"flex",flexDirection:"column",gap:3}}>
                       {rb.map(b=>{
-                        const td=BET_TYPES.find(t=>t.id===b.type);
+                        const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                        const isBoxedStyle = IS_BOXED_TYPE(b.type);
                         return(
                           <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
-                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · #{b.horses.join(" → #")} · {fmt(b.stake)}</span>
+                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · {isBoxedStyle?"🎲 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</span>
                             <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0,marginLeft:8}}>
                               {b.won===true?`+${fmt(b.payout)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
                             </span>
