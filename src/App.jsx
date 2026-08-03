@@ -820,9 +820,22 @@ export default function App() {
       })));
     }
 
+    // How many combinations a boxed/multi bet of N unique horses covers for a given bet type
+    const comboCount = (type, n, r) => {
+      if (type === "quinella") return n*(n-1)/2;
+      let c = 1;
+      for (let i=0; i<r; i++) c *= (n-i);
+      return c;
+    };
+
     // Payout calculator using real dividends
     const calcDividendPayout = (bet) => {
-      const { type, horses, stake } = bet;
+      const { type, horses } = bet;
+      const def = BET_TYPES.find(t=>t.id===type);
+      // Boxed/multi bets store the FULL stake — divide by the number of combos
+      // covered to get the correct per-combo (flexi) unit before applying the dividend.
+      const isBoxedStyle = def && horses.length > def.positions.length;
+      const stake = isBoxedStyle ? bet.stake / comboCount(type, horses.length, def.positions.length) : bet.stake;
       const { first, second, third } = result;
       const d = dividends;
       if (type === "win")   return parseFloat((stake * (d.win || 0)).toFixed(2));
@@ -2002,10 +2015,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
       });
     } else if((boxed&&canShowBoxed)||combos>1) {
       // Boxed, OR multiple horses picked across positions (unboxed "multi"):
-      // store every selected horse as ONE bet with unitStake, so it settles
-      // as a single bet instead of one row per combination.
+      // store the FULL stake as one bet (this is what gets deducted from budget
+      // and shown to the player) — the per-combo split is only used internally
+      // at settlement time to calculate the correct flexi-style payout.
       const allSel=[...new Set(Object.values(effectiveSel||{}).flat())];
-      onQueue(race.id,betType,allSel,unitStake,combos);
+      onQueue(race.id,betType,allSel,stake,combos);
     } else {
       allCombos.forEach(h=>onQueue(race.id,betType,h,unitStake));
     }
