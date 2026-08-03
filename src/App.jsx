@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, Fragment } from "react";
 
 // Animated counter hook
 function useAnimatedCounter(target, duration=1200) {
@@ -429,8 +429,6 @@ export default function App() {
   const [raceId, setRaceId] = useState(null);
   const [toast, setToast] = useState(null);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
-  const [showBetslip, setShowBetslip] = useState(false);
-  const [pendingBets, setPendingBets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
@@ -732,51 +730,6 @@ export default function App() {
     });
     showToast(`Bet placed — ${fmt(stake)} on ${type}`);
   };
-
-  // CONFIRM BETSLIP
-  const confirmBetslip = () => {
-    if (!liveAccount) return;
-    // Validate each race's budget independently
-    const betsByRace = {};
-    for (const b of pendingBets) {
-      if (!betsByRace[b.raceId]) betsByRace[b.raceId] = [];
-      betsByRace[b.raceId].push(b);
-    }
-    for (const [rid, rBets] of Object.entries(betsByRace)) {
-      const available = getRaceBalance(liveAccount.id, rid);
-      const pendingForRace = rBets.reduce((s, b) => s + b.stake, 0);
-      if (pendingForRace > available) {
-        const race = races.find(r => r.id === rid);
-        return showToast(`${race?.name}: only ${fmt(available)} remaining for this race`, "err");
-      }
-    }
-    const now = Date.now();
-    const confirmed = pendingBets.map((b,i)=>({
-      ...b, id:(now+i).toString(),
-      playerId:liveAccount.id,
-      won:null, payout:null,
-      placedAt:new Date().toISOString(),
-    }));
-    setBets(p=>[...p,...confirmed]);
-    const total = pendingBets.reduce((s,b)=>s+b.stake,0);
-    updateAccount(liveAccount.id, a=>({
-      totalStaked:parseFloat((a.totalStaked+total).toFixed(2)),
-    }));
-    // Save bets to Supabase
-    if (liveAccount) {
-      confirmed.forEach(b => sb.insert("bets", {
-        id: b.id, player_id: b.playerId, race_id: b.raceId,
-        type: b.type, horses: JSON.stringify(b.horses),
-        stake: b.stake, potential: b.potential,
-        won: null, payout: null, placed_at: b.placedAt,
-      }));
-    }
-    setPendingBets([]);
-    setShowBetslip(false);
-    showToast(`${confirmed.length} bet${confirmed.length>1?"s":""} placed! Total: ${fmt(total)}`);
-  };
-
-  const removePending = id => setPendingBets(p=>p.filter(b=>b.id!==id));
 
   // SETTLE RACE - uses actual TAB dividends entered by admin
   // dividends = { win: 4.60, place1: 1.90, place2: 2.10, place3: 3.20, exacta: 18.50, trifecta: 142.30, firstfour: 380.00 }
@@ -1283,10 +1236,6 @@ export default function App() {
           sb.upsert("settings", { key: "season_message", value: next });
         }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
-
-      {showBetslip&&(
-        <BetslipModal pendingBets={pendingBets} races={races} account={liveAccount} getRaceBalance={getRaceBalance} onRemove={removePending} onConfirm={confirmBetslip} onClose={()=>setShowBetslip(false)}/>
-      )}
     </div>
   );
 }
@@ -2029,6 +1978,19 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     setStakeStr("");
   };
 
+  // Describes a bet's horses for display — shows ordinal order (1st/2nd/3rd...)
+  // for straight unboxed picks, or a plain "boxed" list when order doesn't apply.
+  const describeBetHorses = (b) => {
+    const d = BET_TYPES.find(t=>t.id===b.type);
+    const names = b.horses.map(n=>{
+      const h = race.horses.find(x=>x.number===n);
+      return h ? `#${n} ${h.name}` : `#${n}`;
+    });
+    const isBoxedStyle = d && b.horses.length > d.positions.length;
+    const isOrdered = d && d.positions.length>1 && !isBoxedStyle && b.type!=="quinella";
+    return { names, isBoxedStyle, isOrdered, positions: d?.positions||[] };
+  };
+
   // Which positions each horse is selected for
   const horsePositions=(num)=>{
     if(boxed) return (effectiveSel[0]||[]).includes(num)?["Selected"]:[];
@@ -2169,10 +2131,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                 {myBets.map(b=>{
                   const d=BET_TYPES.find(t=>t.id===b.type);
                   const canCancel=b.won===null&&race.status==="upcoming";
-                  const horseNames=b.horses.map(n=>{
-                    const h=race.horses.find(x=>x.number===n);
-                    return `#${n} ${h?.name||""}`;
-                  });
+                  const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
                   return(
                     <div key={b.id} style={{padding:"9px 12px",borderRadius:8,background:b.won===true?C.greenBg:b.won===false?C.redBg:"rgba(26,58,26,.06)",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:"#1a3a1a"}`}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,marginBottom:horseNames.length>1?4:0}}>
@@ -2187,13 +2146,27 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       {/* All horses */}
                       {horseNames.length===1?(
                         <div className="sy" style={{fontSize:12,color:"#000"}}>{horseNames[0]}</div>
-                      ):(
-                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:2}}>
+                      ):isOrdered?(
+                        <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:4,marginTop:2}}>
                           {horseNames.map((name,i)=>(
-                            <span key={i} style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:600}}>
-                              {d?.positions?.[i]?.label||`#${i+1}`} {name}
-                            </span>
+                            <Fragment key={i}>
+                              <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:700}}>
+                                {positions[i]?.label||`${i+1}th`} {name}
+                              </span>
+                              {i<horseNames.length-1&&<span style={{fontSize:11,color:"#888"}}>→</span>}
+                            </Fragment>
                           ))}
+                        </div>
+                      ):(
+                        <div style={{marginTop:2}}>
+                          {isBoxedStyle&&<div className="sy" style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:3,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
+                          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                            {horseNames.map((name,i)=>(
+                              <span key={i} style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"#1a3a1a",color:"#fff",fontWeight:600}}>
+                                {name}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2762,7 +2735,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   {myBets.map(b=>{
                     const d=BET_TYPES.find(t=>t.id===b.type);
                     const canCancel = b.won===null && race.status==="upcoming";
-                    const horses = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`}).join(" → ");
+                    const {names:horseNames,isBoxedStyle,isOrdered,positions}=describeBetHorses(b);
                     return(
                       <div key={b.id} style={{padding:"10px 12px",background:b.won===true?C.greenBg:b.won===false?C.redBg:"#f8fffe",border:`1.5px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.greenBd}`,borderRadius:8}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
@@ -2774,7 +2747,21 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                             {b.won===true?`Won ${fmt(b.payout)}`:b.won===false?`Lost`:b.payout?`Won ${fmt(b.payout)}`:"Pending"}
                           </span>
                         </div>
-                        <div className="sy" style={{fontSize:13,color:"#000"}}>{horses}</div>
+                        {isOrdered?(
+                          <div className="sy" style={{fontSize:13,color:"#000",display:"flex",flexWrap:"wrap",alignItems:"center",gap:5}}>
+                            {horseNames.map((name,i)=>(
+                              <Fragment key={i}>
+                                <span><strong>{positions[i]?.label||`${i+1}th`}</strong> {name}</span>
+                                {i<horseNames.length-1&&<span style={{color:"#888"}}>→</span>}
+                              </Fragment>
+                            ))}
+                          </div>
+                        ):(
+                          <div>
+                            {isBoxedStyle&&<div className="sy" style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2,textTransform:"uppercase",letterSpacing:".04em"}}>🎲 Boxed — any order</div>}
+                            <div className="sy" style={{fontSize:13,color:"#000"}}>{horseNames.join(" · ")}</div>
+                          </div>
+                        )}
                         {canCancel&&(
                           <button className="sy" style={{marginTop:8,fontSize:12,padding:"5px 10px",borderRadius:6,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:700}}
                             onClick={()=>{ if(window.confirm("Cancel this bet?")) onCancelBet(b.id); }}>
@@ -2788,78 +2775,6 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               </div>
             )}
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- BETSLIP MODAL
-function BetslipModal({pendingBets,races,account,getRaceBalance,onRemove,onConfirm,onClose}) {
-  const total=pendingBets.reduce((s,b)=>s+b.stake,0);
-
-  // Check per-race budget constraints
-  const raceTotals={};
-  pendingBets.forEach(b=>{ raceTotals[b.raceId]=(raceTotals[b.raceId]||0)+b.stake; });
-  const raceIssues=Object.entries(raceTotals).filter(([rid,amt])=>{
-    const bal=account?getRaceBalance(account.id,rid):0;
-    return amt>bal;
-  });
-  const canAfford=raceIssues.length===0;
-
-  return (
-    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal sr">
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <h3 className="cg" style={{fontSize:24,fontWeight:700}}>Betslip</h3>
-          <button className="btn btn-ghost sy" style={{fontSize:12,padding:"5px 10px"}} onClick={onClose}>Close</button>
-        </div>
-
-        {pendingBets.length===0?(
-          <p className="sy soft" style={{fontSize:13}}>No bets added yet.</p>
-        ):(
-          <>
-            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16,maxHeight:340,overflowY:"auto"}}>
-              {pendingBets.map(b=>{
-                const race=races.find(r=>r.id===b.raceId);
-                const def=BET_TYPES.find(t=>t.id===b.type);
-                return(
-                  <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div className="cg" style={{fontSize:15,fontWeight:700,marginBottom:2}}>{race?.name}</div>
-                      <div className="sy" style={{fontSize:13,color:"#000"}}>{def?.label} · #{b.horses.join(" → #")}</div>
-                      <div style={{marginTop:4}}>
-                        <span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>Stake: {fmt(b.stake)}</span>
-                      </div>
-                    </div>
-                    <button className="sy" style={{fontSize:22,background:"none",border:"none",cursor:"pointer",color:"#000",padding:"0 0 0 8px",lineHeight:1}} onClick={()=>onRemove(b.id)}>×</button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {raceIssues.length>0&&(
-              <div style={{padding:"10px 12px",background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:8,marginBottom:12}}>
-                {raceIssues.map(([rid])=>{
-                  const race=races.find(r=>r.id===rid);
-                  const bal=account?getRaceBalance(account.id,rid):0;
-                  return <p key={rid} className="sy" style={{fontSize:12,color:C.red}}>{race?.name}: only {fmt(bal)} remaining</p>;
-                })}
-              </div>
-            )}
-
-            <div style={{padding:"12px 14px",background:"rgba(26,86,160,.05)",border:"1px solid rgba(26,86,160,.15)",borderRadius:8,marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span className="sy" style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em"}}>Total Cost</span>
-                <span className="cg gold" style={{fontSize:24,fontWeight:700}}>{fmt(total)}</span>
-              </div>
-              <div className="sy soft" style={{fontSize:12,marginTop:4}}>{pendingBets.length} bet{pendingBets.length>1?"s":""} across {new Set(pendingBets.map(b=>b.raceId)).size} race{new Set(pendingBets.map(b=>b.raceId)).size>1?"s":""}</div>
-            </div>
-
-            <button className="btn btn-gold" style={{width:"100%",padding:14,fontSize:13}} disabled={!canAfford} onClick={onConfirm}>
-              ✓ Confirm & Place All Bets
-            </button>
-          </>
         )}
       </div>
     </div>
