@@ -4494,11 +4494,23 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     <div style={{display:"flex",flexDirection:"column",gap:4}}>
                       {rb.map(b=>{
                         const td=BET_TYPES.find(t=>t.id===b.type);
+                        const isBoxedStyle = td && b.horses.length > td.positions.length;
+                        const isOrdered = td && td.positions.length>1 && !isBoxedStyle && b.type!=="quinella";
                         return(
-                          <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:7}}>
-                            <div>
+                          <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:7,gap:8}}>
+                            <div style={{minWidth:0}}>
                               <span className="sy" style={{fontSize:13,fontWeight:700}}>{td?.label}</span>
-                              <span className="sy" style={{fontSize:13,color:"#000"}}> · #{b.horses.join(" → #")}</span>
+                              {isOrdered ? (
+                                <div className="sy" style={{fontSize:12,color:"#000",marginTop:2,display:"flex",flexWrap:"wrap",gap:4}}>
+                                  {b.horses.map((n,i)=>(
+                                    <span key={i}>
+                                      <strong>{td.positions[i]?.label||`${i+1}th`}</strong> #{n}{i<b.horses.length-1?" → ":""}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="sy" style={{fontSize:13,color:"#000"}}> · {isBoxedStyle?"🎲 Boxed: ":""}#{b.horses.join(", #")}</span>
+                              )}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
                               <span className="sy" style={{fontSize:13,fontWeight:700}}>{fmt(b.stake)}</span>
