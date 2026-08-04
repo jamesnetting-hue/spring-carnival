@@ -3168,7 +3168,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         </div>
                       </div>
                       {/* Stats grid */}
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:6,marginBottom:10}}>
                         {[["Bets",pb.length],["Won",won],["Staked",fmt(a.totalStaked)],["Returned",fmt(a.totalWon)]].map(([l,v])=>(
                           <div key={l} style={{background:"#fff",borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.border}`}}>
                             <div className="sy" style={{fontSize:10,color:"#555",fontWeight:600,marginBottom:2}}>{l}</div>
@@ -3741,7 +3741,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         ))}
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:6,marginBottom:12}}>
         {[
           ["Win %",`${raceWinRate}%`,raceWinRate>=50?"#16a34a":raceWinRate>=30?"#d97706":"#dc2626"],
           ["ROI",`${roi}%`,roi>=0?"#16a34a":"#dc2626"],
