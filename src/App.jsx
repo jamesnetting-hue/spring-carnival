@@ -2143,7 +2143,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
         {/* Group Picks toggle */}
         {race.status==="upcoming"&&totalBettors>0&&(
-          <button onClick={()=>setShowPopularity(p=>!p)} className="sy" style={{marginTop:8,width:"100%",padding:"9px",borderRadius:10,background:showPopularity?"#1a3a1a":"#fff",border:`1.5px solid ${showPopularity?"#1a3a1a":"#e5e7eb"}`,color:showPopularity?"#fff":"#000",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+          <button onClick={()=>setShowPopularity(p=>!p)} className="sy" style={{marginTop:6,width:"100%",padding:"8px",borderRadius:10,background:showPopularity?"#1a3a1a":"#fff",border:`1.5px solid ${showPopularity?"#1a3a1a":"#e5e7eb"}`,color:showPopularity?"#fff":"#000",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
             📊 {showPopularity?"Hide":"See"} Group Picks
           </button>
         )}
@@ -2245,13 +2245,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
       {/* Mobile - single Place a Bet button */}
       {isMobile&&race.status==="upcoming"&&(
-        <button className="sy" style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
+        <button className="sy" style={{width:"100%",marginBottom:8,padding:"12px",borderRadius:12,background:"#1a3a1a",border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 16px rgba(26,58,26,.25)"}}
           onClick={()=>setShowBetPanel(true)}>
           Place Bet
         </button>
       )}
 
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:14,alignItems:"start"}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:isMobile?10:14,alignItems:"start"}}>
         {/* Horse field */}
         <div>
           {/* Desktop column headers */}
@@ -2273,7 +2273,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
 
             return (
               <div key={h.number} style={{
-                marginBottom:isMobile?3:8,
+                marginBottom:isMobile?2:8,
                 borderRadius:isMobile?8:12,
                 border:`2px solid ${(winActive||placeActive||highlighted)?"#1a3a1a":scr?"#f3f4f6":"#e5e7eb"}`,
                 background:(winActive||placeActive||highlighted)?"#f0fdf4":scr?"#f0f2f0":"#f7f9f7",
