@@ -467,6 +467,25 @@ export default function App() {
     } catch {}
     return { enabled: false, text: "Upcoming Group 1 races soon" };
   });
+  const seasonMsgSaveTimer = useRef(null);
+  // Safety net: if the admin types then navigates away (tab switch, close, screen
+  // change) before the debounce timer fires, flush the pending save immediately
+  // instead of losing it.
+  useEffect(() => {
+    const flush = () => {
+      if (seasonMsgSaveTimer.current) {
+        clearTimeout(seasonMsgSaveTimer.current);
+        seasonMsgSaveTimer.current = null;
+        sb.upsert("settings", { key: "season_message", value: seasonMessage });
+      }
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [seasonMessage]);
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -1279,7 +1298,14 @@ export default function App() {
         {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onAddHorses={addHorsesToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
           setSeasonMessage(next);
           localStorage.setItem("sc_season_msg", JSON.stringify(next));
-          sb.upsert("settings", { key: "season_message", value: next });
+          // Debounce the actual database write — saving on every keystroke means
+          // several rapid, overlapping requests can arrive at the server out of
+          // order, and whichever happens to land LAST wins, even if it wasn't
+          // sent last. Only push to Supabase once typing pauses for a moment.
+          clearTimeout(seasonMsgSaveTimer.current);
+          seasonMsgSaveTimer.current = setTimeout(()=>{
+            sb.upsert("settings", { key: "season_message", value: next });
+          }, 600);
         }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
     </div>
