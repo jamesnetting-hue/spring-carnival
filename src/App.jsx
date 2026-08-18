@@ -148,6 +148,13 @@ const sb = {
     } catch(e) { console.error("SB update failed", e); return null; }
   },
 
+  async remove(table, id) {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method: "DELETE", headers: this.h });
+      return res.ok;
+    } catch(e) { console.error("SB remove failed", e); return false; }
+  },
+
   async upsert(table, row) {
     try {
       const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
@@ -468,6 +475,21 @@ export default function App() {
     return { enabled: false, text: "Upcoming Group 1 races soon" };
   });
   const seasonMsgSaveTimer = useRef(null);
+  const seasonMsgRowId = useRef(null); // the settings table's real row id, once known
+  // Saves the season message reliably: updates the existing row by its actual
+  // id if we know it, otherwise inserts a new row and remembers its id. This
+  // avoids relying on Supabase's upsert conflict-resolution, which needs a
+  // unique constraint on "key" to work — without one, every "upsert" call was
+  // silently creating a brand new duplicate row instead of updating in place,
+  // which is why saved messages could vanish or revert after a refresh.
+  const saveSeasonMessage = async (next) => {
+    if (seasonMsgRowId.current) {
+      await sb.update("settings", seasonMsgRowId.current, { value: next });
+    } else {
+      const res = await sb.insert("settings", { key: "season_message", value: next });
+      if (Array.isArray(res) && res[0]?.id) seasonMsgRowId.current = res[0].id;
+    }
+  };
   // Safety net: if the admin types then navigates away (tab switch, close, screen
   // change) before the debounce timer fires, flush the pending save immediately
   // instead of losing it.
@@ -476,7 +498,7 @@ export default function App() {
       if (seasonMsgSaveTimer.current) {
         clearTimeout(seasonMsgSaveTimer.current);
         seasonMsgSaveTimer.current = null;
-        sb.upsert("settings", { key: "season_message", value: seasonMessage });
+        saveSeasonMessage(seasonMessage);
       }
     };
     document.addEventListener("visibilitychange", flush);
@@ -515,8 +537,16 @@ export default function App() {
         // Load season message - Supabase is the source of truth; sync local cache either way
         // so a stale message cached on one device (e.g. from earlier testing) doesn't linger
         // forever just because that device never got told the server-side value changed.
-        if (Array.isArray(dbSettings) && dbSettings.length > 0 && dbSettings[0].value) {
-          const msg = dbSettings[0].value;
+        if (Array.isArray(dbSettings) && dbSettings.length > 0) {
+          // The old upsert had no unique constraint to target, so it may have created
+          // duplicate rows over time. Treat the last one as the most recent, keep it,
+          // and clean up the rest so this doesn't keep compounding.
+          const latest = dbSettings[dbSettings.length - 1];
+          seasonMsgRowId.current = latest.id;
+          if (dbSettings.length > 1) {
+            dbSettings.slice(0, -1).forEach(row => sb.remove("settings", row.id));
+          }
+          const msg = latest.value || { enabled: false, text: "Upcoming Group 1 races soon" };
           setSeasonMessage(msg);
           localStorage.setItem("sc_season_msg", JSON.stringify(msg));
         } else {
@@ -1253,7 +1283,7 @@ export default function App() {
           // sent last. Only push to Supabase once typing pauses for a moment.
           clearTimeout(seasonMsgSaveTimer.current);
           seasonMsgSaveTimer.current = setTimeout(()=>{
-            sb.upsert("settings", { key: "season_message", value: next });
+            saveSeasonMessage(next);
           }, 600);
         }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
