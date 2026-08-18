@@ -901,57 +901,6 @@ export default function App() {
       }));
     });
 
-    // Send email notifications via EmailJS to every player who had a bet on this race
-    const emailjs = window.emailjs;
-    if (emailjs) {
-      // Group settled bets by player
-      const byPlayer = {};
-      settled.filter(b=>b.raceId===raceId).forEach(b=>{
-        if (!byPlayer[b.playerId]) byPlayer[b.playerId] = [];
-        byPlayer[b.playerId].push(b);
-      });
-      Object.entries(byPlayer).forEach(([playerId, playerBets]) => {
-        const player = accounts.find(a=>a.id===playerId);
-        if (!player) return;
-        const winner1 = race.horses.find(h=>h.number===result.first);
-        const winner2 = race.horses.find(h=>h.number===result.second);
-        const winner3 = race.horses.find(h=>h.number===result.third);
-        const winner4 = race.horses.find(h=>h.number===result.fourth);
-        const winningBets = playerBets.filter(b=>b.won===true);
-        const losingBets  = playerBets.filter(b=>b.won===false);
-        const totalWon    = winningBets.reduce((s,b)=>s+b.payout,0);
-        const totalLost   = losingBets.reduce((s,b)=>s+b.stake,0);
-        const betLines = playerBets.map(b=>{
-          const def = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
-          const horseLine = b.horses.map(n=>{const h=race.horses.find(x=>x.number===n); return `#${n} ${h?.name||""}`; }).join(" → ");
-          const boxedTag = IS_BOXED_TYPE(b.type) ? "[Boxed] " : "";
-          return `${b.won?"WIN":"LOSS"} ${def?.label}: ${boxedTag}${horseLine} - Staked ${fmt(b.stake)}${b.won?` | Won ${fmt(b.payout)}`:" | Lost"}`;
-        }).join("\n");
-
-        emailjs.send(
-          "service_577hk21",       // EmailJS Service ID
-          "template_636ql7l",      // EmailJS Template ID
-          {
-            to_name:    player.name,
-            to_email:   player.email,
-            race_name:  race.name,
-            race_venue: race.venue,
-            race_date:  new Date(race.date).toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"}),
-            result_1st: `#${winner1?.number} ${winner1?.name}`,
-            result_2nd: `#${winner2?.number} ${winner2?.name}`,
-            result_3rd: `#${winner3?.number} ${winner3?.name}`,
-            result_4th: `#${winner4?.number} ${winner4?.name}`,
-            bet_lines:  betLines,
-            total_won:  fmt(totalWon),
-            total_lost: fmt(totalLost),
-            net_result: totalWon > 0 ? `You won ${fmt(totalWon)}!` : `Better luck next race!`,
-            leaderboard_url: window.location.href,
-          },
-          "yBPk9u89zD7Yn-s3P"      // EmailJS Public Key
-        ).catch(()=>{/* silent fail - email is best-effort */});
-      });
-    }
-
     showToast(`Race settled - ${wins} winner${wins!==1?"s":""}, ${fmt(paid)} paid out`);
 
     // Show results banner for the logged-in player
