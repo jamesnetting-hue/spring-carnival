@@ -465,7 +465,7 @@ export default function App() {
       const saved = localStorage.getItem("sc_season_msg");
       if (saved) return JSON.parse(saved);
     } catch {}
-    return { enabled: false, text: "No races have been added yet. Check back soon - the season is coming! 🏇" };
+    return { enabled: false, text: "Upcoming Group 1 races soon" };
   });
   const [resultsBanner, setResultsBanner] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -493,11 +493,17 @@ export default function App() {
           sb.select("settings", "key=eq.season_message"),
         ]);
 
-        // Load season message - Supabase overrides localStorage
+        // Load season message - Supabase is the source of truth; sync local cache either way
+        // so a stale message cached on one device (e.g. from earlier testing) doesn't linger
+        // forever just because that device never got told the server-side value changed.
         if (Array.isArray(dbSettings) && dbSettings.length > 0 && dbSettings[0].value) {
           const msg = dbSettings[0].value;
           setSeasonMessage(msg);
           localStorage.setItem("sc_season_msg", JSON.stringify(msg));
+        } else {
+          const cleared = { enabled: false, text: "" };
+          setSeasonMessage(cleared);
+          localStorage.setItem("sc_season_msg", JSON.stringify(cleared));
         }
 
         let loadedAccounts = [];
