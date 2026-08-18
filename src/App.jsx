@@ -2584,7 +2584,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                       <span style={{fontSize:13,fontWeight:800,color:flexiPct>=100?"#16a34a":"#92400e"}}>{flexiPct}% flexi</span>
                     </div>
                     <div style={{fontSize:11,color:"#555"}}>
-                      ${stake} total · {combos} bets · {fmt(unitStake)} each
+                      {fmt(stake)} total · {combos} combo{combos!==1?"s":""} · {fmt(unitStake)} each
                     </div>
                     {flexiPct<100&&(
                       <div style={{marginTop:6,fontSize:12,fontWeight:600,color:"#92400e"}}>
@@ -5102,11 +5102,13 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                                 <span className="badge sy" style={{background:race?.status==="finished"?C.greenBg:C.blueBg, color:race?.status==="finished"?C.green:C.blue, border:`1px solid ${race?.status==="finished"?C.greenBd:C.blueBd}`}}>{race?.status}</span>
                               </div>
                               {rbets.map(b => {
-                                const def = BET_TYPES.find(t => t.id === b.type);
+                                const def = BET_TYPES.find(t => t.id === BASE_TYPE(b.type));
+                                const isTrueBox = IS_TRUE_BOX(b.type);
+                                const isMulti = IS_BOXED_TYPE(b.type) && !isTrueBox;
                                 const horses = b.horses.map(n => { const h = race?.horses.find(x => x.number===n); return `#${n} ${h?.name||""}`; }).join(" → ");
                                 return (
                                   <div key={b.id} style={{display:"flex", justifyContent:"space-between", padding:"7px 10px", marginBottom:4, background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface, border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`, borderRadius:7}}>
-                                    <span className="sy" style={{fontSize:12}}><strong>{def?.label}</strong> · {horses}</span>
+                                    <span className="sy" style={{fontSize:12}}><strong>{def?.label}</strong> · {isTrueBox?"🎲 ":isMulti?"🎯 ":""}{horses}</span>
                                     <span className="sy" style={{fontSize:12, fontWeight:700, color:b.won===true?C.green:b.won===false?C.red:C.soft, flexShrink:0, marginLeft:10}}>
                                       {b.won===true ? `Won ${fmt(b.payout)}` : b.won===false ? `Lost ${fmt(b.stake)}` : `${fmt(b.stake)} staked`}
                                     </span>
