@@ -905,8 +905,8 @@ export default function App() {
         }).join("\n");
 
         emailjs.send(
-          "YOUR_SERVICE_ID",       // - replace with your EmailJS Service ID
-          "YOUR_TEMPLATE_ID",      // - replace with your EmailJS Template ID
+          "service_577hk21",       // EmailJS Service ID
+          "template_636ql7l",      // EmailJS Template ID
           {
             to_name:    player.name,
             to_email:   player.email,
@@ -923,7 +923,7 @@ export default function App() {
             net_result: totalWon > 0 ? `You won ${fmt(totalWon)}!` : `Better luck next race!`,
             leaderboard_url: window.location.href,
           },
-          "YOUR_PUBLIC_KEY"        // - replace with your EmailJS Public Key
+          "yBPk9u89zD7Yn-s3P"      // EmailJS Public Key
         ).catch(()=>{/* silent fail - email is best-effort */});
       });
     }
@@ -1592,7 +1592,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
         {(races.length===0||seasonMessage?.enabled)&&(
           <div style={{padding:isMobile?"32px 20px":"48px 36px",borderRadius:16,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",textAlign:"center",marginBottom:16,boxShadow:"0 6px 24px rgba(15,32,16,.22)"}}>
             <div style={{fontSize:48,marginBottom:12}}>🏇</div>
-            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:800,color:"#fff",letterSpacing:"-.01em"}}>{seasonMessage?.text||"No races yet — the season is coming!"}</div>
+            <div className="cg" style={{fontSize:isMobile?18:22,fontWeight:800,color:"#fff",letterSpacing:"-.01em"}}>{seasonMessage?.text||"Upcoming Group 1 races soon"}</div>
           </div>
         )}
 
