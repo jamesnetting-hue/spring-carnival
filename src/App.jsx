@@ -554,7 +554,6 @@ export default function App() {
     })();
   }, []);
 
-  // eslint-disable-next-line no-unused-vars
   const manualRefresh = async () => {
     showToast("Refreshing…");
     try {
@@ -1197,6 +1196,14 @@ export default function App() {
               </nav>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
+
+              <button
+                onClick={manualRefresh}
+                title="Refresh"
+                aria-label="Refresh"
+                style={{width:30,height:30,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:8,color:"#fff",cursor:"pointer",fontSize:14,padding:0}}>
+                ⟳
+              </button>
 
               {liveAccount&&(
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
