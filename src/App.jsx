@@ -484,10 +484,12 @@ export default function App() {
   // which is why saved messages could vanish or revert after a refresh.
   const saveSeasonMessage = async (next) => {
     if (seasonMsgRowId.current) {
-      await sb.update("settings", seasonMsgRowId.current, { value: next });
+      const res = await sb.update("settings", seasonMsgRowId.current, { value: next });
+      if (!res) showToast("⚠ Couldn't save message — check console for details", "err");
     } else {
       const res = await sb.insert("settings", { key: "season_message", value: next });
       if (Array.isArray(res) && res[0]?.id) seasonMsgRowId.current = res[0].id;
+      else showToast("⚠ Couldn't save message — check console for details", "err");
     }
   };
   // Safety net: if the admin types then navigates away (tab switch, close, screen
