@@ -5451,7 +5451,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
 
                       {/* Pre-settlement checklist */}
                       {(()=>{
-                        const raceBets = bets.filter(b=>b.raceId===race.id&&b.won===null);
+                        const raceBets = bets.filter(b=>b.raceId===race.id);
                         const playersDone = [...new Set(raceBets.map(b=>b.playerId))];
                         const missingPlayers = accounts.filter(a=>!playersDone.includes(a.id));
                         const inp = getInp(race.id);
