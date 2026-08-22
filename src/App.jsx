@@ -2988,7 +2988,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const biggestWinAcc=biggestWin?accounts.find(a=>a.id===biggestWin.playerId):null;
   const biggestWinRace=biggestWin?races.find(r=>r.id===biggestWin.raceId):null;
   const biggestWinHorse=biggestWin?biggestWinRace?.horses?.find(h=>h.number===biggestWin.horses?.[0]):null;
-  const roughies=settled.filter(b=>b.won===true&&b.potential&&b.stake&&b.potential/b.stake>=10).sort((a,b)=>(b.potential/b.stake)-(a.potential/a.stake));
+  const roughies=settled.filter(b=>b.won===true&&b.payout&&b.stake&&b.payout/b.stake>=10).sort((a,b)=>(b.payout/b.stake)-(a.payout/a.stake));
   const biggestRoughie=roughies[0];
   const roughieAcc=biggestRoughie?accounts.find(a=>a.id===biggestRoughie.playerId):null;
   const roughieRace=biggestRoughie?races.find(r=>r.id===biggestRoughie.raceId):null;
@@ -3018,7 +3018,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
 
   const awards=[
     {emoji:"🎯",label:"Biggest Win",name:biggestWinAcc?.name||"—",detail:biggestWinAcc?`+${fmt(biggestWin?.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`:"-",active:!!biggestWinAcc},
-    {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"—",detail:roughieAcc?`+${fmt(biggestRoughie.payout||0)} · $${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
+    {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"—",detail:roughieAcc?`+${fmt(biggestRoughie.payout||0)} · $${(biggestRoughie.payout/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
     {emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc?.name||"—",detail:bigTriAcc?`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`:"-",active:!!bigTriAcc},
     {emoji:"🤑",label:"Biggest First Four",name:bigFFAcc?.name||"TBD",detail:bigFFAcc?`+${fmt(bigFF.payout||0)}`:"-",active:!!bigFFAcc},
     {emoji:"🔥",label:"Hot Streak",name:hotStreak.tied?"Tied":(hotStreak.streak>0?hotStreak.name:"TBD"),detail:hotStreak.streak>0?(hotStreak.tied?`${hotStreak.tiedCount} players on ${hotStreak.streak} races in a row`:`${hotStreak.streak} races in a row`):"No streak yet",active:hotStreak.streak>0},
@@ -3945,7 +3945,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
               const mLabel=momentum>=2?"🔥 On Fire!":momentum===1?"📈 Building":momentum===0?"➡️ Neutral":momentum===-1?"📉 Cooling":"❄️ Cold Spell";
               const avgWinReturn=won.length>0?parseFloat((won.reduce((s,b)=>s+(b.payout||0),0)/won.length).toFixed(2)):0;
               const avgStakeAll=settled.length>0?parseFloat((settled.reduce((s,b)=>s+b.stake,0)/settled.length).toFixed(1)):0;
-              const bestMultiplier=won.length>0?Math.max(...won.map(b=>b.potential&&b.stake>0?b.potential/b.stake:0)):0;
+              const bestMultiplier=won.length>0?Math.max(...won.map(b=>b.payout&&b.stake>0?b.payout/b.stake:0)):0;
               return(
                 <div className="card" style={{marginBottom:12}}>
                   <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #f0f7f0"}}><div className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>⚡ Form & Momentum</div></div>
@@ -4364,7 +4364,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 {icon:"🏆",name:"Hat Trick",desc:"3 wins in a row!",hint:"Win 3 races in a row",unlocked:longestWinStreak>=3},
                 {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
                 {icon:"💎",name:"High Roller",desc:"Living large!",hint:"Place a single bet of $20+",unlocked:settled.some(b=>b.stake>=20)},
-                {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.potential&&b.stake>0&&b.potential/b.stake>=10)},
+                {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.payout&&b.stake>0&&b.payout/b.stake>=10)},
                 {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>BASE_TYPE(b.type)==="trifecta"||BASE_TYPE(b.type)==="firstfour")},
                 {icon:"🌟",name:"Big Winner",desc:"Massive payout!",hint:"Win $50+ in a single bet",unlocked:won.some(b=>(b.payout||0)>=50)},
                 {icon:"📈",name:"Consistent",desc:"5 profitable races!",hint:"Be profitable in 5+ races",unlocked:racesWon>=5},
