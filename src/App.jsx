@@ -611,8 +611,8 @@ export default function App() {
     })();
   }, []);
 
-  const manualRefresh = async () => {
-    showToast("Refreshing…");
+  const refreshData = async (silent=false) => {
+    if (!silent) showToast("Refreshing…");
     try {
       const [accs, dbBets, dbRaces] = await Promise.all([
         sb.select("accounts", "order=created_at.asc"),
@@ -647,9 +647,26 @@ export default function App() {
           status: r.status, result: r.result,
         })));
       }
-      showToast("✓ Up to date");
-    } catch(e) { showToast("Refresh failed - check connection", "err"); }
+      if (!silent) showToast("✓ Up to date");
+    } catch(e) { if (!silent) showToast("Refresh failed - check connection", "err"); }
   };
+  const manualRefresh = () => refreshData(false);
+
+  // Automatically pick up new results / bets / balances in the background, so
+  // players see a settled race without needing to know to hit refresh — checks
+  // every 30s, and only while the tab is actually visible (no point polling a
+  // backgrounded tab on someone's phone).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") refreshData(true);
+    }, 30000);
+    const onFocus = () => { if (document.visibilityState === "visible") refreshData(true); };
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, []);
 
   const showToast = (msg, type="ok") => {
     setToast({msg,type});
