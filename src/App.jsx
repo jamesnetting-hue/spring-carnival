@@ -1729,11 +1729,16 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         {isClosed&&(
                           <span style={{color:"#b45309",fontWeight:700}}>🔒 Betting closed — awaiting result</span>
                         )}
-                        {isFinished&&race.result&&(()=>{
-                          const first=race.horses.find(x=>x.number===race.result.first);
-                          const second=race.horses.find(x=>x.number===race.result.second);
-                          return first?<span><strong style={{color:"#000"}}>1st</strong> {first.name}{second?<> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</>:null}</span>:null;
-                        })()}
+                        {isFinished&&(
+                          <span style={{color:"#15803d",fontWeight:700}}>
+                            ✓ Bets settled
+                            {race.result&&(()=>{
+                              const first=race.horses.find(x=>x.number===race.result.first);
+                              const second=race.horses.find(x=>x.number===race.result.second);
+                              return first?<> · <span style={{color:"#666",fontWeight:400}}><strong style={{color:"#000"}}>1st</strong> {first.name}{second?<> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</>:null}</span></>:null;
+                            })()}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -2122,7 +2127,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                   );
                 })()}
                 {race.status==="closed"&&<span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>🔒 Betting closed</span>}
-                {race.status==="finished"&&<span style={{fontSize:12,fontWeight:700,color:"#4ade80"}}>✓ Race finished</span>}
+                {race.status==="finished"&&<span style={{fontSize:12,fontWeight:700,color:"#4ade80"}}>✓ Bets settled</span>}
               </div>
             )}
 
