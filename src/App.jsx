@@ -2974,24 +2974,31 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const bigTriRace=bigTri?races.find(r=>r.id===bigTri.raceId):null;
   const bigFF=settled.filter(b=>b.won===true&&BASE_TYPE(b.type)==="firstfour").sort((a,b)=>(b.payout||0)-(a.payout||0))[0];
   const bigFFAcc=bigFF?accounts.find(a=>a.id===bigFF.playerId):null;
-  const hotStreak=accounts.map(a=>{
+  const hotStreakAll=accounts.map(a=>{
     const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);return p;}).filter(x=>x!==null);
     let streak=0;for(const p of ar){if(p>0)streak++;else break;}
     return{name:a.name,streak};
-  }).sort((a,b)=>b.streak-a.streak)[0];
-  const coldStreak=accounts.map(a=>{
+  });
+  const hotStreakMax=Math.max(0,...hotStreakAll.map(x=>x.streak));
+  const hotStreakLeaders=hotStreakAll.filter(x=>x.streak===hotStreakMax&&hotStreakMax>0);
+  const hotStreak=hotStreakLeaders.length===1?hotStreakLeaders[0]:{name:null,streak:hotStreakMax,tied:hotStreakLeaders.length>1,tiedCount:hotStreakLeaders.length};
+
+  const coldStreakAll=accounts.map(a=>{
     const ar=[...finishedRaces].reverse().map(r=>{const rb=bets.filter(b=>b.raceId===r.id&&b.playerId===a.id&&b.won!==null);if(!rb.length)return null;const p=rb.reduce((s,b)=>s+(b.won?(b.payout||0):0),0);return p;}).filter(x=>x!==null);
     let streak=0;for(const p of ar){if(p<=0)streak++;else break;}
     return{name:a.name,streak};
-  }).sort((a,b)=>b.streak-a.streak)[0];
+  });
+  const coldStreakMax=Math.max(0,...coldStreakAll.map(x=>x.streak));
+  const coldStreakLeaders=coldStreakAll.filter(x=>x.streak===coldStreakMax&&coldStreakMax>0);
+  const coldStreak=coldStreakLeaders.length===1?coldStreakLeaders[0]:{name:null,streak:coldStreakMax,tied:coldStreakLeaders.length>1,tiedCount:coldStreakLeaders.length};
 
   const awards=[
     {emoji:"🎯",label:"Biggest Win",name:biggestWinAcc?.name||"—",detail:biggestWinAcc?`+${fmt(biggestWin?.payout||0)}${biggestWinHorse?` · ${biggestWinHorse.name}`:""}${biggestWinRace?` · ${biggestWinRace.name}`:""}`:"-",active:!!biggestWinAcc},
     {emoji:"🐎",label:"Biggest Roughie",name:roughieAcc?.name||"—",detail:roughieAcc?`+${fmt(biggestRoughie.payout||0)} · $${(biggestRoughie.potential/biggestRoughie.stake).toFixed(1)} odds${roughieHorse?` · ${roughieHorse.name}`:""}`:"-",active:!!roughieAcc},
     {emoji:"💸",label:"Biggest Trifecta",name:bigTriAcc?.name||"—",detail:bigTriAcc?`+${fmt(bigTri.payout||0)}${bigTriRace?` · ${bigTriRace.name}`:""}`:"-",active:!!bigTriAcc},
     {emoji:"🤑",label:"Biggest First Four",name:bigFFAcc?.name||"TBD",detail:bigFFAcc?`+${fmt(bigFF.payout||0)}`:"-",active:!!bigFFAcc},
-    {emoji:"🔥",label:"Hot Streak",name:hotStreak?.streak>0?hotStreak.name:"TBD",detail:hotStreak?.streak>0?`${hotStreak.streak} races in a row`:"No streak yet",active:hotStreak?.streak>0},
-    {emoji:"❄️",label:"Cold Streak",name:coldStreak?.streak>0?coldStreak.name:"TBD",detail:coldStreak?.streak>0?`${coldStreak.streak} races without a profit`:"No streak yet",active:coldStreak?.streak>0},
+    {emoji:"🔥",label:"Hot Streak",name:hotStreak.tied?"Tied":(hotStreak.streak>0?hotStreak.name:"TBD"),detail:hotStreak.streak>0?(hotStreak.tied?`${hotStreak.tiedCount} players on ${hotStreak.streak} races in a row`:`${hotStreak.streak} races in a row`):"No streak yet",active:hotStreak.streak>0},
+    {emoji:"❄️",label:"Cold Streak",name:coldStreak.tied?"Tied":(coldStreak.streak>0?coldStreak.name:"TBD"),detail:coldStreak.streak>0?(coldStreak.tied?`${coldStreak.tiedCount} players on ${coldStreak.streak} races without a profit`:`${coldStreak.streak} races without a profit`):"No streak yet",active:coldStreak.streak>0},
   ];
 
   return (
@@ -3103,6 +3110,12 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         <span className="sy" style={{fontSize:isMobile?13:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{a.name}</span>
                         {isMe&&<span style={{fontSize:9,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>YOU</span>}
                       </div>
+                      {/* Top 3 only: what bet got them here */}
+                      {i<3&&bestWin&&(
+                        <div style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type))?.label} · +{fmt(bestWin.payout||0)}{bestWinHorse?` · ${bestWinHorse.name}`:""}{bestWinRace?` (${bestWinRace.name})`:""}
+                        </div>
+                      )}
                       {/* Personality badge — own line on mobile */}
                       {(()=>{
                         const ab=bets.filter(b=>b.playerId===a.id&&b.won!==null);
@@ -3114,7 +3127,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         const hr=Math.round((abWon.length/ab.length)*100);
                         const as=parseFloat((ab.reduce((s,b)=>s+b.stake,0)/ab.length).toFixed(1));
                         const ew=Math.round((ab.filter(b=>b.type==='eachway').length/ab.length)*100);
-                        const be=ab.filter(b=>b.type==='trifecta'||b.type==='firstfour').length;
+                        const be=ab.filter(b=>{const bt=BASE_TYPE(b.type);return bt==='trifecta'||bt==='firstfour';}).length;
                         // Compute streaks locally for this player
                         const abRaces=[...new Set(ab.map(b=>b.raceId))];
                         let abWinStreak=0,abLossStreak=0,wCur=0,lCur=0;
