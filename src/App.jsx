@@ -3087,17 +3087,17 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                   {/* Main row */}
                   <div
                     onClick={()=>setExpanded(isExp?null:a.id)}
-                    style={{display:"grid",gridTemplateColumns:isMobile?"40px 1fr auto":"50px 1fr auto",padding:isMobile?"9px 12px 7px":"10px 14px 8px",background:rowBg,borderBottom:`1px solid ${C.border}`,borderLeft:`3px solid ${leftBorderCol}`,cursor:"pointer",transition:"background .1s"}}
+                    style={{display:"grid",gridTemplateColumns:isMobile?"32px 1fr auto":"50px 1fr auto",padding:isMobile?"8px 10px 6px":"10px 14px 8px",gap:isMobile?6:0,background:rowBg,borderBottom:`1px solid ${C.border}`,borderLeft:`3px solid ${leftBorderCol}`,cursor:"pointer",transition:"background .1s"}}
                     onMouseEnter={e=>e.currentTarget.style.background=isMe?"rgba(26,58,26,.1)":"#f0f7f0"}
                     onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
 
                     {/* Rank */}
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,paddingTop:2}}>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,paddingTop:2}}>
                       {i<3
-                        ?<span style={{fontSize:20}}>{medals[i]}</span>
-                        :<span className="sy" style={{fontSize:13,fontWeight:700,color:C.text}}>#{i+1}</span>}
+                        ?<span style={{fontSize:isMobile?17:20}}>{medals[i]}</span>
+                        :<span className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:C.text}}>#{i+1}</span>}
                       {movement!==null&&movement!==0&&(
-                        <span style={{fontSize:9,padding:"1px 4px",borderRadius:10,background:movement>0?"#f0fdf4":"#fef2f2",color:movement>0?C.green:C.red,fontWeight:700,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
+                        <span style={{fontSize:isMobile?8:9,padding:"1px 3px",borderRadius:10,background:movement>0?"#f0fdf4":"#fef2f2",color:movement>0?C.green:C.red,fontWeight:700,border:`1px solid ${movement>0?C.greenBd:C.redBd}`}}>
                           {movement>0?"↑":"↓"}{Math.abs(movement)}
                         </span>
                       )}
@@ -3107,7 +3107,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                     <div style={{minWidth:0}}>
                       {/* Name row */}
                       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2,flexWrap:"nowrap",overflow:"hidden"}}>
-                        <span className="sy" style={{fontSize:isMobile?13:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{a.name}</span>
+                        <span className="sy" style={{fontSize:isMobile?12:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{a.name}</span>
                         {isMe&&<span style={{fontSize:9,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>YOU</span>}
                       </div>
                       {/* Top 3 only: their full winning bet */}
@@ -3133,7 +3133,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(bestWin.horses)].map(nameFor).join(", ");
                         }
                         return(
-                          <div title={`${btDef?.label} · +${fmt(bestWin.payout||0)}${bestWinRace?` (${bestWinRace.name})`:""} · ${horsesLabel}`} style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",width:"100%",maxWidth:"100%",minWidth:0,display:"block"}}>
+                          <div title={`${btDef?.label} · +${fmt(bestWin.payout||0)}${bestWinRace?` (${bestWinRace.name})`:""} · ${horsesLabel}`} style={{fontSize:isMobile?9:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",width:"100%",maxWidth:"100%",minWidth:0,display:"block"}}>
                             {btDef?.label} · +{fmt(bestWin.payout||0)}{bestWinRace?` (${bestWinRace.name})`:""} · {horsesLabel}
                           </div>
                         );
@@ -3203,7 +3203,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         </div>
                         <span style={{fontSize:10,flexShrink:0}}>🏁</span>
                       </div>
-                      <div className="sy" style={{fontSize:11,color:"#000"}}>
+                      <div className="sy" style={{fontSize:isMobile?10:11,color:"#000"}}>
                         <span style={{color:C.green,fontWeight:700}}>{won}W</span>
                         <span style={{margin:"0 3px",color:C.border}}> · </span>
                         <span style={{color:C.red,fontWeight:700}}>{lost}L</span>
