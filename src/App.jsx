@@ -3133,7 +3133,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(bestWin.horses)].map(nameFor).join(", ");
                         }
                         return(
-                          <div style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          <div title={`${btDef?.label} · +${fmt(bestWin.payout||0)}${bestWinRace?` (${bestWinRace.name})`:""} · ${horsesLabel}`} style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",width:"100%",maxWidth:"100%",minWidth:0,display:"block"}}>
                             {btDef?.label} · +{fmt(bestWin.payout||0)}{bestWinRace?` (${bestWinRace.name})`:""} · {horsesLabel}
                           </div>
                         );
