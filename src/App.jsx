@@ -915,7 +915,13 @@ export default function App() {
     let wins=0, paid=0;
     const allBetsForRace = [...bets, ...autoBets];
     const settled = allBetsForRace.map(b=>{
-      if (b.raceId!==raceId||b.won!==null) return b;
+      // Recompute EVERY bet on this race every time settleRace runs — including
+      // already-settled ones. This is what actually makes "Re-settle" work: without
+      // recomputing already-won/lost bets, a corrected settlement would leave every
+      // previously (possibly wrongly) settled bet completely untouched. Safe to do
+      // unconditionally since the win-check and payout math are both deterministic —
+      // running them again with the same result/dividends always gives the same answer.
+      if (b.raceId!==raceId) return b;
       const def = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
       let won;
       if(IS_TRUE_BOX(b.type)) {
