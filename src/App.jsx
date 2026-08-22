@@ -1724,14 +1724,12 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const betWon=myBet?(isEW?myBet.pairWon:myBet.won===true):false;
               const betLost=myBet?(isEW?myBet.bothLost:myBet.won===false):false;
 
-              // Full day profit — sums ALL settled bets across every race on this date
-              // (a day might have just 1 race, or several), not just this one race, so
-              // the figure shown reflects how the whole day's gone so far.
+              // Full day gross winnings — sums payouts from every WON bet across every
+              // race on this date (a day might have just 1 race, or several), not just
+              // this one race, so the figure shown reflects how the whole day's gone.
               const dayRaceIds=dayRaces.map(r=>r.id);
               const daySettledBets=myBets.filter(b=>dayRaceIds.includes(b.raceId)&&b.won!==null);
-              const dayWon=daySettledBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-              const dayStaked=daySettledBets.reduce((s,b)=>s+b.stake,0);
-              const dayProfit=parseFloat((dayWon-dayStaked).toFixed(2));
+              const dayWon=parseFloat(daySettledBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0).toFixed(2));
 
               return(
                 <div key={race.id} style={{
@@ -1821,15 +1819,15 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         )
                       )}
 
-                      {/* Settled result — shows the FULL DAY's profit, not just this race */}
+                      {/* Settled result — shows the FULL DAY's gross winnings, not just this race */}
                       {myBet&&!isUpcoming&&(
                         <div style={{fontSize:13,textAlign:"right"}}>
                           <span style={{fontWeight:800,fontSize:13,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"4px 12px"}}>
                             {betWon?"Won":betLost?"Lost":"Pending"}
                           </span>
-                          {daySettledBets.length>0&&(
-                            <div style={{fontSize:14,fontWeight:800,color:dayProfit>0?"#16a34a":dayProfit<0?"#dc2626":"#888",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
-                              {dayProfit>0?"+":dayProfit<0?"-":""}{fmt(Math.abs(dayProfit))}{dayRaces.length>1?<span style={{fontSize:10,fontWeight:600,color:"#888"}}> today</span>:null}
+                          {daySettledBets.length>0&&dayWon>0&&(
+                            <div style={{fontSize:14,fontWeight:800,color:"#16a34a",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
+                              +{fmt(dayWon)}{dayRaces.length>1?<span style={{fontSize:10,fontWeight:600,color:"#888"}}> today</span>:null}
                             </div>
                           )}
                         </div>
@@ -4863,11 +4861,10 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
             {finishedRaces.map(race=>{
               const rb=bets.filter(b=>b.raceId===race.id);
               const racePayout=rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-              const raceStaked=rb.reduce((s,b)=>s+b.stake,0);
-              const raceProfit=parseFloat((racePayout-raceStaked).toFixed(2));
+              const raceHasWin=rb.some(b=>b.won===true);
               const winner=race.horses?.find(h=>h.number===race.result?.first);
               return(
-                <div key={race.id} className="card" style={{borderLeft:`3px solid ${raceProfit>=0?C.green:C.red}`}}>
+                <div key={race.id} className="card" style={{borderLeft:`3px solid ${raceHasWin?C.green:C.red}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:rb.length>0?8:0}}>
                     <div>
                       <div className="cg" style={{fontSize:16,fontWeight:700}}>{race.name}</div>
@@ -4875,8 +4872,8 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                       {winner&&<div className="sy" style={{fontSize:12,marginTop:2,color:C.accent,fontWeight:600}}>🥇 {winner.name}</div>}
                     </div>
                     <div style={{textAlign:"right",flexShrink:0}}>
-                      <div className="sy" style={{fontSize:13,color:"#000"}}>Your result</div>
-                      <div className="cg" style={{fontSize:18,fontWeight:700,color:raceProfit>=0?C.green:C.red}}>{raceProfit>=0?"+":""}{fmt(raceProfit)}</div>
+                      <div className="sy" style={{fontSize:13,color:"#000"}}>Your winnings</div>
+                      <div className="cg" style={{fontSize:18,fontWeight:700,color:raceHasWin?C.green:C.soft}}>{raceHasWin?"+":""}{fmt(racePayout)}</div>
                     </div>
                   </div>
                   {rb.length>0&&(
@@ -4889,7 +4886,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
                             <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · {isTrueBox?"🎲 ":isMulti?"🎯 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</span>
                             <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0,marginLeft:8}}>
-                              {b.won===true?`+${fmt(b.payout)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
+                              {b.won===true?`+${fmt(b.payout||0)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
                             </span>
                           </div>
                         );
