@@ -3259,6 +3259,55 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           </div>
                         ))}
                       </div>
+                      {/* All bets — how they actually won/lost their money */}
+                      <div style={{marginBottom:12}}>
+                        <div className="sy" style={{fontSize:11,fontWeight:700,color:"#000",marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>📋 All Bets</div>
+                        {pb.length===0?(
+                          <span className="sy" style={{fontSize:12,color:"#000",fontStyle:"italic"}}>No bets placed yet</span>
+                        ):(
+                          <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:280,overflowY:"auto"}}>
+                            {[...pb].sort((x,y)=>new Date(y.placedAt)-new Date(x.placedAt)).map(bet=>{
+                              const btRace=races.find(r=>r.id===bet.raceId);
+                              const btDef=BET_TYPES.find(t=>t.id===BASE_TYPE(bet.type));
+                              const nameFor=n=>{const h=btRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
+                              const isTrueBox=IS_TRUE_BOX(bet.type);
+                              const isBoxedStyle=IS_BOXED_TYPE(bet.type);
+                              const isOrdered=btDef&&btDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(bet.type)!=="quinella";
+                              const shape=MULTI_SHAPE(bet.type);
+                              let horsesLabel;
+                              if(isOrdered){
+                                horsesLabel=bet.horses.map((n,idx)=>`${btDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+                              }else if(shape&&btDef){
+                                let idx=0;
+                                horsesLabel=btDef.positions.map((pos,pi)=>{
+                                  const count=shape[pi]||0;
+                                  const names=bet.horses.slice(idx,idx+count).map(nameFor);
+                                  idx+=count;
+                                  return names.length?`${pos.label} ${names.join("/")}`:null;
+                                }).filter(Boolean).join(" · ");
+                              }else{
+                                horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(bet.horses)].map(nameFor).join(", ");
+                              }
+                              return(
+                                <div key={bet.id} style={{padding:"8px 10px",borderRadius:8,background:bet.won===true?"#f0fdf4":bet.won===false?"#fef2f2":"#fff",border:`1px solid ${bet.won===true?C.greenBd:bet.won===false?C.redBd:C.border}`}}>
+                                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                                    <div style={{minWidth:0,flex:1}}>
+                                      <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{btDef?.label} · {btRace?.name||"—"}</div>
+                                      <div className="sy" style={{fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{horsesLabel}</div>
+                                    </div>
+                                    <div style={{textAlign:"right",flexShrink:0}}>
+                                      <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{fmt(bet.stake)}</div>
+                                      <div className="sy" style={{fontSize:11,fontWeight:700,color:bet.won===true?C.green:bet.won===false?C.red:"#888"}}>
+                                        {bet.won===true?`+${fmt(bet.payout||0)}`:bet.won===false?"Lost":"Pending"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                       {myAccount&&a.id!==myAccount.id&&(
                         <button className="sy" style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",color:C.accent,cursor:"pointer",fontWeight:700,fontFamily:"inherit"}}
                           onClick={e=>{e.stopPropagation();setH2h({a:myAccount,b:a});}}>⚔️ Compare with me</button>
