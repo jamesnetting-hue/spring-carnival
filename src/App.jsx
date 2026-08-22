@@ -940,13 +940,19 @@ export default function App() {
     mergedBets.filter(b=>b.raceId===raceId).forEach(b=>{
       sb.update("bets", b.id, { won: b.won, payout: b.payout });
     });
-    // Update account totals for all players who had bets in this race
+    // Update account totals for all players who had bets in this race.
+    // Recalculated fresh from ALL of the player's settled bets each time (not
+    // incrementally added) — this makes settling idempotent: re-settling a
+    // race (e.g. after fixing a save that didn't stick) always lands on the
+    // mathematically correct total instead of compounding on top of a
+    // previous, possibly-partial run.
     const playerIds = [...new Set(mergedBets.filter(b=>b.raceId===raceId).map(b=>b.playerId))];
     playerIds.forEach(pid => {
-      const playerBets = mergedBets.filter(b=>b.raceId===raceId&&b.playerId===pid);
-      const playerWon = playerBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
-      updateAccount(pid, a=>({
-        totalWon: parseFloat((a.totalWon + playerWon).toFixed(2)),
+      const trueTotalWon = mergedBets
+        .filter(b=>b.playerId===pid && b.won===true)
+        .reduce((s,b)=>s+(b.payout||0),0);
+      updateAccount(pid, () => ({
+        totalWon: parseFloat(trueTotalWon.toFixed(2)),
       }));
     });
 
