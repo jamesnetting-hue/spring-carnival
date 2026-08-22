@@ -1788,7 +1788,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             {race.result&&(()=>{
                               const first=race.horses.find(x=>x.number===race.result.first);
                               const second=race.horses.find(x=>x.number===race.result.second);
-                              return first?<> · <span style={{color:"#666",fontWeight:400}}><strong style={{color:"#000"}}>1st</strong> {first.name}{second?<> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</>:null}</span></>:null;
+                              const third=race.horses.find(x=>x.number===race.result.third);
+                              return first?<> · <span style={{color:"#666",fontWeight:400}}><strong style={{color:"#000"}}>1st</strong> {first.name}{second?<> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</>:null}{third?<> · <strong style={{color:"#000"}}>3rd</strong> {third.name}</>:null}</span></>:null;
                             })()}
                           </span>
                         )}
