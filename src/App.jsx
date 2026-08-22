@@ -918,10 +918,27 @@ export default function App() {
       if (b.raceId!==raceId||b.won!==null) return b;
       const def = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
       let won;
-      if(IS_BOXED_TYPE(b.type)) {
-        // Boxed/multi bet - check if the result positions are all covered by selected horses
+      if(IS_TRUE_BOX(b.type)) {
+        // True boxed bet: every horse can be in ANY position — inclusion check is correct here.
         const resultPositions=[result.first,result.second,result.third,result.fourth].slice(0,def.positions.length);
         won = resultPositions.every(pos=>b.horses.includes(pos));
+      } else if(IS_BOXED_TYPE(b.type)) {
+        // Multi bet (unboxed, but >1 horse picked for at least one position): each
+        // position has its OWN specific allowed set, so the actual result horse for
+        // that position must be one of the horses picked for THAT position — not just
+        // present anywhere in the bet. Reconstructed from the stored shape so this
+        // matches exactly what was shown to the player when they placed it.
+        const shape=MULTI_SHAPE(b.type);
+        const resultPositions=[result.first,result.second,result.third,result.fourth].slice(0,def.positions.length);
+        if(shape){
+          let idx=0;
+          const groups=shape.map(count=>{const g=b.horses.slice(idx,idx+count);idx+=count;return g;});
+          won = resultPositions.every((pos,pi)=>groups[pi]&&groups[pi].includes(pos));
+        } else {
+          // No shape stored (shouldn't happen for new bets, safety net for old data) —
+          // fall back to the inclusive check rather than crash.
+          won = resultPositions.every(pos=>b.horses.includes(pos));
+        }
       } else {
         won = def.check(b.horses, result);
       }
