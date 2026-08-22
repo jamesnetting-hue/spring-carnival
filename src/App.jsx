@@ -3110,12 +3110,34 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                         <span className="sy" style={{fontSize:isMobile?13:14,fontWeight:isMe?800:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{a.name}</span>
                         {isMe&&<span style={{fontSize:9,padding:"1px 6px",background:C.accent,color:"#fff",borderRadius:20,fontWeight:700,flexShrink:0}}>YOU</span>}
                       </div>
-                      {/* Top 3 only: what bet got them here */}
-                      {i<3&&bestWin&&(
-                        <div style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                          {BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type))?.label} · +{fmt(bestWin.payout||0)}{bestWinHorse?` · ${bestWinHorse.name}`:""}{bestWinRace?` (${bestWinRace.name})`:""}
-                        </div>
-                      )}
+                      {/* Top 3 only: their full winning bet */}
+                      {i<3&&bestWin&&(()=>{
+                        const btDef=BET_TYPES.find(t=>t.id===BASE_TYPE(bestWin.type));
+                        const nameFor=n=>{const h=bestWinRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
+                        const isTrueBox=IS_TRUE_BOX(bestWin.type);
+                        const isBoxedStyle=IS_BOXED_TYPE(bestWin.type);
+                        const isOrdered=btDef&&btDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(bestWin.type)!=="quinella";
+                        const shape=MULTI_SHAPE(bestWin.type);
+                        let horsesLabel;
+                        if(isOrdered){
+                          horsesLabel=bestWin.horses.map((n,idx)=>`${btDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+                        }else if(shape&&btDef){
+                          let idx=0;
+                          horsesLabel=btDef.positions.map((pos,pi)=>{
+                            const count=shape[pi]||0;
+                            const names=bestWin.horses.slice(idx,idx+count).map(nameFor);
+                            idx+=count;
+                            return names.length?`${pos.label} ${names.join("/")}`:null;
+                          }).filter(Boolean).join(" · ");
+                        }else{
+                          horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(bestWin.horses)].map(nameFor).join(", ");
+                        }
+                        return(
+                          <div style={{fontSize:isMobile?10:11,color:"#666",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {btDef?.label} · +{fmt(bestWin.payout||0)}{bestWinRace?` (${bestWinRace.name})`:""} · {horsesLabel}
+                          </div>
+                        );
+                      })()}
                       {/* Personality badge — own line on mobile */}
                       {(()=>{
                         const ab=bets.filter(b=>b.playerId===a.id&&b.won!==null);
