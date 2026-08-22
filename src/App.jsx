@@ -2944,6 +2944,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const [copied,setCopied]=useState(false);
   const [search,setSearch]=useState("");
   const [expanded,setExpanded]=useState(null);
+  const [expandedBet,setExpandedBet]=useState(null);
   const medals=["🥇","🥈","🥉"];
 
   // eslint-disable-next-line no-unused-vars
@@ -3289,11 +3290,16 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                                 horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(bet.horses)].map(nameFor).join(", ");
                               }
                               return(
-                                <div key={bet.id} style={{padding:"8px 10px",borderRadius:8,background:bet.won===true?"#f0fdf4":bet.won===false?"#fef2f2":"#fff",border:`1px solid ${bet.won===true?C.greenBd:bet.won===false?C.redBd:C.border}`}}>
+                                <div key={bet.id} onClick={e=>{e.stopPropagation();setExpandedBet(expandedBet===bet.id?null:bet.id);}}
+                                  style={{padding:"8px 10px",borderRadius:8,cursor:"pointer",background:bet.won===true?"#f0fdf4":bet.won===false?"#fef2f2":"#fff",border:`1px solid ${bet.won===true?C.greenBd:bet.won===false?C.redBd:C.border}`}}>
                                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                                     <div style={{minWidth:0,flex:1}}>
                                       <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{btDef?.label} · {btRace?.name||"—"}</div>
-                                      <div className="sy" style={{fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{horsesLabel}</div>
+                                      <div className="sy" style={expandedBet===bet.id
+                                        ?{fontSize:11,color:"#555",whiteSpace:"normal",wordBreak:"break-word"}
+                                        :{fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
+                                        {horsesLabel}
+                                      </div>
                                     </div>
                                     <div style={{textAlign:"right",flexShrink:0}}>
                                       <div className="sy" style={{fontSize:12,fontWeight:700,color:"#111"}}>{fmt(bet.stake)}</div>
