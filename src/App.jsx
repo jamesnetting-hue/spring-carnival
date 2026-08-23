@@ -4878,17 +4878,37 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                     </div>
                   </div>
                   {rb.length>0&&(
-                    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       {rb.map(b=>{
                         const td=BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
                         const isTrueBox = IS_TRUE_BOX(b.type);
-                        const isMulti = IS_BOXED_TYPE(b.type) && !isTrueBox;
+                        const isBoxedStyle = IS_BOXED_TYPE(b.type);
+                        const isOrdered = td && td.positions.length>1 && !isBoxedStyle && BASE_TYPE(b.type)!=="quinella";
+                        const nameFor=n=>{const h=race.horses.find(x=>x.number===n);return h?h.name:`#${n}`;};
+                        const shape=MULTI_SHAPE(b.type);
+                        let horsesLabel;
+                        if(isOrdered){
+                          horsesLabel=b.horses.map((n,idx)=>`${td.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+                        }else if(shape&&td){
+                          let idx=0;
+                          horsesLabel="🎯 "+td.positions.map((pos,pi)=>{
+                            const count=shape[pi]||0;
+                            const names=b.horses.slice(idx,idx+count).map(nameFor);
+                            idx+=count;
+                            return names.length?`${pos.label} ${names.join("/")}`:null;
+                          }).filter(Boolean).join(" · ");
+                        }else{
+                          horsesLabel=(isTrueBox?"🎲 Boxed: ":"")+[...new Set(b.horses)].map(nameFor).join(", ");
+                        }
                         return(
-                          <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
-                            <span className="sy" style={{fontSize:12}}><strong>{td?.label}</strong> · {isTrueBox?"🎲 ":isMulti?"🎯 ":""}#{b.horses.join(" → #")} · {fmt(b.stake)}</span>
-                            <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0,marginLeft:8}}>
-                              {b.won===true?`+${fmt(b.payout||0)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
-                            </span>
+                          <div key={b.id} style={{padding:"7px 10px",background:b.won===true?C.greenBg:b.won===false?C.redBg:C.surface,border:`1px solid ${b.won===true?C.greenBd:b.won===false?C.redBd:C.border}`,borderRadius:7}}>
+                            <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
+                              <span className="sy" style={{fontSize:12,fontWeight:700}}>{td?.label} · {fmt(b.stake)}</span>
+                              <span className="sy" style={{fontSize:13,fontWeight:700,color:b.won===true?C.green:b.won===false?C.red:C.soft,flexShrink:0}}>
+                                {b.won===true?`+${fmt(b.payout||0)}`:b.won===false?`-${fmt(b.stake)}`:"Pending"}
+                              </span>
+                            </div>
+                            <div className="sy" style={{fontSize:11,color:"#666",marginTop:2}}>{horsesLabel}</div>
                           </div>
                         );
                       })}
