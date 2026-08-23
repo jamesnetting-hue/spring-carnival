@@ -1268,7 +1268,7 @@ export default function App() {
 
           {/* -- MOBILE BOTTOM NAV -- */}
           <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",borderTop:"1px solid rgba(255,255,255,.12)",display:"flex",boxShadow:"0 -2px 20px rgba(0,0,0,.3)",paddingBottom:"max(env(safe-area-inset-bottom, 10px), 10px)"}}>
-            {[["lobby","Races"],["leaderboard","Leaders"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
+            {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>{
               const active = screen===s||(screen==="race"&&s==="lobby");
               return (
                 <button key={s} onClick={()=>setScreen(s)}
