@@ -1576,6 +1576,13 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
   races.forEach(r=>{if(!grouped[r.date])grouped[r.date]=[];grouped[r.date].push(r);});
   const upcoming = races.filter(r=>r.status==="upcoming").length;
   const finished = races.filter(r=>r.status==="finished").length;
+  const [expandedPastDays,setExpandedPastDays]=useState(()=>new Set());
+  const sortedDayGroups=Object.entries(grouped).map(([date,dayRaces])=>({
+    date,dayRaces,hasUpcoming:dayRaces.some(r=>r.status==="upcoming"||r.status==="closed"),
+  })).sort((a,b)=>{
+    if(a.hasUpcoming!==b.hasUpcoming) return a.hasUpcoming?-1:1;
+    return a.hasUpcoming ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date);
+  });
 
   return (
     <div className="fu" style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 260px",gap:20,alignItems:"start"}}>
@@ -1663,28 +1670,35 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
         )}
 
         {/* ── Race groups ── */}
-        {Object.entries(grouped).sort(([dateA,racesA],[dateB,racesB])=>{
-          const aHasUpcoming=racesA.some(r=>r.status==="upcoming"||r.status==="closed");
-          const bHasUpcoming=racesB.some(r=>r.status==="upcoming"||r.status==="closed");
-          if(aHasUpcoming!==bHasUpcoming) return aHasUpcoming?-1:1; // upcoming days float to the top
-          return aHasUpcoming ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA); // soonest upcoming first, most recent past first
-        }).map(([date,dayRaces])=>{
+        {sortedDayGroups.map(({date,dayRaces,hasUpcoming},idx)=>{
+          const isFirstPastDay = !hasUpcoming && (idx===0 || sortedDayGroups[idx-1].hasUpcoming);
           const isToday=date===localDateStr();
           const isTomorrow=date===localDateStr(new Date(Date.now()+86400000));
           const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
           const dayUpcoming=dayRaces.filter(r=>r.status==="upcoming").length;
           const dayDone=dayRaces.filter(r=>r.status==="finished").length;
+          const isExpanded = hasUpcoming || expandedPastDays.has(date);
+          const dayPastWon=dayRaces.reduce((s,r)=>s+myBets.filter(b=>b.raceId===r.id&&b.won===true).reduce((s2,b)=>s2+(b.payout||0),0),0);
           return(
-          <div key={date} style={{marginBottom:isMobile?18:24}}>
+          <div key={date}>
+            {isFirstPastDay&&(
+              <div style={{display:"flex",alignItems:"center",gap:10,margin:isMobile?"22px 0 14px":"28px 0 16px"}}>
+                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:"#888",textTransform:"uppercase",letterSpacing:".08em",whiteSpace:"nowrap"}}>📋 Past Results</span>
+                <div style={{height:1,flex:1,background:"#d4dbd4"}}/>
+              </div>
+            )}
+          <div style={{marginBottom:isMobile?18:24}}>
 
             {/* Day header */}
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:isMobile?9:12}}>
+            <div
+              onClick={hasUpcoming?undefined:()=>setExpandedPastDays(prev=>{const n=new Set(prev);n.has(date)?n.delete(date):n.add(date);return n;})}
+              style={{display:"flex",alignItems:"center",gap:8,marginBottom:isMobile?9:12,cursor:hasUpcoming?"default":"pointer"}}>
               <div style={{
-                background:isToday?"#1a3a1a":"transparent",
-                border:isToday?"none":"1.5px solid #1a3a1a",
+                background:isToday?"#1a3a1a":hasUpcoming?"transparent":"#f0f1ef",
+                border:isToday?"none":hasUpcoming?"1.5px solid #1a3a1a":"1.5px solid #ccc",
                 borderRadius:8,padding:isMobile?"4px 11px":"5px 14px",flexShrink:0,
               }}>
-                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":"#1a3a1a",whiteSpace:"nowrap",letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:isToday?6:0}}>
+                <span style={{fontSize:isMobile?12:13,fontWeight:800,color:isToday?"#fff":hasUpcoming?"#1a3a1a":"#777",whiteSpace:"nowrap",letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:isToday?6:0}}>
                   {isToday&&<span style={{fontSize:isMobile?17:19}}>🏇</span>}{dateLabel}
                 </span>
               </div>
@@ -1693,10 +1707,13 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                 {dayRaces.length} race{dayRaces.length!==1?"s":""}
                 {dayDone>0?` · ${dayDone} done`:""}
                 {dayUpcoming>0?` · ${dayUpcoming} open`:""}
+                {!hasUpcoming&&dayPastWon>0?` · +${fmt(dayPastWon)}`:""}
               </span>
+              {!hasUpcoming&&<span style={{fontSize:13,color:"#999",flexShrink:0}}>{isExpanded?"▲":"▼"}</span>}
             </div>
 
             {/* Race cards — single column list */}
+            {isExpanded&&(
             <div style={{display:"flex",flexDirection:"column",gap:isMobile?8:10}}>
             {dayRaces.sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||"")).map((race,raceIdx)=>{
               const rb=myBets.filter(b=>b.raceId===race.id);
@@ -1844,6 +1861,8 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               );
             })}
             </div>
+            )}
+          </div>
           </div>
           );
         })}
