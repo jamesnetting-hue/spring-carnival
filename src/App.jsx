@@ -1756,7 +1756,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                     </div>
                   )}
 
-                  <div style={{display:"flex",alignItems:"center",gap:isMobile?12:18,padding:isMobile?"14px 14px":"18px 22px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:isMobile?12:18,padding:isFinished?(isMobile?"11px 14px":"13px 22px"):(isMobile?"14px 14px":"18px 22px")}}>
 
                     {/* Left: race info */}
                     <div style={{flex:1,minWidth:0}}>
@@ -1766,7 +1766,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       </div>
                       {/* Race name + grade badge */}
                       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4,flexWrap:"wrap"}}>
-                        <div className="cg" style={{fontSize:isMobile?17:22,fontWeight:800,color:"#000",lineHeight:1.2,letterSpacing:"-.005em"}}>{race.name}</div>
+                        <div className="cg" style={{fontSize:isFinished?(isMobile?15:18):(isMobile?17:22),fontWeight:800,color:isFinished?"#333":"#000",lineHeight:1.2,letterSpacing:"-.005em"}}>{race.name}</div>
                         {race.grade&&(
                           <span style={{fontSize:isMobile?10:11,fontWeight:800,padding:isMobile?"2px 7px":"3px 9px",borderRadius:20,whiteSpace:"nowrap",flexShrink:0,
                             background:race.grade==="Group 1"?"#fef3c7":"#eef2ff",
@@ -2194,7 +2194,12 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               </div>
             )}
 
-            {race.oddsAsOf&&<div style={{marginTop:6,fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:500}}>Odds as of {race.oddsAsOf}</div>}
+            {race.oddsAsOf&&(
+              <div style={{marginTop:10,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.14)",border:"1px solid rgba(255,255,255,.25)",borderRadius:20,padding:"5px 12px"}}>
+                <span style={{fontSize:13}}>🕐</span>
+                <span style={{fontSize:13,color:"#fff",fontWeight:700}}>Odds as of {race.oddsAsOf}</span>
+              </div>
+            )}
 
             {/* Results strip — 1st, 2nd, 3rd */}
             {race.status==="finished"&&race.result&&(()=>{
