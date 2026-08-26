@@ -1838,7 +1838,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                             <button style={{fontSize:13,fontWeight:700,color:"#fff",background:"#d97706",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 2px 6px rgba(217,119,6,.3)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Add more</button>
                           </div>
                         ):(
-                          <button style={{fontSize:14,fontWeight:700,color:"#fff",background:"#1a3a1a",border:"none",borderRadius:9,padding:"10px 20px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(26,58,26,.35)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bet Now</button>
+                          <button style={{fontSize:14,fontWeight:700,color:"#fff",background:"#1a3a1a",border:"none",borderRadius:9,padding:"10px 20px",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(26,58,26,.35)"}} onClick={e=>{e.stopPropagation();onSelect(race.id);}}>Bets Open</button>
                         )
                       )}
 
