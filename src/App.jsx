@@ -1663,7 +1663,12 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
         )}
 
         {/* ── Race groups ── */}
-        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,dayRaces])=>{
+        {Object.entries(grouped).sort(([dateA,racesA],[dateB,racesB])=>{
+          const aHasUpcoming=racesA.some(r=>r.status==="upcoming"||r.status==="closed");
+          const bHasUpcoming=racesB.some(r=>r.status==="upcoming"||r.status==="closed");
+          if(aHasUpcoming!==bHasUpcoming) return aHasUpcoming?-1:1; // upcoming days float to the top
+          return aHasUpcoming ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA); // soonest upcoming first, most recent past first
+        }).map(([date,dayRaces])=>{
           const isToday=date===localDateStr();
           const isTomorrow=date===localDateStr(new Date(Date.now()+86400000));
           const dateLabel=isToday?"Today":isTomorrow?"Tomorrow":new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
