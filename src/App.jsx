@@ -3323,14 +3323,16 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                           </div>
                         ))}
                       </div>
-                      {/* All bets — how they actually won/lost their money */}
+                      {/* All bets — SETTLED only. Showing still-active/pending bets here would let
+                          people see what others have picked before the race runs, defeating the
+                          point of the competition. */}
                       <div style={{marginBottom:12}}>
-                        <div className="sy" style={{fontSize:11,fontWeight:700,color:"#000",marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>📋 All Bets</div>
-                        {pb.length===0?(
-                          <span className="sy" style={{fontSize:12,color:"#000",fontStyle:"italic"}}>No bets placed yet</span>
+                        <div className="sy" style={{fontSize:11,fontWeight:700,color:"#000",marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}}>📋 Settled Bets</div>
+                        {pb.filter(b=>b.won!==null).length===0?(
+                          <span className="sy" style={{fontSize:12,color:"#000",fontStyle:"italic"}}>No settled bets yet</span>
                         ):(
                           <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:280,overflowY:"auto"}}>
-                            {[...pb].sort((x,y)=>new Date(y.placedAt)-new Date(x.placedAt)).map(bet=>{
+                            {pb.filter(b=>b.won!==null).sort((x,y)=>new Date(y.placedAt)-new Date(x.placedAt)).map(bet=>{
                               const btRace=races.find(r=>r.id===bet.raceId);
                               const btDef=BET_TYPES.find(t=>t.id===BASE_TYPE(bet.type));
                               const nameFor=n=>{const h=btRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
