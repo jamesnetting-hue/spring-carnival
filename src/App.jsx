@@ -3128,9 +3128,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               {/* Name */}
               <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:3,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
 
-              {/* One simple detail line */}
+              {/* Clear detail line: Race — Bet type: Horse(s) */}
               <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10,wordBreak:"break-word"}}>
-                {topWinDef?.label} · {topWinRace?.name} · {horsesLabel}
+                <span style={{color:"#fff",fontWeight:600}}>{topWinRace?.name}</span> — {topWinDef?.label}: <span style={{color:"#fff",fontWeight:600}}>{horsesLabel}</span>
               </div>
 
               {/* Payout */}
