@@ -1664,27 +1664,27 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           }
           const oddsHit=star.payout&&star.stake?(star.payout/star.stake):0;
           return(
-            <div style={{position:"relative",borderRadius:18,overflow:"hidden",marginBottom:16,background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 55%,#12240f 100%)",boxShadow:"0 10px 32px rgba(15,32,16,.35)"}}>
+            <div style={{position:"relative",borderRadius:14,overflow:"hidden",marginBottom:14,background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 55%,#12240f 100%)",boxShadow:"0 6px 20px rgba(15,32,16,.3)"}}>
               {/* Spotlight beam effect */}
               <div style={{position:"absolute",top:"-40%",left:"50%",transform:"translateX(-50%)",width:"140%",height:"180%",background:"radial-gradient(ellipse at top, rgba(252,211,77,.22) 0%, rgba(252,211,77,0) 60%)",pointerEvents:"none"}}/>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,transparent,#fcd34d,transparent)"}}/>
-              <div style={{position:"relative",padding:isMobile?"20px 18px":"26px 30px",textAlign:"center"}}>
-                <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(252,211,77,.15)",border:"1px solid rgba(252,211,77,.4)",borderRadius:20,padding:"4px 14px",marginBottom:14}}>
-                  <span style={{fontSize:13}}>🔦</span>
-                  <span style={{fontSize:11,fontWeight:800,letterSpacing:".12em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
+              <div style={{position:"relative",padding:isMobile?"14px 16px":"16px 20px",textAlign:"center"}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,211,77,.15)",border:"1px solid rgba(252,211,77,.4)",borderRadius:20,padding:"3px 11px",marginBottom:9}}>
+                  <span style={{fontSize:11}}>🔦</span>
+                  <span style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
                 </div>
-                <div className="cg" style={{fontSize:isMobile?24:30,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:6}}>{starPlayer?.name||"Someone"}</div>
-                <div style={{fontSize:isMobile?12:13,color:"rgba(255,255,255,.65)",marginBottom:16}}>{starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}</div>
+                <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:4}}>{starPlayer?.name||"Someone"}</div>
+                <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10}}>{starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}</div>
 
-                <div style={{fontSize:isMobile?40:52,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:6,textShadow:"0 0 24px rgba(252,211,77,.4)"}}>
+                <div style={{fontSize:isMobile?26:32,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:4,textShadow:"0 0 18px rgba(252,211,77,.4)"}}>
                   +{fmt(star.payout||0)}
                 </div>
-                <div style={{fontSize:12,color:"rgba(255,255,255,.6)",marginBottom:18}}>
+                <div style={{fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:12}}>
                   from a {fmt(star.stake)} stake{oddsHit>=5?` · $${oddsHit.toFixed(1)} odds hit`:""}
                 </div>
 
-                <div style={{display:"inline-block",maxWidth:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:12,padding:"10px 18px"}}>
-                  <div style={{fontSize:isMobile?11:12,color:"#fff",fontWeight:600,wordBreak:"break-word"}}>{horsesLabel}</div>
+                <div style={{display:"inline-block",maxWidth:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"7px 14px"}}>
+                  <div style={{fontSize:isMobile?10:11,color:"#fff",fontWeight:600,wordBreak:"break-word"}}>{horsesLabel}</div>
                 </div>
               </div>
             </div>
