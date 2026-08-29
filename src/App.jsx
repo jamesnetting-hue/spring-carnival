@@ -1657,15 +1657,49 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           const topWinNames=tiedNamesFor(topWin,b=>b.payout||0);
           const topWinRace=races.find(r=>r.id===topWin.raceId);
           const topWinDef=BET_TYPES.find(t=>t.id===BASE_TYPE(topWin.type));
+          const isTrueBox=IS_TRUE_BOX(topWin.type);
+          const isBoxedStyle=IS_BOXED_TYPE(topWin.type);
+          const isOrdered=topWinDef&&topWinDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(topWin.type)!=="quinella";
+          const nameFor=n=>{const h=topWinRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
+          const shape=MULTI_SHAPE(topWin.type);
+          let horsesLabel;
+          if(isOrdered){
+            horsesLabel=topWin.horses.map((n,idx)=>`${topWinDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+          }else if(shape&&topWinDef){
+            let idx=0;
+            horsesLabel=topWinDef.positions.map((pos,pi)=>{const count=shape[pi]||0;const names=topWin.horses.slice(idx,idx+count).map(nameFor);idx+=count;return names.length?`${pos.label} ${names.join("/")}`:null;}).filter(Boolean).join(" · ");
+          }else{
+            horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(topWin.horses)].map(nameFor).join(", ");
+          }
+          const dateLabel=new Date(weekDate+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
 
           return(
-            <div style={{display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:isMobile?"8px 12px":"9px 14px",marginBottom:12,background:"linear-gradient(135deg,#0f2010 0%,#1a3a1a 70%)",boxShadow:"0 3px 10px rgba(15,32,16,.25)"}}>
-              <span style={{fontSize:14,flexShrink:0}}>🔦</span>
-              <span style={{fontSize:9,fontWeight:800,letterSpacing:".07em",textTransform:"uppercase",color:"#fcd34d",flexShrink:0}}>Bet of the Week</span>
-              <span style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.15)",flexShrink:0}}/>
-              <span className="cg" style={{fontSize:isMobile?11:12,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{topWinNames||"Someone"}</span>
-              <span style={{fontSize:14,fontWeight:900,color:"#fcd34d",flexShrink:0}}>+{fmt(topWin.payout||0)}</span>
-              <span className="mobile-hide" style={{fontSize:10,color:"rgba(255,255,255,.55)",flexShrink:0,whiteSpace:"nowrap"}}>{topWinDef?.label} · {topWinRace?.name}</span>
+            <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 60%,#15300f 100%)",boxShadow:"0 5px 16px rgba(15,32,16,.28)"}}>
+              <div style={{position:"absolute",top:-30,right:-30,width:110,height:110,borderRadius:"50%",background:"rgba(252,211,77,.06)",pointerEvents:"none"}}/>
+              <div style={{position:"relative",padding:isMobile?"12px 14px":"14px 18px"}}>
+                {/* Header row: label + date */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:5}}>
+                    <span style={{fontSize:12}}>🔦</span>
+                    <span style={{fontSize:10,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
+                  </span>
+                  <span style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{dateLabel}</span>
+                </div>
+
+                {/* Player name(s) */}
+                <div className="cg" style={{fontSize:isMobile?15:17,fontWeight:800,color:"#fff",lineHeight:1.25,marginBottom:6,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
+
+                {/* Bet type + race name */}
+                <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:8,wordBreak:"break-word"}}>
+                  {topWinDef?.label}{isBoxedStyle?(isTrueBox?" (Boxed)":" (Multi)"):""} · {topWinRace?.name}
+                </div>
+
+                {/* Horse(s) + payout */}
+                <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                  <div style={{fontSize:isMobile?11:12,fontWeight:700,color:"#fff",wordBreak:"break-word",flex:1,minWidth:0}}>{horsesLabel}</div>
+                  <div style={{fontSize:isMobile?22:26,fontWeight:900,color:"#fcd34d",lineHeight:1,flexShrink:0}}>+{fmt(topWin.payout||0)}</div>
+                </div>
+              </div>
             </div>
           );
         })()}
