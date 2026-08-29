@@ -118,7 +118,7 @@ const sb = {
 
   async select(table, query = "") {
     try {
-      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, { headers: this.h });
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, { headers: this.h, cache: "no-store" });
       if (!res.ok) { console.error("SB select error", table, await res.text()); return []; }
       return await res.json();
     } catch(e) { console.error("SB select failed", e); return []; }
