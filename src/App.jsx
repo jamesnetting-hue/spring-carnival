@@ -3140,7 +3140,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
                 +{fmt(topWin.payout||0)}
               </div>
               {oddsHit>0&&(
-                <div style={{fontSize:isMobile?10:11,color:"rgba(255,255,255,.7)",fontWeight:600,marginTop:3}}>
+                <div style={{fontSize:isMobile?10:11,color:"#fff",fontWeight:700,marginTop:3}}>
                   ${oddsHit.toFixed(1)} odds · {fmt(topWin.stake)} stake
                 </div>
               )}
