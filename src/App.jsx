@@ -1636,7 +1636,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           })()}
         </div>
 
-        {/* ── Bet of the Week + Biggest Upset ── */}
+        {/* ── Bet of the Week ── */}
         {(()=>{
           const finishedDates=[...new Set(races.filter(r=>r.status==="finished").map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
           if(finishedDates.length===0) return null;
@@ -1652,40 +1652,20 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             return names.length>2?`${names.slice(0,-1).join(", ")} & ${names[names.length-1]}`:names.join(" & ");
           };
 
-          // Box 1: biggest payout
           const byPayout=[...weekWins].sort((a,b2)=>(b2.payout||0)-(a.payout||0));
           const topWin=byPayout[0];
           const topWinNames=tiedNamesFor(topWin,b=>b.payout||0);
           const topWinRace=races.find(r=>r.id===topWin.raceId);
           const topWinDef=BET_TYPES.find(t=>t.id===BASE_TYPE(topWin.type));
 
-          // Box 2: longest odds hit (the upset)
-          const withOdds=weekWins.filter(b=>b.payout&&b.stake).map(b=>({b,odds:b.payout/b.stake}));
-          const byOdds=[...withOdds].sort((a,b2)=>b2.odds-a.odds);
-          const topOdds=byOdds[0];
-          const upsetNames=topOdds?tiedNamesFor(topOdds.b,x=>Math.round((x.payout/x.stake)*100)):null;
-          const upsetRace=topOdds?races.find(r=>r.id===topOdds.b.raceId):null;
-          const upsetDef=topOdds?BET_TYPES.find(t=>t.id===BASE_TYPE(topOdds.b.type)):null;
-
           return(
-            <div style={{display:"grid",gridTemplateColumns:topOdds&&topOdds.b!==topWin?"1fr 1fr":"1fr",gap:8,marginBottom:14}}>
-              {/* Bet of the Week */}
-              <div style={{borderRadius:12,padding:isMobile?"10px 12px":"12px 14px",background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 70%)",boxShadow:"0 4px 14px rgba(15,32,16,.28)"}}>
-                <div style={{fontSize:9,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:"#fcd34d",marginBottom:4}}>🔦 Bet of the Week</div>
-                <div className="cg" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{topWinNames||"Someone"}</div>
-                <div style={{fontSize:18,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:2}}>+{fmt(topWin.payout||0)}</div>
-                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{topWinDef?.label} · {topWinRace?.name}</div>
-              </div>
-
-              {/* Biggest Upset — only show as a separate box if it's a different bet */}
-              {topOdds&&topOdds.b!==topWin&&(
-                <div style={{borderRadius:12,padding:isMobile?"10px 12px":"12px 14px",background:"linear-gradient(160deg,#7c2d12 0%,#431407 70%)",boxShadow:"0 4px 14px rgba(67,20,7,.28)"}}>
-                  <div style={{fontSize:9,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:"#fdba74",marginBottom:4}}>💥 Biggest Upset</div>
-                  <div className="cg" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{upsetNames||"Someone"}</div>
-                  <div style={{fontSize:18,fontWeight:900,color:"#fdba74",lineHeight:1,marginBottom:2}}>${topOdds.odds.toFixed(1)} odds</div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{upsetDef?.label} · {upsetRace?.name}</div>
-                </div>
-              )}
+            <div style={{display:"flex",alignItems:"center",gap:10,borderRadius:10,padding:isMobile?"8px 12px":"9px 14px",marginBottom:12,background:"linear-gradient(135deg,#0f2010 0%,#1a3a1a 70%)",boxShadow:"0 3px 10px rgba(15,32,16,.25)"}}>
+              <span style={{fontSize:14,flexShrink:0}}>🔦</span>
+              <span style={{fontSize:9,fontWeight:800,letterSpacing:".07em",textTransform:"uppercase",color:"#fcd34d",flexShrink:0}}>Bet of the Week</span>
+              <span style={{width:1,alignSelf:"stretch",background:"rgba(255,255,255,.15)",flexShrink:0}}/>
+              <span className="cg" style={{fontSize:isMobile?11:12,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{topWinNames||"Someone"}</span>
+              <span style={{fontSize:14,fontWeight:900,color:"#fcd34d",flexShrink:0}}>+{fmt(topWin.payout||0)}</span>
+              <span className="mobile-hide" style={{fontSize:10,color:"rgba(255,255,255,.55)",flexShrink:0,whiteSpace:"nowrap"}}>{topWinDef?.label} · {topWinRace?.name}</span>
             </div>
           );
         })()}
