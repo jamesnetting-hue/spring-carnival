@@ -3077,7 +3077,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       </div>
 
-      {/* ── BET OF THE WEEK — winning ticket design ───────────────── */}
+      {/* ── BET OF THE WEEK ────────────────────────────────────────── */}
       {(()=>{
         const finishedDates=[...new Set(races.filter(r=>r.status==="finished").map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
         if(finishedDates.length===0) return null;
@@ -3116,54 +3116,38 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const oddsHit=topWin.payout&&topWin.stake?(topWin.payout/topWin.stake):0;
 
         return(
-          <div style={{position:"relative",marginBottom:18,filter:"drop-shadow(0 6px 16px rgba(0,0,0,.16))"}}>
-            {/* WINNER ribbon */}
-            <div style={{position:"absolute",top:14,right:-9,zIndex:2,background:"#b91c1c",color:"#fff",fontSize:10,fontWeight:900,letterSpacing:".08em",padding:"3px 14px",transform:"rotate(45deg)",boxShadow:"0 2px 6px rgba(0,0,0,.25)"}}>WINNER</div>
+          <div style={{background:"#fff",borderRadius:12,padding:isMobile?"14px 16px":"18px 22px",border:`1px solid ${C.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)",marginBottom:18}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:6}}>
+              <span className="sy" style={{fontSize:11,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".06em"}}>🏆 Bet of the Week</span>
+              <span className="sy" style={{fontSize:11,color:"#888"}}>{dateLabel}</span>
+            </div>
 
-            <div style={{background:"#faf6ea",borderRadius:14,border:"1.5px solid #d9cfa8",overflow:"hidden"}}>
-              {/* Ticket header */}
-              <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:isMobile?"9px 16px":"10px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
-                <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                  <span style={{fontSize:14}}>🎫</span>
-                  <span style={{fontSize:11,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
-                </span>
-                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.7)",letterSpacing:".03em"}}>{dateLabel}</span>
+            <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:800,color:"#111",lineHeight:1.25,marginBottom:10,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
+
+            <div style={{display:"flex",flexWrap:"wrap",gap:isMobile?14:24,marginBottom:14}}>
+              <div style={{minWidth:0}}>
+                <div className="sy" style={{fontSize:10,color:"#000",marginBottom:2}}>Bet</div>
+                <div className="sy" style={{fontSize:13,fontWeight:600,color:"#333"}}>{topWinDef?.label}{isBoxedStyle?(isTrueBox?" (Boxed)":" (Multi)"):""}</div>
               </div>
-
-              {/* Perforation */}
-              <div style={{height:0,borderTop:"2px dashed #d9cfa8",margin:"0 16px"}}/>
-
-              {/* Ticket body */}
-              <div style={{padding:isMobile?"14px 16px":"16px 20px"}}>
-                <div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a",marginBottom:3}}>Winning Punter</div>
-                <div className="cg" style={{fontSize:isMobile?16:19,fontWeight:900,color:"#1a3a1a",lineHeight:1.25,marginBottom:10,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
-
-                <div style={{display:"flex",gap:isMobile?16:28,flexWrap:"wrap",marginBottom:12}}>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a",marginBottom:2}}>Bet</div>
-                    <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:"#333"}}>{topWinDef?.label}{isBoxedStyle?(isTrueBox?" (Boxed)":" (Multi)"):""}</div>
-                  </div>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a",marginBottom:2}}>Race</div>
-                    <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:"#333",wordBreak:"break-word"}}>{topWinRace?.name}</div>
-                  </div>
-                  {oddsHit>=5&&(
-                    <div style={{minWidth:0}}>
-                      <div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a",marginBottom:2}}>Odds</div>
-                      <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:"#333"}}>${oddsHit.toFixed(1)}</div>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a",marginBottom:2}}>Runners</div>
-                <div className="sy" style={{fontSize:isMobile?12:13,fontWeight:700,color:"#333",marginBottom:14,wordBreak:"break-word"}}>{horsesLabel}</div>
-
-                {/* Payout stub */}
-                <div style={{borderTop:"2px dashed #d9cfa8",paddingTop:12,display:"flex",alignItems:"baseline",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
-                  <span style={{fontSize:10,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"#8a7a4a"}}>Payout</span>
-                  <span style={{fontSize:isMobile?28:34,fontWeight:900,color:"#15803d",fontFamily:"Georgia,serif"}}>+{fmt(topWin.payout||0)}</span>
-                </div>
+              <div style={{minWidth:0}}>
+                <div className="sy" style={{fontSize:10,color:"#000",marginBottom:2}}>Race</div>
+                <div className="sy" style={{fontSize:13,fontWeight:600,color:"#333",wordBreak:"break-word"}}>{topWinRace?.name}</div>
               </div>
+              {oddsHit>=5&&(
+                <div style={{minWidth:0}}>
+                  <div className="sy" style={{fontSize:10,color:"#000",marginBottom:2}}>Odds</div>
+                  <div className="sy" style={{fontSize:13,fontWeight:600,color:"#333"}}>${oddsHit.toFixed(1)}</div>
+                </div>
+              )}
+              <div style={{minWidth:0,flex:1}}>
+                <div className="sy" style={{fontSize:10,color:"#000",marginBottom:2}}>Runners</div>
+                <div className="sy" style={{fontSize:13,fontWeight:600,color:"#333",wordBreak:"break-word"}}>{horsesLabel}</div>
+              </div>
+            </div>
+
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span className="sy" style={{fontSize:11,color:"#888"}}>Payout</span>
+              <span className="cg" style={{fontSize:isMobile?24:28,fontWeight:800,color:C.green}}>+{fmt(topWin.payout||0)}</span>
             </div>
           </div>
         );
