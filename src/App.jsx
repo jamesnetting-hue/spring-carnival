@@ -1636,64 +1636,56 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           })()}
         </div>
 
-        {/* ── Bet of the Week spotlight ── */}
+        {/* ── Bet of the Week + Biggest Upset ── */}
         {(()=>{
           const finishedDates=[...new Set(races.filter(r=>r.status==="finished").map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
           if(finishedDates.length===0) return null;
           const weekDate=finishedDates[0];
           const weekRaceIds=races.filter(r=>r.date===weekDate&&r.status==="finished").map(r=>r.id);
-          const weekWins=bets.filter(b=>weekRaceIds.includes(b.raceId)&&b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0));
-          const star=weekWins[0];
-          if(!star) return null;
-          const tiedWinners=weekWins.filter(b=>(b.payout||0)===(star.payout||0));
-          const tiedPlayerIds=[...new Set(tiedWinners.map(b=>b.playerId))];
-          const tiedNames=tiedPlayerIds.map(id=>accounts.find(a=>a.id===id)?.name).filter(Boolean);
-          const spotlightNames=tiedNames.length>2?`${tiedNames.slice(0,-1).join(", ")} & ${tiedNames[tiedNames.length-1]}`:tiedNames.join(" & ");
-          const starPlayer=accounts.find(a=>a.id===star.playerId);
-          const starRace=races.find(r=>r.id===star.raceId);
-          const starDef=BET_TYPES.find(t=>t.id===BASE_TYPE(star.type));
-          const isTrueBox=IS_TRUE_BOX(star.type);
-          const isBoxedStyle=IS_BOXED_TYPE(star.type);
-          const isOrdered=starDef&&starDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(star.type)!=="quinella";
-          const nameFor=n=>{const h=starRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
-          const shape=MULTI_SHAPE(star.type);
-          let horsesLabel;
-          if(isOrdered){
-            horsesLabel=star.horses.map((n,idx)=>`${starDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
-          }else if(shape&&starDef){
-            let idx=0;
-            horsesLabel=starDef.positions.map((pos,pi)=>{const count=shape[pi]||0;const names=star.horses.slice(idx,idx+count).map(nameFor);idx+=count;return names.length?`${pos.label} ${names.join("/")}`:null;}).filter(Boolean).join(" · ");
-          }else{
-            horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(star.horses)].map(nameFor).join(", ");
-          }
-          const oddsHit=star.payout&&star.stake?(star.payout/star.stake):0;
+          const weekWins=bets.filter(b=>weekRaceIds.includes(b.raceId)&&b.won===true);
+          if(weekWins.length===0) return null;
+
+          const tiedNamesFor=(bet,key)=>{
+            const tied=weekWins.filter(b=>key(b)===key(bet));
+            const ids=[...new Set(tied.map(b=>b.playerId))];
+            const names=ids.map(id=>accounts.find(a=>a.id===id)?.name).filter(Boolean);
+            return names.length>2?`${names.slice(0,-1).join(", ")} & ${names[names.length-1]}`:names.join(" & ");
+          };
+
+          // Box 1: biggest payout
+          const byPayout=[...weekWins].sort((a,b2)=>(b2.payout||0)-(a.payout||0));
+          const topWin=byPayout[0];
+          const topWinNames=tiedNamesFor(topWin,b=>b.payout||0);
+          const topWinRace=races.find(r=>r.id===topWin.raceId);
+          const topWinDef=BET_TYPES.find(t=>t.id===BASE_TYPE(topWin.type));
+
+          // Box 2: longest odds hit (the upset)
+          const withOdds=weekWins.filter(b=>b.payout&&b.stake).map(b=>({b,odds:b.payout/b.stake}));
+          const byOdds=[...withOdds].sort((a,b2)=>b2.odds-a.odds);
+          const topOdds=byOdds[0];
+          const upsetNames=topOdds?tiedNamesFor(topOdds.b,x=>Math.round((x.payout/x.stake)*100)):null;
+          const upsetRace=topOdds?races.find(r=>r.id===topOdds.b.raceId):null;
+          const upsetDef=topOdds?BET_TYPES.find(t=>t.id===BASE_TYPE(topOdds.b.type)):null;
+
           return(
-            <div style={{position:"relative",borderRadius:14,overflow:"hidden",marginBottom:14,background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 55%,#12240f 100%)",boxShadow:"0 6px 20px rgba(15,32,16,.3)"}}>
-              {/* Spotlight beam effect */}
-              <div style={{position:"absolute",top:"-40%",left:"50%",transform:"translateX(-50%)",width:"140%",height:"180%",background:"radial-gradient(ellipse at top, rgba(252,211,77,.22) 0%, rgba(252,211,77,0) 60%)",pointerEvents:"none"}}/>
-              <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,transparent,#fcd34d,transparent)"}}/>
-              <div style={{position:"relative",padding:isMobile?"14px 16px":"16px 20px",textAlign:"center"}}>
-                <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,211,77,.15)",border:"1px solid rgba(252,211,77,.4)",borderRadius:20,padding:"3px 11px",marginBottom:9}}>
-                  <span style={{fontSize:11}}>🔦</span>
-                  <span style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
-                </div>
-                <div className="cg" style={{fontSize:tiedNames.length>1?(isMobile?14:17):(isMobile?17:20),fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:4}}>{spotlightNames||"Someone"}</div>
-                <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10}}>
-                  {tiedNames.length>1&&<span style={{color:"#fcd34d",fontWeight:700}}>Tied · </span>}
-                  {starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}
-                </div>
-
-                <div style={{fontSize:isMobile?26:32,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:4,textShadow:"0 0 18px rgba(252,211,77,.4)"}}>
-                  +{fmt(star.payout||0)}
-                </div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,.6)",marginBottom:12}}>
-                  from a {fmt(star.stake)} stake{oddsHit>=5?` · $${oddsHit.toFixed(1)} odds hit`:""}
-                </div>
-
-                <div style={{display:"inline-block",maxWidth:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"7px 14px"}}>
-                  <div style={{fontSize:isMobile?10:11,color:"#fff",fontWeight:600,wordBreak:"break-word"}}>{horsesLabel}</div>
-                </div>
+            <div style={{display:"grid",gridTemplateColumns:topOdds&&topOdds.b!==topWin?"1fr 1fr":"1fr",gap:8,marginBottom:14}}>
+              {/* Bet of the Week */}
+              <div style={{borderRadius:12,padding:isMobile?"10px 12px":"12px 14px",background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 70%)",boxShadow:"0 4px 14px rgba(15,32,16,.28)"}}>
+                <div style={{fontSize:9,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:"#fcd34d",marginBottom:4}}>🔦 Bet of the Week</div>
+                <div className="cg" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{topWinNames||"Someone"}</div>
+                <div style={{fontSize:18,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:2}}>+{fmt(topWin.payout||0)}</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{topWinDef?.label} · {topWinRace?.name}</div>
               </div>
+
+              {/* Biggest Upset — only show as a separate box if it's a different bet */}
+              {topOdds&&topOdds.b!==topWin&&(
+                <div style={{borderRadius:12,padding:isMobile?"10px 12px":"12px 14px",background:"linear-gradient(160deg,#7c2d12 0%,#431407 70%)",boxShadow:"0 4px 14px rgba(67,20,7,.28)"}}>
+                  <div style={{fontSize:9,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:"#fdba74",marginBottom:4}}>💥 Biggest Upset</div>
+                  <div className="cg" style={{fontSize:isMobile?12:13,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{upsetNames||"Someone"}</div>
+                  <div style={{fontSize:18,fontWeight:900,color:"#fdba74",lineHeight:1,marginBottom:2}}>${topOdds.odds.toFixed(1)} odds</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{upsetDef?.label} · {upsetRace?.name}</div>
+                </div>
+              )}
             </div>
           );
         })()}
