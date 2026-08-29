@@ -1636,6 +1636,61 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           })()}
         </div>
 
+        {/* ── Bet of the Week spotlight ── */}
+        {(()=>{
+          const finishedDates=[...new Set(races.filter(r=>r.status==="finished").map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
+          if(finishedDates.length===0) return null;
+          const weekDate=finishedDates[0];
+          const weekRaceIds=races.filter(r=>r.date===weekDate&&r.status==="finished").map(r=>r.id);
+          const weekWins=bets.filter(b=>weekRaceIds.includes(b.raceId)&&b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0));
+          const star=weekWins[0];
+          if(!star) return null;
+          const starPlayer=accounts.find(a=>a.id===star.playerId);
+          const starRace=races.find(r=>r.id===star.raceId);
+          const starDef=BET_TYPES.find(t=>t.id===BASE_TYPE(star.type));
+          const isTrueBox=IS_TRUE_BOX(star.type);
+          const isBoxedStyle=IS_BOXED_TYPE(star.type);
+          const isOrdered=starDef&&starDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(star.type)!=="quinella";
+          const nameFor=n=>{const h=starRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
+          const shape=MULTI_SHAPE(star.type);
+          let horsesLabel;
+          if(isOrdered){
+            horsesLabel=star.horses.map((n,idx)=>`${starDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+          }else if(shape&&starDef){
+            let idx=0;
+            horsesLabel=starDef.positions.map((pos,pi)=>{const count=shape[pi]||0;const names=star.horses.slice(idx,idx+count).map(nameFor);idx+=count;return names.length?`${pos.label} ${names.join("/")}`:null;}).filter(Boolean).join(" · ");
+          }else{
+            horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(star.horses)].map(nameFor).join(", ");
+          }
+          const oddsHit=star.payout&&star.stake?(star.payout/star.stake):0;
+          return(
+            <div style={{position:"relative",borderRadius:18,overflow:"hidden",marginBottom:16,background:"linear-gradient(160deg,#0f2010 0%,#1a3a1a 55%,#12240f 100%)",boxShadow:"0 10px 32px rgba(15,32,16,.35)"}}>
+              {/* Spotlight beam effect */}
+              <div style={{position:"absolute",top:"-40%",left:"50%",transform:"translateX(-50%)",width:"140%",height:"180%",background:"radial-gradient(ellipse at top, rgba(252,211,77,.22) 0%, rgba(252,211,77,0) 60%)",pointerEvents:"none"}}/>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,transparent,#fcd34d,transparent)"}}/>
+              <div style={{position:"relative",padding:isMobile?"20px 18px":"26px 30px",textAlign:"center"}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(252,211,77,.15)",border:"1px solid rgba(252,211,77,.4)",borderRadius:20,padding:"4px 14px",marginBottom:14}}>
+                  <span style={{fontSize:13}}>🔦</span>
+                  <span style={{fontSize:11,fontWeight:800,letterSpacing:".12em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
+                </div>
+                <div className="cg" style={{fontSize:isMobile?24:30,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:6}}>{starPlayer?.name||"Someone"}</div>
+                <div style={{fontSize:isMobile?12:13,color:"rgba(255,255,255,.65)",marginBottom:16}}>{starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}</div>
+
+                <div style={{fontSize:isMobile?40:52,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:6,textShadow:"0 0 24px rgba(252,211,77,.4)"}}>
+                  +{fmt(star.payout||0)}
+                </div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,.6)",marginBottom:18}}>
+                  from a {fmt(star.stake)} stake{oddsHit>=5?` · $${oddsHit.toFixed(1)} odds hit`:""}
+                </div>
+
+                <div style={{display:"inline-block",maxWidth:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:12,padding:"10px 18px"}}>
+                  <div style={{fontSize:isMobile?11:12,color:"#fff",fontWeight:600,wordBreak:"break-word"}}>{horsesLabel}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Quick stats ── */}
         {account&&races.length>0&&(()=>{
           const myAllBets=bets.filter(b=>b.playerId===account.id);
@@ -4399,17 +4454,23 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
             {/* ⑪ TROPHY CABINET ──────────────────────────────────── */}
             {settled.length>0&&(()=>{
+              const comebackKid = raceStats.some((r,i)=> r.profit>0 && i>=2 && raceStats[i-1].profit<=0 && raceStats[i-2].profit<=0);
               const achievements=[
                 {icon:"🎯",name:"First Bet",desc:"You're on the board!",hint:"Place your first bet",unlocked:settled.length>=1},
                 {icon:"💸",name:"Full Send",desc:"Spent your whole $24 in one race!",hint:"Use your entire budget in a single race",unlocked:allRaces.some(r=>getRaceBalance(account.id,r.id)===0)},
                 {icon:"🔥",name:"On a Roll",desc:"2 wins in a row!",hint:"Win 2 races in a row",unlocked:longestWinStreak>=2},
                 {icon:"🏆",name:"Hat Trick",desc:"3 wins in a row!",hint:"Win 3 races in a row",unlocked:longestWinStreak>=3},
                 {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
+                {icon:"🏦",name:"Bank Breaker",desc:"$200+ returned!",hint:"Return over $200 total",unlocked:account.totalWon>=200},
                 {icon:"💎",name:"High Roller",desc:"Living large!",hint:"Place a single bet of $20+",unlocked:settled.some(b=>b.stake>=20)},
                 {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.payout&&b.stake>0&&b.payout/b.stake>=10)},
                 {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>BASE_TYPE(b.type)==="trifecta"||BASE_TYPE(b.type)==="firstfour")},
+                {icon:"🎲",name:"Multi Master",desc:"Boxed or multi bet winner!",hint:"Win a boxed or multi-position bet",unlocked:won.some(b=>IS_BOXED_TYPE(b.type))},
                 {icon:"🌟",name:"Big Winner",desc:"Massive payout!",hint:"Win $50+ in a single bet",unlocked:won.some(b=>(b.payout||0)>=50)},
                 {icon:"📈",name:"Consistent",desc:"5 profitable races!",hint:"Be profitable in 5+ races",unlocked:racesWon>=5},
+                {icon:"🥊",name:"Comeback Kid",desc:"Bounced back from a cold run!",hint:"Win a race right after 2+ losses in a row",unlocked:comebackKid},
+                {icon:"🏛️",name:"Group 1 Glory",desc:"Won on the big stage!",hint:"Win a bet on a Group 1 race",unlocked:won.some(b=>races.find(r=>r.id===b.raceId)?.grade==="Group 1")},
+                {icon:"🦾",name:"Iron Punter",desc:"Never missed a race!",hint:"Bet on every race so far this season",unlocked:finishedRaces.length>0&&finishedRaces.every(r=>bets.some(b=>b.raceId===r.id))},
               ];
               const unlocked=achievements.filter(a=>a.unlocked);
               const pct=Math.round((unlocked.length/achievements.length)*100);
@@ -5361,6 +5422,41 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
               <button className="btn btn-gold sy" style={{fontSize:12,padding:"8px 16px"}} onClick={()=>setShowAddRace(true)}>+ Add Race</button>
             </div>
           </div>
+
+          {/* Pending Settlement Dashboard */}
+          {(()=>{
+            const openRaces = races.filter(r=>r.status==="upcoming"||r.status==="closed");
+            if(openRaces.length===0) return null;
+            return(
+              <div style={{marginBottom:20,background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
+                  <span className="cg" style={{fontSize:14,fontWeight:800,color:"#fff"}}>📋 Pending Settlement — {openRaces.length} race{openRaces.length!==1?"s":""} still open</span>
+                </div>
+                <div>
+                  {openRaces.map((race,i)=>{
+                    const raceBets = bets.filter(b=>b.raceId===race.id);
+                    const staked = raceBets.reduce((s,b)=>s+b.stake,0);
+                    const players = new Set(raceBets.map(b=>b.playerId)).size;
+                    const missing = accounts.length - players;
+                    return(
+                      <div key={race.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,padding:"10px 16px",borderTop:i>0?`1px solid ${C.border}`:"none",flexWrap:"wrap"}}>
+                        <div style={{minWidth:0}}>
+                          <span className="sy" style={{fontSize:13,fontWeight:700,color:"#111"}}>{race.name}</span>
+                          <span className="sy" style={{fontSize:12,color:"#777"}}> · {race.venue} · {race.raceTime?.substring(0,5)||"TBC"}</span>
+                          <span style={{fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:20,marginLeft:8,background:race.status==="closed"?"#fee2e2":"#dcfce7",color:race.status==="closed"?C.red:C.green,textTransform:"uppercase"}}>{race.status}</span>
+                        </div>
+                        <div style={{display:"flex",gap:16,flexShrink:0,fontSize:12}}>
+                          <span className="sy" style={{color:"#555"}}><strong style={{color:"#111"}}>{players}</strong>/{accounts.length} bet</span>
+                          <span className="sy" style={{color:"#555"}}><strong style={{color:"#111"}}>{fmt(staked)}</strong> staked</span>
+                          {missing>0&&<span style={{color:"#b45309",fontWeight:700}}>⚠ {missing} missing</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Race day checklist */}
           {races.filter(r=>r.status==="upcoming"||r.status==="closed").map(race=>{
