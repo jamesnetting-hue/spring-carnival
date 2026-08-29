@@ -3116,48 +3116,51 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const oddsHit=topWin.payout&&topWin.stake?(topWin.payout/topWin.stake):0;
 
         return(
-          <div style={{position:"relative",overflow:"hidden",background:"linear-gradient(180deg,#0a1a0a 0%,#132813 60%,#0a1a0a 100%)",borderRadius:14,marginBottom:18,boxShadow:"0 8px 24px rgba(0,0,0,.3)"}}>
+          <div style={{position:"relative",overflow:"hidden",background:"linear-gradient(180deg,#0a1a0a 0%,#152b15 60%,#0a1a0a 100%)",borderRadius:14,marginBottom:18,boxShadow:"0 8px 26px rgba(0,0,0,.32)"}}>
             {/* Torch beam cone, shining down onto the name */}
-            <div style={{position:"absolute",top:-30,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"90px solid transparent",borderRight:"90px solid transparent",borderTop:"170px solid rgba(255,241,181,.10)",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",top:30,left:"50%",transform:"translateX(-50%)",width:260,height:140,borderRadius:"50%",background:"radial-gradient(ellipse, rgba(255,241,181,.35) 0%, rgba(255,241,181,.12) 45%, transparent 75%)",pointerEvents:"none",filter:"blur(2px)"}}/>
+            <div style={{position:"absolute",top:-30,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"100px solid transparent",borderRight:"100px solid transparent",borderTop:"175px solid rgba(255,244,200,.13)",pointerEvents:"none"}}/>
+            <div style={{position:"absolute",top:26,left:"50%",transform:"translateX(-50%)",width:280,height:150,borderRadius:"50%",background:"radial-gradient(ellipse, rgba(255,244,200,.4) 0%, rgba(255,244,200,.14) 45%, transparent 75%)",pointerEvents:"none",filter:"blur(2px)"}}/>
 
-            <div style={{position:"relative",padding:isMobile?"16px 16px 14px":"20px 22px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:6}}>
+            <div style={{position:"relative",padding:isMobile?"16px 16px 16px":"20px 22px 18px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:6}}>
                 <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
                   <span style={{fontSize:13}}>🔦</span>
-                  <span style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"rgba(255,255,255,.45)"}}>Bet of the Week</span>
+                  <span style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
                 </span>
-                <span style={{fontSize:10,color:"rgba(255,255,255,.35)"}}>{dateLabel}</span>
+                <span style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.55)"}}>{dateLabel}</span>
               </div>
 
               {/* Spotlit name */}
-              <div style={{textAlign:"center",marginBottom:18}}>
-                <div className="cg" style={{fontSize:isMobile?19:23,fontWeight:900,color:"#fff9e8",lineHeight:1.25,wordBreak:"break-word",textShadow:"0 0 22px rgba(255,241,181,.55), 0 0 6px rgba(255,241,181,.4)"}}>{topWinNames||"Someone"}</div>
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div className="cg" style={{fontSize:isMobile?20:24,fontWeight:900,color:"#fffdf5",lineHeight:1.25,wordBreak:"break-word",textShadow:"0 0 26px rgba(255,244,200,.65), 0 0 8px rgba(255,244,200,.5)"}}>{topWinNames||"Someone"}</div>
               </div>
 
-              <div style={{display:"flex",flexWrap:"wrap",gap:isMobile?14:24,marginBottom:14,justifyContent:isMobile?"flex-start":"center"}}>
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Bet</div>
-                  <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.85)"}}>{topWinDef?.label}{isBoxedStyle?(isTrueBox?" (Boxed)":" (Multi)"):""}</div>
-                </div>
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Race</div>
-                  <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.85)",wordBreak:"break-word"}}>{topWinRace?.name}</div>
-                </div>
-                {oddsHit>=5&&(
+              {/* Info panel */}
+              <div style={{background:"rgba(0,0,0,.2)",borderRadius:10,padding:isMobile?"11px 14px":"12px 16px",marginBottom:14}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:isMobile?12:22,justifyContent:isMobile?"flex-start":"center"}}>
                   <div style={{minWidth:0}}>
-                    <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Odds</div>
-                    <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.85)"}}>${oddsHit.toFixed(1)}</div>
+                    <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.5)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Bet</div>
+                    <div style={{fontSize:12.5,fontWeight:700,color:"#fff"}}>{topWinDef?.label}{isBoxedStyle?(isTrueBox?" (Boxed)":" (Multi)"):""}</div>
                   </div>
-                )}
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,.4)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Runners</div>
-                  <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.85)",wordBreak:"break-word"}}>{horsesLabel}</div>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.5)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Race</div>
+                    <div style={{fontSize:12.5,fontWeight:700,color:"#fff",wordBreak:"break-word"}}>{topWinRace?.name}</div>
+                  </div>
+                  {oddsHit>=5&&(
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.5)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Odds</div>
+                      <div style={{fontSize:12.5,fontWeight:700,color:"#fff"}}>${oddsHit.toFixed(1)}</div>
+                    </div>
+                  )}
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.5)",marginBottom:2,textTransform:"uppercase",letterSpacing:".06em"}}>Runners</div>
+                    <div style={{fontSize:12.5,fontWeight:700,color:"#fff",wordBreak:"break-word"}}>{horsesLabel}</div>
+                  </div>
                 </div>
               </div>
 
-              <div style={{borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12,textAlign:"center"}}>
-                <span style={{fontSize:isMobile?26:30,fontWeight:900,color:"#fcd34d",textShadow:"0 0 16px rgba(252,211,77,.4)"}}>+{fmt(topWin.payout||0)}</span>
+              <div style={{borderTop:"1px solid rgba(255,255,255,.15)",paddingTop:13,textAlign:"center"}}>
+                <span style={{fontSize:isMobile?27:32,fontWeight:900,color:"#fcd34d",textShadow:"0 0 18px rgba(252,211,77,.5)"}}>+{fmt(topWin.payout||0)}</span>
               </div>
             </div>
           </div>
