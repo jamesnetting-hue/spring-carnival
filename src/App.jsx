@@ -3116,11 +3116,13 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         const oddsHit=topWin.payout&&topWin.stake?(topWin.payout/topWin.stake):0;
 
         return(
-          <div style={{position:"relative",overflow:"hidden",borderRadius:14,marginBottom:16,background:"linear-gradient(135deg,#1a3a1a 0%,#2d6a4f 100%)",boxShadow:"0 5px 16px rgba(15,32,16,.28)"}}>
+          <div style={{position:"relative",overflow:"hidden",borderRadius:14,marginBottom:16,background:"linear-gradient(135deg,#0f2010 0%,#1a3a1a 35%,#2d6a4f 70%,#1a3a1a 100%)",boxShadow:"0 6px 20px rgba(15,32,16,.32), inset 0 1px 0 rgba(255,255,255,.08)"}}>
+            {/* Diagonal sheen for extra depth */}
+            <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(115deg,transparent 30%,rgba(255,255,255,.08) 45%,transparent 60%)",pointerEvents:"none"}}/>
             <div style={{position:"absolute",bottom:6,right:12,fontSize:isMobile?26:32,opacity:.12,transform:"rotate(8deg)"}}>🐎</div>
 
             {/* Gold top band */}
-            <div style={{background:"#dba53f",padding:"4px 0",textAlign:"center"}}>
+            <div style={{background:"linear-gradient(90deg,#dba53f 0%,#f0c05a 50%,#dba53f 100%)",padding:"4px 0",textAlign:"center",position:"relative"}}>
               <span style={{fontSize:10,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"#1a3a1a"}}>★ Bet of the Week ★</span>
             </div>
 
@@ -3128,9 +3130,9 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
               {/* Name */}
               <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:3,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
 
-              {/* Clear detail line: Race — Bet type: Horse(s) */}
-              <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10,wordBreak:"break-word"}}>
-                <span style={{color:"#fff",fontWeight:600}}>{topWinRace?.name}</span> — {topWinDef?.label}: <span style={{color:"#fff",fontWeight:600}}>{horsesLabel}</span>
+              {/* Clear detail line: Race — Bet type: Horse(s) — all white for readability */}
+              <div style={{fontSize:isMobile?11:12,color:"#fff",fontWeight:600,marginBottom:10,wordBreak:"break-word"}}>
+                {topWinRace?.name} — {topWinDef?.label}: {horsesLabel}
               </div>
 
               {/* Payout */}
