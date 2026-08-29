@@ -1645,6 +1645,10 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
           const weekWins=bets.filter(b=>weekRaceIds.includes(b.raceId)&&b.won===true).sort((a,b2)=>(b2.payout||0)-(a.payout||0));
           const star=weekWins[0];
           if(!star) return null;
+          const tiedWinners=weekWins.filter(b=>(b.payout||0)===(star.payout||0));
+          const tiedPlayerIds=[...new Set(tiedWinners.map(b=>b.playerId))];
+          const tiedNames=tiedPlayerIds.map(id=>accounts.find(a=>a.id===id)?.name).filter(Boolean);
+          const spotlightNames=tiedNames.length>2?`${tiedNames.slice(0,-1).join(", ")} & ${tiedNames[tiedNames.length-1]}`:tiedNames.join(" & ");
           const starPlayer=accounts.find(a=>a.id===star.playerId);
           const starRace=races.find(r=>r.id===star.raceId);
           const starDef=BET_TYPES.find(t=>t.id===BASE_TYPE(star.type));
@@ -1673,8 +1677,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   <span style={{fontSize:11}}>🔦</span>
                   <span style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"#fcd34d"}}>Bet of the Week</span>
                 </div>
-                <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:4}}>{starPlayer?.name||"Someone"}</div>
-                <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10}}>{starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}</div>
+                <div className="cg" style={{fontSize:tiedNames.length>1?(isMobile?14:17):(isMobile?17:20),fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:4}}>{spotlightNames||"Someone"}</div>
+                <div style={{fontSize:isMobile?11:12,color:"rgba(255,255,255,.65)",marginBottom:10}}>
+                  {tiedNames.length>1&&<span style={{color:"#fcd34d",fontWeight:700}}>Tied · </span>}
+                  {starDef?.label}{isBoxedStyle?(isTrueBox?" · Boxed":" · Multi"):""} on {starRace?.name}
+                </div>
 
                 <div style={{fontSize:isMobile?26:32,fontWeight:900,color:"#fcd34d",lineHeight:1,marginBottom:4,textShadow:"0 0 18px rgba(252,211,77,.4)"}}>
                   +{fmt(star.payout||0)}
