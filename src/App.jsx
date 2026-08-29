@@ -5452,27 +5452,25 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           }}>
                           ✏️ Edit Race
                         </button>
-                        {race.status === "finished" && (
-                          <button className="sy" style={{fontSize:12,padding:"4px 10px",borderRadius:6,border:`1px solid ${C.accent}`,background:resettleIds.has(race.id)?C.accent:C.accentGlow,color:resettleIds.has(race.id)?"#fff":C.accent,cursor:"pointer",fontWeight:700}}
-                            onClick={()=>{
-                              setResettleIds(prev=>{
-                                const n=new Set(prev);
-                                if(n.has(race.id)){ n.delete(race.id); }
-                                else{
-                                  n.add(race.id);
-                                  // Pre-fill the form from the existing result so it doesn't need retyping
-                                  if(race.result){
-                                    const f=[race.result.first,race.result.second,race.result.third,race.result.fourth].map(num=>num?race.horses.find(h=>h.number===num)?.number??null:null);
-                                    const d=race.result.dividends||{};
-                                    setInputs(prev2=>({...prev2,[race.id]:{finishers:f,divs:{...d}}}));
-                                  }
+                        <button className="sy" style={{fontSize:12,padding:"4px 10px",borderRadius:6,border:`1px solid ${C.accent}`,background:resettleIds.has(race.id)?C.accent:C.accentGlow,color:resettleIds.has(race.id)?"#fff":C.accent,cursor:"pointer",fontWeight:700}}
+                          onClick={()=>{
+                            setResettleIds(prev=>{
+                              const n=new Set(prev);
+                              if(n.has(race.id)){ n.delete(race.id); }
+                              else{
+                                n.add(race.id);
+                                // Pre-fill the form from the existing result so it doesn't need retyping
+                                if(race.result){
+                                  const f=[race.result.first,race.result.second,race.result.third,race.result.fourth].map(num=>num?race.horses.find(h=>h.number===num)?.number??null:null);
+                                  const d=race.result.dividends||{};
+                                  setInputs(prev2=>({...prev2,[race.id]:{finishers:f,divs:{...d}}}));
                                 }
-                                return n;
-                              });
-                            }}>
-                            🔁 {resettleIds.has(race.id)?"Cancel Re-settle":"Re-settle"}
-                          </button>
-                        )}
+                              }
+                              return n;
+                            });
+                          }}>
+                          🔁 {resettleIds.has(race.id)?"Cancel Re-settle":"Re-settle"}
+                        </button>
                         {race.status !== "finished" && rb.length === 0 && (
                           <button className="sy" style={{fontSize:12,padding:"4px 10px",borderRadius:6,border:`1px solid ${C.redBd}`,background:C.redBg,color:C.red,cursor:"pointer",fontWeight:600}}
                             onClick={()=>{ if(window.confirm(`Delete "${race.name}"? This cannot be undone.`)) onDeleteRace(race.id); }}>
@@ -5519,7 +5517,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                     <div style={{marginTop:14}}>
                       {resettleIds.has(race.id)&&(
                         <div style={{padding:"10px 14px",background:"#fef3c7",border:"1px solid #fcd34d",borderRadius:8,marginBottom:14}}>
-                          <p className="sy" style={{fontSize:12,fontWeight:700,color:"#92400e"}}>⚠️ Re-settling an already-finished race. Re-enter the result and dividends below, then hit Settle again — totals recalculate fresh each time, so this safely corrects any mistake without double-paying anyone.</p>
+                          <p className="sy" style={{fontSize:12,fontWeight:700,color:"#92400e"}}>⚠️ Re-settle mode. Re-enter the result and dividends below, then hit Settle again — totals recalculate fresh each time, so this safely corrects any mistake or stuck save without double-paying anyone.</p>
                         </div>
                       )}
 
