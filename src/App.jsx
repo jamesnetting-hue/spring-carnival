@@ -1687,7 +1687,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
             )}
           <div style={{
             marginBottom:isMobile?18:24,
-            background:hasUpcoming?"transparent":"#eceeec",
+            background:hasUpcoming?"transparent":"#e2e5e1",
             border:hasUpcoming?"none":"1px solid #dcdedb",
             borderRadius:hasUpcoming?0:14,
             padding:hasUpcoming?0:(isMobile?"12px":"16px"),
