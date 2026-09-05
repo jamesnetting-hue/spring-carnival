@@ -1764,7 +1764,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                   transition:"box-shadow .15s,border-color .15s",
                 }}
                   onMouseEnter={e=>{if(!isMobile&&isUpcoming){e.currentTarget.style.boxShadow="0 3px 12px rgba(0,0,0,.08)";e.currentTarget.style.borderColor="#c8d2c8";}}}
-                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 2px rgba(0,0,0,.04)";e.currentTarget.style.borderColor=hasScratched?"#f59e0b":C.border;}}
+                  onMouseLeave={e=>{if(!isMobile&&isUpcoming){e.currentTarget.style.boxShadow="0 1px 2px rgba(0,0,0,.04)";e.currentTarget.style.borderColor=hasScratched?"#f59e0b":C.border;}}}
                   onClick={()=>isUpcoming&&onSelect(race.id)}>
 
                   {/* Scratched warning */}
