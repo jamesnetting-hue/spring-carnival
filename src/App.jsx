@@ -5322,10 +5322,17 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
 
   return (
     <div className="fu">
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8}}>
         <h2 className="cg" style={{fontSize:26, fontWeight:700}}>Admin</h2>
-        <div style={{display:"flex", gap:8}}>
+        <div style={{display:"flex", gap:8, alignItems:"center"}}>
           <span className="badge sy" style={{background:C.greenBg, color:C.green, border:`1px solid ${C.greenBd}`}}>🔓 Active</span>
+          <button
+            className="sy"
+            title="Reloads the whole app fresh — use this if a race you settled elsewhere isn't showing as finished here"
+            style={{fontSize:12,padding:"6px 12px",borderRadius:7,border:`1px solid ${C.border}`,background:"#fff",color:C.text,cursor:"pointer",fontWeight:600}}
+            onClick={()=>{ window.location.href = window.location.pathname + "?r=" + Date.now(); }}>
+            🔄 Force Full Reload
+          </button>
           <button className="btn btn-ghost sy" style={{fontSize:12}} onClick={() => {setAdminUnlocked(false);setAdminPasswordEntry("");}}>Lock</button>
         </div>
       </div>
