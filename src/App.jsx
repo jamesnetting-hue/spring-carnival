@@ -3028,7 +3028,12 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
   const biggestWinAcc=biggestWin?accounts.find(a=>a.id===biggestWin.playerId):null;
   const biggestWinRace=biggestWin?races.find(r=>r.id===biggestWin.raceId):null;
   const biggestWinHorse=biggestWin?biggestWinRace?.horses?.find(h=>h.number===biggestWin.horses?.[0]):null;
-  const roughies=settled.filter(b=>b.won===true&&b.payout&&b.stake&&b.payout/b.stake>=10).sort((a,b)=>(b.payout/b.stake)-(a.payout/a.stake));
+  // "Biggest Roughie" must be a genuine single-horse Win bet — for any other bet
+  // type (Place, Each Way, or an exotic like Trifecta/Quinella), the payout/stake
+  // ratio reflects a combined bet across multiple horses/positions, not one
+  // horse's real odds, so attributing that ratio to a single named horse is
+  // misleading (e.g. a boxed trifecta touching a $9.50 horse showing "$43 odds").
+  const roughies=settled.filter(b=>b.won===true&&BASE_TYPE(b.type)==="win"&&b.payout&&b.stake&&b.payout/b.stake>=10).sort((a,b)=>(b.payout/b.stake)-(a.payout/a.stake));
   const biggestRoughie=roughies[0];
   const roughieAcc=biggestRoughie?accounts.find(a=>a.id===biggestRoughie.playerId):null;
   const roughieRace=biggestRoughie?races.find(r=>r.id===biggestRoughie.raceId):null;
@@ -4480,7 +4485,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                 {icon:"💰",name:"Ton Up",desc:"$100+ returned!",hint:"Return over $100 total",unlocked:account.totalWon>=100},
                 {icon:"🏦",name:"Bank Breaker",desc:"$200+ returned!",hint:"Return over $200 total",unlocked:account.totalWon>=200},
                 {icon:"💎",name:"High Roller",desc:"Living large!",hint:"Place a single bet of $20+",unlocked:settled.some(b=>b.stake>=20)},
-                {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a bet at $10+ odds",unlocked:won.some(b=>b.payout&&b.stake>0&&b.payout/b.stake>=10)},
+                {icon:"🐎",name:"Roughie King",desc:"Longshot landed!",hint:"Win a Win bet at $10+ odds",unlocked:won.some(b=>BASE_TYPE(b.type)==="win"&&b.payout&&b.stake>0&&b.payout/b.stake>=10)},
                 {icon:"🎰",name:"Exotic Lover",desc:"Exotic winner!",hint:"Win a trifecta or first four",unlocked:won.some(b=>BASE_TYPE(b.type)==="trifecta"||BASE_TYPE(b.type)==="firstfour")},
                 {icon:"🎲",name:"Multi Master",desc:"Boxed or multi bet winner!",hint:"Win a boxed or multi-position bet",unlocked:won.some(b=>IS_BOXED_TYPE(b.type))},
                 {icon:"🌟",name:"Big Winner",desc:"Massive payout!",hint:"Win $50+ in a single bet",unlocked:won.some(b=>(b.payout||0)>=50)},
