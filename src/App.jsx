@@ -1756,8 +1756,9 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               return(
                 <div key={race.id} style={{
                   borderRadius:12,overflow:"hidden",
-                  background:"#fff",
+                  background:isFinished?(betWon?"#f7fdf9":betLost?"#fdf7f7":"#fff"):"#fff",
                   border:`1px solid ${hasScratched?"#f59e0b":C.border}`,
+                  borderLeft:isFinished?`4px solid ${betWon?"#16a34a":betLost?"#dc2626":C.border}`:`1px solid ${hasScratched?"#f59e0b":C.border}`,
                   boxShadow:"0 1px 2px rgba(0,0,0,.04)",
                   cursor:isUpcoming?"pointer":"default",
                   transition:"box-shadow .15s,border-color .15s",
@@ -1811,7 +1812,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                               const first=race.horses.find(x=>x.number===race.result.first);
                               const second=race.horses.find(x=>x.number===race.result.second);
                               const third=race.horses.find(x=>x.number===race.result.third);
-                              return first?<> · <span style={{color:"#666",fontWeight:400}}><strong style={{color:"#000"}}>1st</strong> {first.name}{second?<> · <strong style={{color:"#000"}}>2nd</strong> {second.name}</>:null}{third?<> · <strong style={{color:"#000"}}>3rd</strong> {third.name}</>:null}</span></>:null;
+                              return first?<> · <span style={{color:"#666",fontWeight:400}}>🥇 {first.name}{second?<> · 🥈 {second.name}</>:null}{third?<> · 🥉 {third.name}</>:null}</span></>:null;
                             })()}
                           </span>
                         )}
