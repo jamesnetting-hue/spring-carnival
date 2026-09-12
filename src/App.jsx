@@ -1726,6 +1726,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const timeLabel=race.raceTime?race.raceTime.substring(0,5):"TBC";
               const minsUntil=race.raceTime&&race.date?Math.round((new Date(`${race.date}T${race.raceTime}:00`)-new Date())/60000):null;
               const urgent=minsUntil!==null&&minsUntil>=0&&minsUntil<=30&&isUpcoming&&!betPlaced;
+              const critical=minsUntil!==null&&minsUntil>=0&&minsUntil<10&&isUpcoming;
               const hasScratched=rb.some(b=>b.won===null&&b.horses.some(n=>race.horses.find(h=>h.number===n)?.scratched));
               const fav=race.horses.filter(h=>!h.scratched).sort((a,b)=>(a.winOdds||99)-(b.winOdds||99))[0];
 
@@ -1798,9 +1799,15 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       {/* One quiet line: just the countdown, or result */}
                       <div style={{fontSize:isMobile?12:13,color:"#666",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                         {isUpcoming&&minsUntil!==null&&minsUntil>=0&&(
-                          <span style={{color:urgent?"#ea580c":"#888",fontWeight:urgent?700:400,fontVariantNumeric:"tabular-nums"}}>
-                            {urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
-                          </span>
+                          critical?(
+                            <span style={{display:"inline-flex",alignItems:"center",gap:5,color:"#fff",background:"#dc2626",fontWeight:800,fontVariantNumeric:"tabular-nums",padding:"3px 10px",borderRadius:20,fontSize:isMobile?12:13,animation:"pulse 1.3s ease-in-out infinite"}}>
+                              🔴 Closes in {minsUntil}m!
+                            </span>
+                          ):(
+                            <span style={{color:urgent?"#ea580c":"#888",fontWeight:urgent?700:400,fontVariantNumeric:"tabular-nums"}}>
+                              {urgent?"Closes in ":""}{minsUntil>=60?`${Math.floor(minsUntil/60)}h ${minsUntil%60}m`:`${minsUntil}m`}
+                            </span>
+                          )
                         )}
                         {isClosed&&(
                           <span style={{color:"#b45309",fontWeight:700}}>🔒 Betting closed — awaiting result</span>
@@ -1821,7 +1828,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 
                     {/* Right: time + one clear action */}
                     <div style={{flexShrink:0,textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7}}>
-                      <div style={{fontSize:isMobile?16:18,fontWeight:700,color:urgent?"#ea580c":isClosed?"#b45309":"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
+                      <div style={{fontSize:isMobile?16:18,fontWeight:700,color:critical?"#dc2626":urgent?"#ea580c":isClosed?"#b45309":"#555",letterSpacing:"-.3px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{timeLabel}</div>
 
                       {isClosed&&!myBet&&(
                         <span style={{fontSize:13,fontWeight:800,color:"#b45309",background:"#fef3c7",borderRadius:20,padding:"4px 12px",whiteSpace:"nowrap"}}>🔒 Closed</span>
