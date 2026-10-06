@@ -124,6 +124,15 @@ const sb = {
     } catch(e) { console.error("SB select failed", e); return []; }
   },
 
+  lastError: "",
+  async _fail(kind, table, res) {
+    const text = await res.text();
+    let msg = text;
+    try { msg = JSON.parse(text).message || text; } catch {}
+    this.lastError = `${res.status} ${msg}`;
+    console.error(`SB ${kind} error`, table, text);
+  },
+
   async insert(table, row) {
     try {
       const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
@@ -131,9 +140,22 @@ const sb = {
         headers: this.h,
         body: JSON.stringify(row),
       });
-      if (!res.ok) { console.error("SB insert error", table, await res.text()); return null; }
+      if (!res.ok) { await this._fail("insert", table, res); return null; }
       return await res.json();
-    } catch(e) { console.error("SB insert failed", e); return null; }
+    } catch(e) { this.lastError = `network: ${e?.message||e}`; console.error("SB insert failed", e); return null; }
+  },
+
+  // Insert, but silently skip rows whose id already exists (no error, never overwrites).
+  async insertIgnore(table, row) {
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+        method: "POST",
+        headers: { ...this.h, "Prefer": "resolution=ignore-duplicates,return=minimal" },
+        body: JSON.stringify(row),
+      });
+      if (!res.ok) { await this._fail("insertIgnore", table, res); return false; }
+      return true;
+    } catch(e) { this.lastError = `network: ${e?.message||e}`; console.error("SB insertIgnore failed", e); return false; }
   },
 
   async update(table, id, data) {
@@ -162,9 +184,9 @@ const sb = {
         headers: { ...this.h, "Prefer": "resolution=merge-duplicates,return=representation" },
         body: JSON.stringify(row),
       });
-      if (!res.ok) { console.error("SB upsert error", table, await res.text()); return null; }
+      if (!res.ok) { await this._fail("upsert", table, res); return null; }
       return await res.json();
-    } catch(e) { console.error("SB upsert failed", e); return null; }
+    } catch(e) { this.lastError = `network: ${e?.message||e}`; console.error("SB upsert failed", e); return null; }
   },
 };
 
@@ -803,7 +825,7 @@ export default function App() {
         updateAccount(liveAccount.id, a=>({
           totalStaked: parseFloat(Math.max(0, a.totalStaked - stake).toFixed(2)),
         }));
-        showToast("⚠ Bet NOT saved — please check your connection and place it again", "err");
+        showToast(`⚠ Bet NOT saved (${String(sb.lastError||"unknown error").slice(0,90)}) — please place it again`, "err");
       }
     })();
     showToast(`Bet placed — ${fmt(stake)} on ${type}`);
@@ -811,7 +833,25 @@ export default function App() {
 
   // SETTLE RACE - uses actual TAB dividends entered by admin
   // dividends = { win: 4.60, place1: 1.90, place2: 2.10, place3: 3.20, exacta: 18.50, trifecta: 142.30, firstfour: 380.00 }
-  const settleRace = (raceId, result, dividends) => {
+  const settleRace = async (raceId, result, dividends) => {
+    let merged = bets;
+    try {
+      const serverRows = await sb.select("bets", `race_id=eq.${raceId}`);
+      if (Array.isArray(serverRows) && serverRows.length > 0) {
+        const have = new Set(bets.map(b => b.id));
+        const missing = serverRows.filter(b => !have.has(b.id)).map(b => ({
+          id: b.id, playerId: b.player_id, raceId: b.race_id, type: b.type,
+          horses: Array.isArray(b.horses) ? b.horses : (typeof b.horses === "string" ? JSON.parse(b.horses) : []),
+          stake: parseFloat(b.stake || 0), potential: parseFloat(b.potential || 0),
+          won: b.won, payout: b.payout ? parseFloat(b.payout) : null, placedAt: b.placed_at,
+        }));
+        if (missing.length) merged = [...bets, ...missing];
+      }
+    } catch (e) { console.warn("Could not pre-load race bets before settling", e); }
+    return settleRaceWith(merged, raceId, result, dividends);
+  };
+  // The original settlement body — `bets` here is the freshest list (local + anything the server had that this screen didn't).
+  const settleRaceWith = (bets, raceId, result, dividends) => {
     const race = races.find(r=>r.id===raceId);
     if (!race) return;
 
@@ -839,7 +879,7 @@ export default function App() {
 
     // Save auto-bets to Supabase and state
     if (autoBets.length > 0) {
-      autoBets.forEach(b => sb.insert("bets", {
+      autoBets.forEach(b => sb.insertIgnore("bets", {
         id: b.id, player_id: b.playerId, race_id: b.raceId,
         type: b.type, horses: JSON.stringify(b.horses),
         stake: b.stake, potential: b.potential,
