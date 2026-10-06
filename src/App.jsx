@@ -117,11 +117,24 @@ const sb = {
   },
 
   async select(table, query = "") {
+    // Supabase returns at most 1,000 rows per request and drops the rest WITHOUT an
+    // error. The bets table grew past that, so the newest bets silently stopped loading.
+    // Fetch in pages (with a stable order so no row is skipped or repeated).
+    const PAGE = 1000;
+    const q = /(^|&)order=/.test(query)
+      ? query.replace(/(^|&)(order=[^&]+)/, "$1$2,id.asc")
+      : `${query}${query ? "&" : ""}order=id.asc`;
     try {
-      const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`, { headers: this.h, cache: "no-store" });
-      if (!res.ok) { console.error("SB select error", table, await res.text()); return []; }
-      return await res.json();
-    } catch(e) { console.error("SB select failed", e); return []; }
+      let all = [];
+      for (let offset = 0; offset < 100000; offset += PAGE) {
+        const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${q}&limit=${PAGE}&offset=${offset}`, { headers: this.h, cache: "no-store" });
+        if (!res.ok) { await this._fail("select", table, res); return []; }   // [] = "failed", never a partial list
+        const rows = await res.json();
+        all = all.concat(rows);
+        if (rows.length < PAGE) break;
+      }
+      return all;
+    } catch(e) { this.lastError = `network: ${e?.message||e}`; console.error("SB select failed", e); return []; }
   },
 
   lastError: "",
@@ -852,6 +865,23 @@ export default function App() {
   };
   // The original settlement body — `bets` here is the freshest list (local + anything the server had that this screen didn't).
   const settleRaceWith = (bets, raceId, result, dividends) => {
+    // An automatic bet is only valid for a player with NO real bet on this race. Earlier
+    // settles (made while this screen couldn't see everyone's bets) handed them out to
+    // players who had bet — remove those so the player's real bet is what counts.
+    {
+      const isAuto = b => String(b.id).startsWith("auto_");
+      const realBettors = new Set(bets.filter(b => b.raceId === raceId && !isAuto(b)).map(b => b.playerId));
+      const stale = bets.filter(b => b.raceId === raceId && isAuto(b) && realBettors.has(b.playerId));
+      if (stale.length) {
+        stale.forEach(b => {
+          sb.remove("bets", b.id);
+          updateAccount(b.playerId, a => ({ totalStaked: parseFloat(Math.max(0, a.totalStaked - b.stake).toFixed(2)) }));
+        });
+        const staleIds = new Set(stale.map(b => b.id));
+        bets = bets.filter(b => !staleIds.has(b.id));
+        showToast(`Removed ${stale.length} automatic bet${stale.length!==1?"s":""} from players who had bet`);
+      }
+    }
     const race = races.find(r=>r.id===raceId);
     if (!race) return;
 
