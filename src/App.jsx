@@ -626,7 +626,10 @@ export default function App() {
           totalStaked: parseFloat(a.total_staked || 0),
         })));
       }
-      if (Array.isArray(dbBets)) {
+      // sb.select returns [] when a request fails, so an empty list is treated as a
+      // failed fetch, not "there are no bets" — otherwise one dropped request wipes
+      // every bet off the screen.
+      if (Array.isArray(dbBets) && dbBets.length > 0) {
         setBets(dbBets.map(b => ({
           id: b.id, playerId: b.player_id, raceId: b.race_id,
           type: b.type,
@@ -758,48 +761,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Poll Supabase every 30s - keeps all clients in sync and catches failed saves
-  useEffect(() => {
-    const refresh = async () => {
-      try {
-        const [accs, dbBets, dbRaces] = await Promise.all([
-          sb.select("accounts", "order=created_at.asc"),
-          sb.select("bets", "order=placed_at.asc"),
-          sb.select("races"),
-        ]);
-        if (Array.isArray(accs) && accs.length > 0) {
-          setAccounts(accs.map(a => ({
-            id: a.id, name: a.name, email: a.email, pin: a.pin,
-            totalWon: parseFloat(a.total_won || 0),
-            totalStaked: parseFloat(a.total_staked || 0),
-          })));
-        }
-        if (Array.isArray(dbBets) && dbBets.length > 0) {
-          setBets(dbBets.map(b => ({
-            id: b.id, playerId: b.player_id, raceId: b.race_id,
-            type: b.type,
-            horses: Array.isArray(b.horses) ? b.horses : (typeof b.horses === "string" ? JSON.parse(b.horses) : []),
-            stake: parseFloat(b.stake || 0),
-            potential: parseFloat(b.potential || 0),
-            won: b.won, payout: b.payout ? parseFloat(b.payout) : null,
-            placedAt: b.placed_at,
-          })));
-        }
-        if (Array.isArray(dbRaces) && dbRaces.length > 0) {
-          setRaces(dbRaces.map(r => ({
-            id: r.id, name: r.name, venue: r.venue, date: r.date,
-            raceTime: r.race_time, distance: r.distance,
-            raceNum: r.race_num, grade: r.grade || "Group 1",
-            oddsAsOf: r.odds_as_of,
-            horses: Array.isArray(r.horses) ? r.horses : (typeof r.horses === "string" ? JSON.parse(r.horses) : []),
-            status: r.status, result: r.result,
-          })));
-        }
-      } catch(e) { console.warn("Refresh poll failed", e); }
-    };
-    const interval = setInterval(refresh, 30000);
-    return () => clearInterval(interval);
-  }, []);
   const queueBet = (raceId, type, horses, stake, boxedCombos) => {
     if (!liveAccount) return;
     const race = races.find(r=>r.id===raceId);
@@ -814,8 +775,10 @@ export default function App() {
     const mult = def.multiplier(horses,om);
     const potential = parseFloat((stake*mult).toFixed(2));
     const now = Date.now();
+    // Unique id: two bets placed in the same millisecond (e.g. both legs of an
+    // Each Way) used to share an id, and the second save was rejected as a duplicate.
     const bet = {
-      id: now.toString(), raceId, type, horses, stake, potential,
+      id: `${now}${Math.random().toString(36).slice(2,6)}`, raceId, type, horses, stake, potential,
       playerId: liveAccount.id, won: null, payout: null,
       placedAt: new Date().toISOString(),
     };
@@ -823,12 +786,26 @@ export default function App() {
     updateAccount(liveAccount.id, a=>({
       totalStaked: parseFloat((a.totalStaked + stake).toFixed(2)),
     }));
-    sb.insert("bets", {
+    const row = {
       id: bet.id, player_id: bet.playerId, race_id: bet.raceId,
       type: bet.type, horses: JSON.stringify(bet.horses),
       stake: bet.stake, potential: bet.potential,
       won: null, payout: null, placed_at: bet.placedAt,
-    });
+    };
+    (async () => {
+      let res = await sb.insert("bets", row);
+      if (!res) {                                   // one retry (upsert is safe if the first actually landed)
+        await new Promise(r => setTimeout(r, 1200));
+        res = await sb.upsert("bets", row);
+      }
+      if (!res) {                                   // still failed — undo the optimistic bet and say so
+        setBets(p => p.filter(b => b.id !== bet.id));
+        updateAccount(liveAccount.id, a=>({
+          totalStaked: parseFloat(Math.max(0, a.totalStaked - stake).toFixed(2)),
+        }));
+        showToast("⚠ Bet NOT saved — please check your connection and place it again", "err");
+      }
+    })();
     showToast(`Bet placed — ${fmt(stake)} on ${type}`);
   };
 
