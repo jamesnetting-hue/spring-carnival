@@ -2661,10 +2661,11 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                               else if(betType==="place"){setPlaceSel(h.number);setSel({0:[h.number]});}
                               else{setWinSel(h.number);setPlaceSel(h.number);setSel({0:[h.number]});}
                             }}>
+                            <div style={{width:22,height:22,borderRadius:6,background:"#1a3a1a",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{h.number}</div>
                             {/* Silk */}
                             <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:`1px solid ${isSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
                               {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                              <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:isSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{isSel?"✓":h.number}</div>
+                              <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:isSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{isSel?"✓":""}</div>
                               {isSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                             </div>
                             <div style={{flex:1,minWidth:0}}>
@@ -2686,9 +2687,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                           const inSel=(sel[0]||[]).includes(h.number);
                           return(
                             <button key={h.number} className="sy" style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:11,border:`2px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,background:inSel?"#f0fdf4":"#fafafa",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} onClick={()=>toggleHorse(0,h.number)}>
+                              <div style={{width:22,height:22,borderRadius:6,background:"#1a3a1a",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{h.number}</div>
                               <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:`1px solid ${inSel?"#1a3a1a":"#e5e7eb"}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
                                 {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:inSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{inSel?"✓":h.number}</div>
+                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:inSel?"#1a3a1a":silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>{inSel?"✓":""}</div>
                                 {inSel&&<div style={{position:"absolute",top:0,right:0,width:14,height:14,borderRadius:"50%",background:"#1a3a1a",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:800}}>✓</span></div>}
                               </div>
                               <div style={{flex:1}}>
@@ -2702,9 +2704,10 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
                         return(
                           <div key={h.number} style={{borderRadius:12,border:`2px solid ${myPos.length?"#1a3a1a":"#e5e7eb"}`,background:myPos.length?"#f0fdf4":"#fafafa",overflow:"hidden",marginBottom:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:9,padding:"8px 12px"}}>
+                              <div style={{width:22,height:22,borderRadius:6,background:"#1a3a1a",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{h.number}</div>
                               <div style={{width:34,height:34,borderRadius:8,background:"#fff",border:"1px solid #e5e7eb",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                                 {h.silkUrl?<img src={h.silkUrl} alt="" referrerPolicy="no-referrer" style={{width:26,height:26,objectFit:"contain"}} onError={e=>{e.target.style.display="none";const fb=e.target.parentNode.querySelector(".silk-fb");if(fb)fb.style.display="flex";}}/>:null}
-                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}>{h.number}</div>
+                                <div className="silk-fb" style={{width:28,height:28,borderRadius:"50%",background:silkCol(h.number),display:h.silkUrl?"none":"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff"}}></div>
                               </div>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:14,fontWeight:700,color:"#000"}}>{h.name}</div>
