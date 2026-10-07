@@ -518,14 +518,9 @@ export default function App() {
   // silently creating a brand new duplicate row instead of updating in place,
   // which is why saved messages could vanish or revert after a refresh.
   const saveSeasonMessage = async (next) => {
-    if (seasonMsgRowId.current) {
-      const res = await sb.update("settings", seasonMsgRowId.current, { value: next });
-      if (!res) showToast("⚠ Couldn't save message — check console for details", "err");
-    } else {
-      const res = await sb.insert("settings", { key: "season_message", value: next });
-      if (Array.isArray(res) && res[0]?.id) seasonMsgRowId.current = res[0].id;
-      else showToast("⚠ Couldn't save message — check console for details", "err");
-    }
+    // `settings` is keyed by `key` (it has no id column), so upsert on that key.
+    const res = await sb.upsert("settings", { key: "season_message", value: next });
+    if (!res) showToast(`⚠ Couldn't save message (${String(sb.lastError||"unknown error").slice(0,80)})`, "err");
   };
   // Safety net: if the admin types then navigates away (tab switch, close, screen
   // change) before the debounce timer fires, flush the pending save immediately
@@ -575,14 +570,7 @@ export default function App() {
         // so a stale message cached on one device (e.g. from earlier testing) doesn't linger
         // forever just because that device never got told the server-side value changed.
         if (Array.isArray(dbSettings) && dbSettings.length > 0) {
-          // The old upsert had no unique constraint to target, so it may have created
-          // duplicate rows over time. Treat the last one as the most recent, keep it,
-          // and clean up the rest so this doesn't keep compounding.
           const latest = dbSettings[dbSettings.length - 1];
-          seasonMsgRowId.current = latest.id;
-          if (dbSettings.length > 1) {
-            dbSettings.slice(0, -1).forEach(row => sb.remove("settings", row.id));
-          }
           const msg = latest.value || { enabled: false, text: "Upcoming Group 1 races soon" };
           setSeasonMessage(msg);
           localStorage.setItem("sc_season_msg", JSON.stringify(msg));
