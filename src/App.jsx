@@ -611,7 +611,7 @@ export default function App() {
             raceNum: r.race_num || "Group 1",
             raceTime: r.race_time || "",
             oddsAsOf: r.odds_as_of || "",
-            grade: "Group 1",
+            grade: r.grade || "Group 1",
             status: r.status || "upcoming",
             horses: r.horses ? (Array.isArray(r.horses) ? r.horses : JSON.parse(r.horses)) : [],
             result: r.result || null,
@@ -1038,7 +1038,7 @@ export default function App() {
     sb.insert("races", {
       id: race.id, name: race.name, venue: race.venue,
       date: race.date, race_time: race.raceTime, distance: race.distance,
-      race_num: race.raceNum, status: "upcoming",
+      race_num: race.raceNum, status: "upcoming", grade: race.grade || "Group 1",
       odds_as_of: race.oddsAsOf || null,
       horses: [], result: null,
     });
