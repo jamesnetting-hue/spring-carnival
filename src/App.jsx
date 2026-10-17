@@ -3168,7 +3168,7 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         return(
           <div style={{marginBottom:16}}>
             <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:8,gap:8,flexWrap:"wrap"}}>
-              <h3 className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,margin:0,color:"#111"}}>★ Bet of the Week</h3>
+              <h3 className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,margin:0,color:"#111"}}>★ Bets of the Week</h3>
               <span className="sy" style={{fontSize:11,color:"#555",fontWeight:600}}>{dateLabel} · best bet from each race</span>
             </div>
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(230px,1fr))",gap:8}}>
