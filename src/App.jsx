@@ -1891,7 +1891,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                           <span style={{fontWeight:800,fontSize:13,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"4px 12px"}}>
                             {betWon?"Won":betLost?"Lost":"Pending"}
                           </span>
-                          {daySettledBets.length>0&&dayWon>0&&(
+                          {betWon&&daySettledBets.length>0&&dayWon>0&&(
                             <div style={{fontSize:14,fontWeight:800,color:"#16a34a",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
                               +{fmt(dayWon)}{dayRaces.length>1?<span style={{fontSize:10,fontWeight:600,color:"#888"}}> today</span>:null}
                             </div>
