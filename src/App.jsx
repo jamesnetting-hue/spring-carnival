@@ -1787,6 +1787,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               // this one race, so the figure shown reflects how the whole day's gone.
               const dayRaceIds=dayRaces.map(r=>r.id);
               const daySettledBets=myBets.filter(b=>dayRaceIds.includes(b.raceId)&&b.won!==null);
+              const raceWon=parseFloat(myBets.filter(b=>b.raceId===race.id&&b.won===true).reduce((s,b)=>s+(b.payout||0),0).toFixed(2));
               const dayWon=parseFloat(daySettledBets.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0).toFixed(2));
 
               return(
@@ -1885,15 +1886,15 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                         )
                       )}
 
-                      {/* Settled result — shows the FULL DAY's gross winnings, not just this race */}
+                      {/* Settled result — gross winnings for THIS race only */}
                       {myBet&&!isUpcoming&&(
                         <div style={{fontSize:13,textAlign:"right"}}>
                           <span style={{fontWeight:800,fontSize:13,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"4px 12px"}}>
                             {betWon?"Won":betLost?"Lost":"Pending"}
                           </span>
-                          {betWon&&daySettledBets.length>0&&dayWon>0&&(
+                          {betWon&&raceWon>0&&(
                             <div style={{fontSize:14,fontWeight:800,color:"#16a34a",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
-                              +{fmt(dayWon)}{dayRaces.length>1?<span style={{fontSize:10,fontWeight:600,color:"#888"}}> today</span>:null}
+                              +{fmt(raceWon)}
                             </div>
                           )}
                         </div>
