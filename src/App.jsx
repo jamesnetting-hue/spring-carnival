@@ -3128,73 +3128,68 @@ function LeaderboardScreen({accounts,bets,races,getMovement,myAccount}) {
         </div>
       </div>
 
-      {/* ── BET OF THE WEEK ────────────────────────────────────────── */}
+      {/* ── BET OF THE WEEK (one per race on the latest race day) ───── */}
       {(()=>{
         const finishedDates=[...new Set(races.filter(r=>r.status==="finished").map(r=>r.date))].sort((a,b)=>b.localeCompare(a));
         if(finishedDates.length===0) return null;
         const weekDate=finishedDates[0];
-        const weekRaceIds=races.filter(r=>r.date===weekDate&&r.status==="finished").map(r=>r.id);
-        const weekWins=bets.filter(b=>weekRaceIds.includes(b.raceId)&&b.won===true);
-        if(weekWins.length===0) return null;
+        const dayRaces=races.filter(r=>r.date===weekDate&&r.status==="finished").sort((a,b)=>(a.raceTime||"").localeCompare(b.raceTime||""));
+        const dayWins=bets.filter(b=>dayRaces.some(r=>r.id===b.raceId)&&b.won===true);
+        if(dayWins.length===0) return null;
+        const dateLabel=new Date(weekDate+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
 
-        const tiedNamesFor=(bet,key)=>{
-          const tied=weekWins.filter(b=>key(b)===key(bet));
+        const cards=dayRaces.map(race=>{
+          const wins=dayWins.filter(b=>b.raceId===race.id);
+          if(wins.length===0) return {race,none:true};
+          const top=[...wins].sort((x,y)=>(y.payout||0)-(x.payout||0))[0];
+          const tied=wins.filter(b=>(b.payout||0)===(top.payout||0)&&b.type===top.type&&JSON.stringify(b.horses)===JSON.stringify(top.horses));
           const ids=[...new Set(tied.map(b=>b.playerId))];
           const names=ids.map(id=>accounts.find(a=>a.id===id)?.name).filter(Boolean);
-          return names.length>2?`${names.slice(0,-1).join(", ")} & ${names[names.length-1]}`:names.join(" & ");
-        };
-
-        const byPayout=[...weekWins].sort((a,b2)=>(b2.payout||0)-(a.payout||0));
-        const topWin=byPayout[0];
-        const topWinNames=tiedNamesFor(topWin,b=>b.payout||0);
-        const topWinRace=races.find(r=>r.id===topWin.raceId);
-        const topWinDef=BET_TYPES.find(t=>t.id===BASE_TYPE(topWin.type));
-        const isTrueBox=IS_TRUE_BOX(topWin.type);
-        const isBoxedStyle=IS_BOXED_TYPE(topWin.type);
-        const isOrdered=topWinDef&&topWinDef.positions.length>1&&!isBoxedStyle&&BASE_TYPE(topWin.type)!=="quinella";
-        const nameFor=n=>{const h=topWinRace?.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
-        const shape=MULTI_SHAPE(topWin.type);
-        let horsesLabel;
-        if(isOrdered){
-          horsesLabel=topWin.horses.map((n,idx)=>`${topWinDef.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
-        }else if(shape&&topWinDef){
-          let idx=0;
-          horsesLabel=topWinDef.positions.map((pos,pi)=>{const count=shape[pi]||0;const names=topWin.horses.slice(idx,idx+count).map(nameFor);idx+=count;return names.length?`${pos.label} ${names.join("/")}`:null;}).filter(Boolean).join(" · ");
-        }else{
-          horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(topWin.horses)].map(nameFor).join(", ");
-        }
-        const dateLabel=new Date(weekDate+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
-        const oddsHit=topWin.payout&&topWin.stake?(topWin.payout/topWin.stake):0;
+          const nameStr=names.length>2?`${names.slice(0,-1).join(", ")} & ${names[names.length-1]}`:names.join(" & ");
+          const def=BET_TYPES.find(t=>t.id===BASE_TYPE(top.type));
+          const isTrueBox=IS_TRUE_BOX(top.type);
+          const isBoxedStyle=IS_BOXED_TYPE(top.type);
+          const isOrdered=def&&def.positions.length>1&&!isBoxedStyle&&BASE_TYPE(top.type)!=="quinella";
+          const nameFor=n=>{const h=race.horses?.find(x=>x.number===n);return h?h.name:`#${n}`;};
+          const shape=MULTI_SHAPE(top.type);
+          let horsesLabel;
+          if(isOrdered){
+            horsesLabel=top.horses.map((n,idx)=>`${def.positions[idx]?.label||`${idx+1}th`} ${nameFor(n)}`).join(" · ");
+          }else if(shape&&def){
+            let idx=0;
+            horsesLabel=def.positions.map((pos,pi)=>{const count=shape[pi]||0;const hn=top.horses.slice(idx,idx+count).map(nameFor);idx+=count;return hn.length?`${pos.label} ${hn.join("/")}`:null;}).filter(Boolean).join(" · ");
+          }else{
+            horsesLabel=(isTrueBox?"Boxed: ":"")+[...new Set(top.horses)].map(nameFor).join(", ");
+          }
+          const oddsHit=top.payout&&top.stake?(top.payout/top.stake):0;
+          return {race,top,nameStr,def,horsesLabel,oddsHit};
+        });
 
         return(
-          <div style={{position:"relative",overflow:"hidden",borderRadius:14,marginBottom:16,background:"linear-gradient(135deg,#0f2010 0%,#1a3a1a 35%,#2d6a4f 70%,#1a3a1a 100%)",boxShadow:"0 6px 20px rgba(15,32,16,.32), inset 0 1px 0 rgba(255,255,255,.08)"}}>
-            {/* Diagonal sheen for extra depth */}
-            <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(115deg,transparent 30%,rgba(255,255,255,.08) 45%,transparent 60%)",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",bottom:6,right:12,fontSize:isMobile?26:32,opacity:.12,transform:"rotate(8deg)"}}>🐎</div>
-
-            {/* Gold top band */}
-            <div style={{background:"linear-gradient(90deg,#dba53f 0%,#f0c05a 50%,#dba53f 100%)",padding:"4px 0",textAlign:"center",position:"relative"}}>
-              <span style={{fontSize:10,fontWeight:900,letterSpacing:".14em",textTransform:"uppercase",color:"#1a3a1a"}}>★ Bet of the Week ★</span>
+          <div style={{marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:8,gap:8,flexWrap:"wrap"}}>
+              <h3 className="cg" style={{fontSize:isMobile?16:18,fontWeight:800,margin:0,color:"#111"}}>★ Bet of the Week</h3>
+              <span className="sy" style={{fontSize:11,color:"#555",fontWeight:600}}>{dateLabel} · best bet from each race</span>
             </div>
-
-            <div style={{position:"relative",padding:isMobile?"12px 16px 14px":"14px 20px 16px",textAlign:"center"}}>
-              {/* Name */}
-              <div className="cg" style={{fontSize:isMobile?17:20,fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:3,wordBreak:"break-word"}}>{topWinNames||"Someone"}</div>
-
-              {/* Clear detail line: Race — Bet type: Horse(s) — all white for readability */}
-              <div style={{fontSize:isMobile?11:12,color:"#fff",fontWeight:600,marginBottom:10,wordBreak:"break-word"}}>
-                {topWinRace?.name} — {topWinDef?.label}: {horsesLabel}
-              </div>
-
-              {/* Payout */}
-              <div style={{fontSize:isMobile?30:36,fontWeight:900,color:"#fcd34d",lineHeight:1}}>
-                +{fmt(topWin.payout||0)}
-              </div>
-              {oddsHit>0&&(
-                <div style={{fontSize:isMobile?10:11,color:"#fff",fontWeight:700,marginTop:3}}>
-                  ${oddsHit.toFixed(1)} odds · {fmt(topWin.stake)} stake
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(230px,1fr))",gap:8}}>
+              {cards.map(c=>(
+                <div key={c.race.id} style={{position:"relative",overflow:"hidden",borderRadius:12,background:c.none?"#f3f4f6":"linear-gradient(135deg,#0f2010 0%,#1a3a1a 40%,#2d6a4f 100%)",border:c.none?`1px solid ${C.border}`:"none",boxShadow:c.none?"none":"0 3px 10px rgba(15,32,16,.25)",padding:isMobile?"10px 12px":"12px 14px"}}>
+                  {!c.none&&<div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#dba53f,#f0c05a,#dba53f)"}}/>}
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:".08em",textTransform:"uppercase",color:c.none?"#555":"#fcd34d",marginBottom:4}}>{c.race.name}</div>
+                  {c.none?(
+                    <div style={{fontSize:12,color:"#555"}}>No winning bets</div>
+                  ):(
+                    <>
+                      <div className="cg" style={{fontSize:isMobile?15:16,fontWeight:900,color:"#fff",lineHeight:1.2,wordBreak:"break-word"}}>{c.nameStr||"Someone"}</div>
+                      <div style={{fontSize:11,color:"#fff",fontWeight:600,margin:"3px 0 6px",lineHeight:1.35,wordBreak:"break-word"}}>{c.def?.label}: {c.horsesLabel}</div>
+                      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
+                        <span style={{fontSize:isMobile?20:22,fontWeight:900,color:"#fcd34d",lineHeight:1}}>+{fmt(c.top.payout||0)}</span>
+                        {c.oddsHit>0&&<span style={{fontSize:10,color:"#fff",fontWeight:700,textAlign:"right"}}>${c.oddsHit.toFixed(1)} odds · {fmt(c.top.stake)} stake</span>}
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           </div>
         );
