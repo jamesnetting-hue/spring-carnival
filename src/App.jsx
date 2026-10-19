@@ -183,6 +183,22 @@ const sb = {
     } catch(e) { console.error("SB update failed", e); return null; }
   },
 
+  // Update many rows that all get the SAME values with one request per chunk.
+  // Returns true only if every chunk was accepted by the server.
+  async updateMany(table, ids, data) {
+    let ok = true;
+    for (let i = 0; i < ids.length; i += 40) {
+      const chunk = ids.slice(i, i + 40).map(x => encodeURIComponent(x)).join(",");
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=in.(${chunk})`, {
+          method: "PATCH", headers: { ...this.h, "Prefer": "return=minimal" }, body: JSON.stringify(data),
+        });
+        if (!res.ok) { await this._fail("updateMany", table, res); ok = false; }
+      } catch(e) { this.lastError = `network: ${e?.message||e}`; console.error("SB updateMany failed", e); ok = false; }
+    }
+    return ok;
+  },
+
   async remove(table, id) {
     try {
       const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method: "DELETE", headers: this.h });
@@ -875,7 +891,7 @@ export default function App() {
 
     const fullResult = { ...result, dividends };
     setRaces(p=>p.map(r=>r.id===raceId?{...r,result:fullResult,status:"finished"}:r));
-    sb.upsert("races", { id: raceId, status: "finished", result: fullResult });
+    const racePromise = sb.upsert("races", { id: raceId, status: "finished", result: fullResult });
 
     // AUTO-BET: any player who hasn't placed a bet gets $24 Win on horse #1 (top weight)
     const defaultHorse = race.horses.filter(h=>!h.scratched).sort((a,b)=>a.number-b.number)[0];
@@ -896,8 +912,9 @@ export default function App() {
     })) : [];
 
     // Save auto-bets to Supabase and state
+    let autoBetPromises = [];
     if (autoBets.length > 0) {
-      autoBets.forEach(b => sb.insertIgnore("bets", {
+      autoBetPromises = autoBets.map(b => sb.insertIgnore("bets", {
         id: b.id, player_id: b.playerId, race_id: b.raceId,
         type: b.type, horses: JSON.stringify(b.horses),
         stake: b.stake, potential: b.potential,
@@ -995,9 +1012,32 @@ export default function App() {
     ];
     setBets(mergedBets);
     // Persist bet outcomes to Supabase
-    mergedBets.filter(b=>b.raceId===raceId).forEach(b=>{
-      sb.update("bets", b.id, { won: b.won, payout: b.payout });
-    });
+    // Saved in a handful of grouped requests (all losers together, winners grouped by payout)
+    // and AWAITED + VERIFIED, so a dropped connection or a locked phone can't silently leave
+    // bets pending on the server while this screen shows them as settled.
+    const raceBetsNow = mergedBets.filter(b=>b.raceId===raceId);
+    const persistOutcomes = async () => {
+      await Promise.all([racePromise, ...autoBetPromises]);
+      const groups = new Map();
+      raceBetsNow.forEach(b=>{
+        const key = `${b.won}|${b.payout||0}`;
+        if(!groups.has(key)) groups.set(key,{won:b.won,payout:b.payout||0,ids:[]});
+        groups.get(key).ids.push(b.id);
+      });
+      const results = await Promise.all([...groups.values()].map(g=>sb.updateMany("bets", g.ids, {won:g.won,payout:g.payout})));
+      let saved = results.every(Boolean);
+      if (saved) {
+        const check = await sb.select("bets", `race_id=eq.${raceId}&won=is.null`);
+        if (Array.isArray(check) && check.length>0) saved = false;
+      }
+      return saved;
+    };
+    (async()=>{
+      let saved = await persistOutcomes();
+      if(!saved) saved = await persistOutcomes();
+      if(saved) showToast("Results saved to the server ✓");
+      else showToast(`⚠ Settlement NOT fully saved (${sb.lastError||"unknown"}) — press Re-settle`, "err");
+    })();
     // Update account totals for all players who had bets in this race.
     // Recalculated fresh from ALL of the player's settled bets each time (not
     // incrementally added) — this makes settling idempotent: re-settling a
