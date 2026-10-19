@@ -1819,8 +1819,11 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               const hn=myBet?race.horses.find(h=>h.number===myBet.horses[0]):null;
               const def2=myBet?BET_TYPES.find(t=>t.id===BASE_TYPE(myBet.type)):null;
               const isEW=myBet?.type==="eachway"&&myBet.pairPayout!==undefined;
-              const betWon=myBet?(isEW?myBet.pairWon:myBet.won===true):false;
-              const betLost=myBet?(isEW?myBet.bothLost:myBet.won===false):false;
+              // Result is judged across ALL of my bets on this race, not just the first one:
+              // any winning bet (win OR place) makes it a win; it's only "Lost" if every bet lost.
+              const betWon=rb.some(b=>b.won===true);
+              const betLost=!betWon&&rb.length>0&&rb.every(b=>b.won===false);
+              const wonOnlyPlace=betWon&&rb.filter(b=>b.won===true).every(b=>BASE_TYPE(b.type)==="place");
 
               // Full day gross winnings — sums payouts from every WON bet across every
               // race on this date (a day might have just 1 race, or several), not just
@@ -1930,7 +1933,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       {myBet&&!isUpcoming&&(
                         <div style={{fontSize:13,textAlign:"right"}}>
                           <span style={{fontWeight:800,fontSize:13,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"4px 12px"}}>
-                            {betWon?"Won":betLost?"Lost":"Pending"}
+                            {betWon?(wonOnlyPlace?"Won · Place":"Won"):betLost?"Lost":"Pending"}
                           </span>
                           {betWon&&raceWon>0&&(
                             <div style={{fontSize:14,fontWeight:800,color:"#16a34a",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
