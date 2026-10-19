@@ -1823,7 +1823,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
               // any winning bet (win OR place) makes it a win; it's only "Lost" if every bet lost.
               const betWon=rb.some(b=>b.won===true);
               const betLost=!betWon&&rb.length>0&&rb.every(b=>b.won===false);
-              const wonOnlyPlace=betWon&&rb.filter(b=>b.won===true).every(b=>BASE_TYPE(b.type)==="place");
+              const wonTypes=[...new Set(rb.filter(b=>b.won===true).map(b=>BET_TYPES.find(t=>t.id===BASE_TYPE(b.type))?.label).filter(Boolean))];
 
               // Full day gross winnings — sums payouts from every WON bet across every
               // race on this date (a day might have just 1 race, or several), not just
@@ -1933,7 +1933,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
                       {myBet&&!isUpcoming&&(
                         <div style={{fontSize:13,textAlign:"right"}}>
                           <span style={{fontWeight:800,fontSize:13,color:betWon?"#15803d":betLost?"#b91c1c":"#888",background:betWon?"#dcfce7":betLost?"#fee2e2":"#f1f1f1",borderRadius:20,padding:"4px 12px"}}>
-                            {betWon?(wonOnlyPlace?"Won · Place":"Won"):betLost?"Lost":"Pending"}
+                            {betWon?`Won${wonTypes.length?` · ${wonTypes.join(" + ")}`:""}`:betLost?"Lost":"Pending"}
                           </span>
                           {betWon&&raceWon>0&&(
                             <div style={{fontSize:14,fontWeight:800,color:"#16a34a",marginTop:3,fontVariantNumeric:"tabular-nums"}}>
