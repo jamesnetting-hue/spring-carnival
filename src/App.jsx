@@ -1411,7 +1411,7 @@ export default function App() {
           seasonMsgSaveTimer.current = setTimeout(()=>{
             saveSeasonMessage(next);
           }, 600);
-        }} toast={showToast} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
+        }} toast={showToast} onRefresh={manualRefresh} onLockRace={id=>{editRace(id,{status:"closed"});showToast("Betting locked 🔒");}}/>}
       </main>}
     </div>
   );
@@ -4220,11 +4220,13 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         // Bet type breakdown
         const typeColors={win:"#1a3a1a",place:"#1d4ed8",eachway:"#7c3aed",quinella:"#b45309",exacta:"#0e7490",trifecta:"#be185d",firstfour:"#d97706"};
         const typeData=BET_TYPES.map(t=>{
-          const tb=settled.filter(b=>b.type===t.id);if(!tb.length)return null;
+          const tb=settled.filter(b=>BASE_TYPE(b.type)===t.id);if(!tb.length)return null;
           const tw=tb.filter(b=>b.won===true);
           const payout=tw.reduce((s,b)=>s+(b.payout||0),0);
           const hitRate=Math.round((tw.length/tb.length)*100);
-          return{label:t.label,id:t.id,payout,count:tb.length,wins:tw.length,hitRate,col:typeColors[t.id]||C.accent};
+          const stakedT=tb.reduce((s,b)=>s+b.stake,0);
+          const cents=stakedT>0?Math.round((payout/stakedT)*100):0;
+          return{label:t.label,id:t.id,payout,count:tb.length,wins:tw.length,hitRate,cents,col:typeColors[t.id]||C.accent};
         }).filter(Boolean);
 
         // Stake buckets
@@ -4824,7 +4826,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
                           <span className="sy" style={{fontSize:12,color:"#000"}}>{t.wins}/{t.count}</span>
                         </div>
                         <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                          <span style={{fontSize:12,color:"#000",fontFamily:"inherit"}}>{t.hitRate}%</span>
+                          <span style={{fontSize:12,color:"#000",fontFamily:"inherit"}}>{t.hitRate}% · {t.cents}c per $1</span>
                           <span className="sy" style={{fontSize:14,fontWeight:700,color:t.payout>0?C.green:"#9ca3af",minWidth:60,textAlign:"right"}}>{t.payout>0?"+":""}{fmt(t.payout)}</span>
                         </div>
                       </div>
@@ -5156,7 +5158,172 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 }
 
 // --- ADMIN --------------------------------------------------------------------
-function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace}) {
+
+// --- ADMIN: DATA HEALTH --------------------------------------------------------
+// Reads FRESH data from the server (not this screen's copy) and checks it for the
+// problems we've hit this season. Each problem has a plain "Fix" button.
+function HealthPanel({races, onSettle, onRefresh, toast}) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState("");
+  const [showAllMismatch, setShowAllMismatch] = useState(false);
+  const money = n => `$${(Math.round(n*100)/100).toFixed(2)}`;
+  const isAuto = b => String(b.id).startsWith("auto_");
+
+  const runCheck = async () => {
+    setLoading(true);
+    try {
+      const [bets, accs] = await Promise.all([sb.select("bets"), sb.select("accounts")]);
+      if (!Array.isArray(bets) || !Array.isArray(accs) || bets.length === 0 || accs.length === 0) {
+        toast(`⚠ Could not load data (${sb.lastError||"empty result"}) — try again`, "err");
+        setLoading(false); return;
+      }
+      const raceById = Object.fromEntries(races.map(r => [r.id, r]));
+      const live = bets.filter(b => raceById[b.race_id] && raceById[b.race_id].status !== "deleted");
+
+      // 1. Pending bets sitting in races that are already finished
+      const pendingByRace = {};
+      live.forEach(b => { const r = raceById[b.race_id]; if (r.status === "finished" && b.won === null) (pendingByRace[r.id] = pendingByRace[r.id] || []).push(b); });
+      const pending = Object.entries(pendingByRace).map(([id, list]) => ({ race: raceById[id], count: list.length }));
+
+      // 2. Same bet saved more than once within seconds (a save glitch, not a real second bet)
+      const groups = {};
+      live.filter(b => !isAuto(b)).forEach(b => {
+        const key = [b.player_id, b.race_id, b.type, JSON.stringify(b.horses), b.stake].join("|");
+        (groups[key] = groups[key] || []).push(b);
+      });
+      const dupExtras = [];
+      Object.values(groups).forEach(list => {
+        if (list.length < 2) return;
+        list.sort((a, b) => new Date(a.placed_at) - new Date(b.placed_at));
+        for (let i = 1; i < list.length; i++) {
+          if (Math.abs(new Date(list[i].placed_at) - new Date(list[i-1].placed_at)) <= 10000) dupExtras.push(list[i]);
+        }
+      });
+
+      // 3. Automatic bets (for players who didn't bet) — and any that wrongly sit beside a real bet
+      const autos = live.filter(isAuto);
+      const realKey = new Set(live.filter(b => !isAuto(b)).map(b => b.player_id + "|" + b.race_id));
+      const staleAutos = autos.filter(b => realKey.has(b.player_id + "|" + b.race_id));
+
+      // 4. Totals on each account vs what their bets actually add up to
+      const dupIds = new Set(dupExtras.map(b => b.id));
+      const staleIds = new Set(staleAutos.map(b => b.id));
+      const mismatches = [];
+      accs.forEach(a => {
+        const mine = live.filter(b => b.player_id === a.id);
+        const staked = mine.reduce((s, b) => s + parseFloat(b.stake || 0), 0);
+        const won = mine.filter(b => b.won === true).reduce((s, b) => s + parseFloat(b.payout || 0), 0);
+        const storedStaked = parseFloat(a.total_staked || 0), storedWon = parseFloat(a.total_won || 0);
+        if (Math.abs(staked - storedStaked) > 0.009 || Math.abs(won - storedWon) > 0.009) {
+          mismatches.push({ id: a.id, name: a.name, storedStaked, staked: parseFloat(staked.toFixed(2)), storedWon, won: parseFloat(won.toFixed(2)) });
+        }
+      });
+      mismatches.sort((a, b) => Math.abs(b.storedStaked - b.staked) - Math.abs(a.storedStaked - a.staked));
+      setReport({ total: live.length, players: accs.length, pending, dupExtras, autos, staleAutos, mismatches, ranAt: new Date() });
+    } catch (e) { toast(`⚠ Check failed: ${e?.message||e}`, "err"); }
+    setLoading(false);
+  };
+
+  useEffect(() => { runCheck(); }, []);
+
+  const resettle = async (race) => {
+    if (!race.result || !race.result.first) { toast("This race has no saved result — use Re-settle in Race Management", "err"); return; }
+    setBusy("settle:" + race.id);
+    const { dividends, ...order } = race.result;
+    await onSettle(race.id, { first: order.first, second: order.second, third: order.third, fourth: order.fourth }, dividends || {});
+    setTimeout(async () => { await runCheck(); onRefresh && onRefresh(); setBusy(""); }, 5000);
+  };
+  const removeBets = async (list, label) => {
+    setBusy(label);
+    let ok = 0;
+    for (const b of list) { if (await sb.remove("bets", b.id)) ok++; }
+    toast(`Removed ${ok} of ${list.length}`, ok === list.length ? "ok" : "err");
+    await runCheck(); onRefresh && onRefresh(); setBusy("");
+  };
+  const fixTotals = async () => {
+    setBusy("totals");
+    let ok = 0;
+    for (const m of report.mismatches) {
+      const res = await sb.update("accounts", m.id, { total_staked: m.staked, total_won: m.won });
+      if (res) ok++;
+    }
+    toast(`Corrected ${ok} of ${report.mismatches.length} players`, ok === report.mismatches.length ? "ok" : "err");
+    await runCheck(); onRefresh && onRefresh(); setBusy("");
+  };
+
+  const Card = ({ title, ok, summary, children }) => (
+    <div className="card" style={{marginBottom:12, borderLeft:`5px solid ${ok?"#16a34a":"#d97706"}`}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+        <div className="cg" style={{fontSize:17,fontWeight:800,color:"#111"}}>{title}</div>
+        <span className="sy" style={{fontSize:14,fontWeight:800,color:ok?"#15803d":"#b45309",background:ok?"#dcfce7":"#fef3c7",padding:"4px 12px",borderRadius:20}}>{ok?"✓ All good":summary}</span>
+      </div>
+      {!ok && <div style={{marginTop:10}}>{children}</div>}
+    </div>
+  );
+  const Btn = ({ onClick, label, id, danger }) => (
+    <button className="sy" disabled={!!busy} onClick={onClick}
+      style={{fontSize:15,fontWeight:700,color:"#fff",background:busy===id?"#9ca3af":danger?"#b91c1c":"#1a3a1a",border:"none",borderRadius:9,padding:"10px 18px",cursor:busy?"default":"pointer",fontFamily:"inherit"}}>
+      {busy===id?"Working…":label}
+    </button>
+  );
+  const txt = { fontSize:14, color:"#111", lineHeight:1.5, margin:"0 0 8px" };
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,gap:10,flexWrap:"wrap"}}>
+        <p className="sy" style={{...txt,margin:0}}>Checks the saved data on the server for problems. {report && <span>Last checked {report.ranAt.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"})} · {report.total.toLocaleString()} bets · {report.players} players.</span>}</p>
+        <button className="sy" disabled={loading||!!busy} onClick={runCheck} style={{fontSize:15,fontWeight:700,color:"#1a3a1a",background:"#fff",border:"2px solid #1a3a1a",borderRadius:9,padding:"9px 16px",cursor:"pointer",fontFamily:"inherit"}}>{loading?"Checking…":"Run check again"}</button>
+      </div>
+
+      {!report && <div className="card sy" style={{textAlign:"center",padding:30,fontSize:15}}>Checking…</div>}
+
+      {report && <>
+        <Card title="1. Bets still pending in finished races" ok={report.pending.length===0} summary={`${report.pending.reduce((s,x)=>s+x.count,0)} pending`}>
+          <p className="sy" style={txt}>These races are marked finished, but some bets were never marked won or lost. Re-settling uses the result already saved — it won't pay anyone twice.</p>
+          {report.pending.map(x => (
+            <div key={x.race.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,padding:"8px 0",borderTop:"1px solid #e5e7eb",flexWrap:"wrap"}}>
+              <span className="sy" style={{fontSize:15,color:"#111"}}><strong>{x.race.name}</strong> · {x.count} pending</span>
+              <Btn id={"settle:"+x.race.id} label="Fix: re-settle" onClick={()=>resettle(x.race)}/>
+            </div>
+          ))}
+        </Card>
+
+        <Card title="2. Duplicate bets" ok={report.dupExtras.length===0} summary={`${report.dupExtras.length} duplicate${report.dupExtras.length!==1?"s":""}`}>
+          <p className="sy" style={txt}>The same bet saved again within 10 seconds (a save glitch). The first copy is kept and the extras are removed. Identical bets placed minutes apart are treated as real and left alone.</p>
+          {report.dupExtras.slice(0,8).map(b => { const r=races.find(x=>x.id===b.race_id); return (
+            <div key={b.id} className="sy" style={{fontSize:14,color:"#111",padding:"4px 0",borderTop:"1px solid #e5e7eb"}}>{r?.name||"Race"} · {BASE_TYPE(b.type)} · {money(parseFloat(b.stake))}</div>
+          );})}
+          {report.dupExtras.length>8 && <p className="sy" style={txt}>…and {report.dupExtras.length-8} more.</p>}
+          <div style={{marginTop:10}}><Btn id="dups" label={`Fix: remove ${report.dupExtras.length} extra${report.dupExtras.length!==1?"s":""}`} danger onClick={()=>removeBets(report.dupExtras,"dups")}/></div>
+        </Card>
+
+        <Card title="3. Automatic bets" ok={report.staleAutos.length===0} summary={`${report.staleAutos.length} wrongly placed`}>
+          <p className="sy" style={txt}>{report.autos.length} automatic $24 bets exist (for players who didn't bet in a race) — that is normal. {report.staleAutos.length} of them belong to a player who also made a real bet in that race, which shouldn't happen.</p>
+          <Btn id="autos" label={`Fix: remove ${report.staleAutos.length}`} danger onClick={()=>removeBets(report.staleAutos,"autos")}/>
+        </Card>
+        {report.staleAutos.length===0 && <p className="sy" style={{...txt,margin:"-4px 4px 12px"}}>{report.autos.length} automatic bets in total across all races.</p>}
+
+        <Card title="4. Player totals that don't match their bets" ok={report.mismatches.length===0} summary={`${report.mismatches.length} player${report.mismatches.length!==1?"s":""} off`}>
+          <p className="sy" style={txt}>Each player's saved "staked" and "won" totals compared with their actual bets. Fixing sets the totals to what the bets add up to. If you fixed duplicates or automatic bets above, do that first.</p>
+          {(showAllMismatch?report.mismatches:report.mismatches.slice(0,6)).map(m => (
+            <div key={m.id} style={{display:"flex",justifyContent:"space-between",gap:10,padding:"6px 0",borderTop:"1px solid #e5e7eb",flexWrap:"wrap"}}>
+              <span className="sy" style={{fontSize:14,fontWeight:700,color:"#111"}}>{m.name}</span>
+              <span className="sy" style={{fontSize:14,color:"#111"}}>
+                {Math.abs(m.storedStaked-m.staked)>0.009 && <>Staked {money(m.storedStaked)} → <strong>{money(m.staked)}</strong>  </>}
+                {Math.abs(m.storedWon-m.won)>0.009 && <>Won {money(m.storedWon)} → <strong>{money(m.won)}</strong></>}
+              </span>
+            </div>
+          ))}
+          {report.mismatches.length>6 && <button className="sy" onClick={()=>setShowAllMismatch(v=>!v)} style={{background:"none",border:"none",color:"#1a3a1a",fontWeight:700,fontSize:14,textDecoration:"underline",cursor:"pointer",padding:"6px 0",fontFamily:"inherit"}}>{showAllMismatch?"Show fewer":`Show all ${report.mismatches.length}`}</button>}
+          <div style={{marginTop:10}}><Btn id="totals" label={`Fix: correct ${report.mismatches.length} player${report.mismatches.length!==1?"s":""}`} onClick={fixTotals}/></div>
+        </Card>
+      </>}
+    </div>
+  );
+}
+
+function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace, onRefresh}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [inputs, setInputs] = useState({});
@@ -5428,7 +5595,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
       <div className="tog" style={{marginBottom:20}}>
         <button className={`topt${adminTab==="races"?" on":""}`} onClick={() => setAdminTab("races")}>Race Management</button>
         <button className={`topt${adminTab==="players"?" on":""}`} onClick={() => setAdminTab("players")}>Players ({accounts.length})</button>
+        <button className={`topt${adminTab==="health"?" on":""}`} onClick={() => setAdminTab("health")}>Data Health</button>
       </div>
+
+      {adminTab === "health" && <HealthPanel races={races} onSettle={onSettle} onRefresh={onRefresh} toast={toast}/>}
 
       {adminTab === "players" && (
         <div>
