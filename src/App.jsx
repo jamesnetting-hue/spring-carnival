@@ -1000,7 +1000,10 @@ export default function App() {
       } else {
         won = def.check(b.horses, result);
       }
-      const payout = won ? calcDividendPayout(b) : 0;
+      let payout = won ? calcDividendPayout(b) : 0;
+      // A place bet on a horse that finished where NO place dividend was paid (e.g. 3rd in a
+      // small field) pays $0 — that's a loss, not a win.
+      if (won && BASE_TYPE(b.type)==="place" && payout<=0) { won = false; payout = 0; }
       if (won){wins++;paid=parseFloat((paid+payout).toFixed(2));}
       return {...b,won,payout};
     });
