@@ -2076,7 +2076,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     const active=race.horses.filter(h=>!h.scratched);
     if(t==="win"||t==="place"||t==="eachway"){
       const h=active[Math.floor(Math.random()*active.length)];
-      setWinSel(h?.number);setPlaceSel(h?.number);
+      setWinSel(h?.number);setPlaceSel(h?.number);setSel(h?{0:[h.number]}:{});
     } else {
       const shuffled=[...active].sort(()=>Math.random()-.5);
       const needed=t==="quinella"?2:t==="exacta"?2:t==="trifecta"?3:4;
@@ -2094,6 +2094,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     changeType("win");
     setWinSel(favourite.number);
     setPlaceSel(favourite.number);
+    setSel({0:[favourite.number]});
     setStakeStr("24");
   };
 
@@ -2451,6 +2452,23 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
           Place Bet
         </button>
       )}
+
+      {race.status==="upcoming"&&account&&(()=>{
+        const favH=[...race.horses].filter(h=>!h.scratched&&h.winOdds).sort((a,b)=>a.winOdds-b.winOdds)[0];
+        const qb={flex:1,minWidth:0,padding:"12px 14px",borderRadius:12,border:"2px solid #1a3a1a",background:"#fff",color:"#1a3a1a",fontFamily:"inherit",cursor:"pointer",textAlign:"left"};
+        return (
+          <div style={{display:"flex",gap:10,marginBottom:12,flexDirection:isMobile?"column":"row"}}>
+            <button className="sy" style={qb} onClick={()=>{backFav();setShowBetPanel(true);}}>
+              <div style={{fontSize:16,fontWeight:800}}>Back the Favourite</div>
+              <div style={{fontSize:14,color:"#000",marginTop:2}}>{favH?`#${favH.number} ${favH.name} · $${favH.winOdds.toFixed(2)} · $24 to win`:"No favourite yet"}</div>
+            </button>
+            <button className="sy" style={qb} onClick={()=>{luckyDip();setShowBetPanel(true);}}>
+              <div style={{fontSize:16,fontWeight:800}}>Mystery Bet</div>
+              <div style={{fontSize:14,color:"#000",marginTop:2}}>Random horses and bet type · $24 · tap again for a new one</div>
+            </button>
+          </div>
+        );
+      })()}
 
       <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 290px",gap:isMobile?10:14,alignItems:"start"}}>
         {/* Horse field */}
