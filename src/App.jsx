@@ -942,7 +942,14 @@ export default function App() {
       // Boxed/multi bets store the FULL stake — divide by the number of combos
       // covered to get the correct per-combo (flexi) unit before applying the dividend.
       const isBoxedStyle = IS_BOXED_TYPE(type);
-      const actualCombos = STORED_COMBOS(type) || comboCount(baseType, horses.length, def.positions.length);
+      let actualCombos = STORED_COMBOS(type) || comboCount(baseType, horses.length, def.positions.length);
+      if (baseType === "quinella" && isBoxedStyle && !IS_TRUE_BOX(type) && MULTI_SHAPE(type)) {
+        // Unordered: count each distinct pair once (older bets stored 2-14 and 14-2 as two combos).
+        let idx=0; const groups=MULTI_SHAPE(type).map(c=>{const g=horses.slice(idx,idx+c);idx+=c;return g;});
+        const seen=new Set();
+        (groups[0]||[]).forEach(x=>(groups[1]||[]).forEach(y=>{ if(x!==y) seen.add([x,y].sort((m,n)=>m-n).join("-")); }));
+        if (seen.size>0) actualCombos = seen.size;
+      }
       const stake = isBoxedStyle ? bet.stake / actualCombos : bet.stake;
       const { first, second, third } = result;
       const d = dividends;
@@ -992,6 +999,10 @@ export default function App() {
           let idx=0;
           const groups=shape.map(count=>{const g=b.horses.slice(idx,idx+count);idx+=count;return g;});
           won = resultPositions.every((pos,pi)=>groups[pi]&&groups[pi].includes(pos));
+          // Quinella ignores finishing order: also accept the pair the other way round.
+          if(!won && BASE_TYPE(b.type)==="quinella" && groups.length>=2){
+            won = (groups[0].includes(resultPositions[1]) && groups[1].includes(resultPositions[0]));
+          }
         } else {
           // No shape stored (shouldn't happen for new bets, safety net for old data) —
           // fall back to the inclusive check rather than crash.
@@ -2144,7 +2155,13 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     }
     const posArrays=def.positions.map((_,i)=>effectiveSel[i]||[]);
     if(posArrays.some(a=>a.length===0)) return [];
-    return cartesian(posArrays);
+    const all=cartesian(posArrays);
+    if(betType==="quinella"){
+      // Quinella is unordered: 2-14 and 14-2 are the SAME bet, so count each pair once.
+      const seen=new Set();
+      return all.filter(c=>{const k=[...c].sort((x,y)=>x-y).join("-");if(seen.has(k))return false;seen.add(k);return true;});
+    }
+    return all;
   };
 
   const getBoxedCombos=()=>{
