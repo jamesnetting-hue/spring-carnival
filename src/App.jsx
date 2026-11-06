@@ -1328,7 +1328,7 @@ export default function App() {
           {/* -- HEADER -- */}
           <header style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d5a2d 100%)",padding:window.innerWidth<700?"0 12px":"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:window.innerWidth<700?52:62,position:"sticky",top:0,zIndex:500,boxShadow:"0 3px 16px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span className="cg" style={{fontSize:window.innerWidth<700?15:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>🏇 Spring Carnival</span>
+              <span className="cg" style={{fontSize:window.innerWidth<700?15:19,fontWeight:900,color:"#fff",whiteSpace:"nowrap"}}>{window.innerWidth<420?"🏇 Carnival":"🏇 Spring Carnival"}</span>
               {/* Desktop nav */}
               <nav className="desktop-nav" style={{display:"flex",gap:2}}>
                 {[["lobby","Races"],["leaderboard","Leaderboard"],["mybets","My Bets"],["admin","Admin"]].map(([s,l])=>(
@@ -1337,6 +1337,22 @@ export default function App() {
               </nav>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
+
+              {liveAccount&&(()=>{
+                const openCount=bets.filter(b=>b.playerId===liveAccount.id&&b.won===null).length;
+                const small=window.innerWidth<420;
+                return(
+                  <button
+                    onClick={()=>setScreen("mybets")}
+                    title="See your bets"
+                    aria-label="My Bets"
+                    className="sy"
+                    style={{position:"relative",flexShrink:0,display:"flex",alignItems:"center",gap:5,height:small?32:36,padding:small?"0 10px":"0 14px",background:"linear-gradient(135deg,#fde68a,#f5c542)",border:"2px solid #fff",borderRadius:20,color:"#1a3a1a",cursor:"pointer",fontSize:small?13:14,fontWeight:800,boxShadow:"0 2px 10px rgba(0,0,0,.3)",whiteSpace:"nowrap"}}>
+                    <span style={{fontSize:small?14:16}}>🎟️</span>My Bets
+                    {openCount>0&&<span style={{position:"absolute",top:-8,right:-6,minWidth:20,height:20,padding:"0 5px",borderRadius:10,background:"#dc2626",color:"#fff",border:"2px solid #fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{openCount}</span>}
+                  </button>
+                );
+              })()}
 
               <button
                 onClick={manualRefresh}
