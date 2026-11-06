@@ -1388,7 +1388,18 @@ export default function App() {
             })}
           </nav>
 
-          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onSeeAll={()=>{setSlipOpen(false);setScreen("mybets");}}/>
+          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onSeeAll={()=>{
+            setSlipOpen(false);
+            setScreen("mybets");
+            // wait for My Bets to render, then jump to the Upcoming Bets section
+            let tries=0;
+            const go=()=>{
+              const el=document.getElementById("upcoming-bets");
+              if(el){el.scrollIntoView({behavior:"smooth",block:"start"});}
+              else if(++tries<10){setTimeout(go,80);}
+            };
+            setTimeout(go,60);
+          }}/>
         </>
       )}
 
@@ -5095,7 +5106,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
 
       {/* Pending bets */}
       {upcomingRaces.length>0&&(
-        <div style={{marginBottom:20}}>
+        <div id="upcoming-bets" style={{marginBottom:20,scrollMarginTop:80}}>
           <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #f0f7f0"}}><div className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>📋 Upcoming Bets</div></div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {upcomingRaces.map(race=>{
@@ -5176,7 +5187,7 @@ function MyBetsScreen({account, bets, races, getRaceBalance, onChangePin, onCanc
         <div style={{marginBottom:20}}>
           <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #f0f7f0"}}><div className="cg" style={{fontSize:15,fontWeight:800,color:"#111"}}>✅ Race Results</div></div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {finishedRaces.map(race=>{
+            {[...finishedRaces].sort((a,b)=>`${b.date||""}${b.raceTime||""}`.localeCompare(`${a.date||""}${a.raceTime||""}`)).map(race=>{
               const rb=bets.filter(b=>b.raceId===race.id);
               const racePayout=rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
               const raceHasWin=rb.some(b=>b.won===true);
