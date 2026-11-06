@@ -461,6 +461,8 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe
 @keyframes slideR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
 @keyframes notif{from{opacity:0;transform:translateX(110%)}to{opacity:1;transform:translateX(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes slipIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes slipFade{from{opacity:0}to{opacity:1}}
 .fu{animation:fadeUp .28s ease} .sr{animation:slideR .22s ease}
 
 /* Modal */
@@ -512,6 +514,7 @@ export default function App() {
   const [races, setRaces] = useState(INITIAL_RACES);
   const [bets, setBets] = useState([]);
   const [screen, setScreen] = useState("auth");
+  const [slipOpen, setSlipOpen] = useState(false);
   const [raceId, setRaceId] = useState(null);
   const [toast, setToast] = useState(null);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
@@ -770,7 +773,7 @@ export default function App() {
   const doLogout = () => {
     setSession(null);
     localStorage.removeItem("sc_session");
-    setScreen("auth");
+    setScreen("auth"); setSlipOpen(false);
     setPendingBets([]);
   };
 
@@ -1343,7 +1346,7 @@ export default function App() {
                 const small=window.innerWidth<420;
                 return(
                   <button
-                    onClick={()=>setScreen("mybets")}
+                    onClick={()=>setSlipOpen(true)}
                     title="See your bets"
                     aria-label="My Bets"
                     className="sy"
@@ -1384,6 +1387,8 @@ export default function App() {
               );
             })}
           </nav>
+
+          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onSeeAll={()=>{setSlipOpen(false);setScreen("mybets");}}/>
         </>
       )}
 
@@ -4009,6 +4014,81 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// Slide-out bet slip: shows the player's open bets, opened from the header button
+function BetSlip({open, onClose, bets, races, onSeeAll}) {
+  if(!open) return null;
+  const mine = bets.filter(b=>b.won===null);
+  const byRace = {};
+  mine.forEach(b=>{(byRace[b.raceId]=byRace[b.raceId]||[]).push(b);});
+  const raceList = Object.keys(byRace).map(id=>races.find(r=>String(r.id)===id)).filter(Boolean)
+    .sort((a,b)=>`${a.date||""}${a.raceTime||""}`.localeCompare(`${b.date||""}${b.raceTime||""}`));
+  const total = mine.reduce((s,b)=>s+(parseFloat(b.stake)||0),0);
+
+  const describe = (b, race) => {
+    const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+    const nameFor = n => { const h = race.horses.find(x=>x.number===n); return h ? `#${n} ${h.name}` : `#${n}`; };
+    const shape = MULTI_SHAPE(b.type);
+    if (shape && d) {
+      let idx = 0;
+      return d.positions.map((pos,i)=>{
+        const count = shape[i]||0;
+        const names = b.horses.slice(idx, idx+count).map(nameFor);
+        idx += count;
+        return names.length ? `${pos.label}: ${names.join(" / ")}` : null;
+      }).filter(Boolean);
+    }
+    if (IS_BOXED_TYPE(b.type)) return [`Any order: ${[...new Set(b.horses)].map(nameFor).join(", ")}`];
+    if (d && d.positions.length>1 && BASE_TYPE(b.type)!=="quinella") {
+      return b.horses.map((n,i)=>`${d.positions[i]?.label||`${i+1}th`}: ${nameFor(n)}`);
+    }
+    return [...new Set(b.horses)].map(nameFor);
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:700}}>
+      <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,.35)",animation:"slipFade .2s ease"}}/>
+      <div style={{position:"absolute",top:0,bottom:0,right:0,width:"min(400px,92vw)",background:"#fffdf5",boxShadow:"-8px 0 32px rgba(0,0,0,.25)",display:"flex",flexDirection:"column",animation:"slipIn .25s ease"}}>
+        <div style={{background:"linear-gradient(135deg,#fde68a,#f5c542)",padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div>
+            <div className="sy" style={{fontSize:20,fontWeight:900,color:"#1a3a1a"}}>🎟️ Your Bets</div>
+            <div className="sy" style={{fontSize:14,fontWeight:600,color:"#1a3a1a",marginTop:2}}>
+              {mine.length===0?"No open bets":`${mine.length} open bet${mine.length===1?"":"s"} · ${fmt(total)} staked`}
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{width:36,height:36,borderRadius:18,border:"2px solid #1a3a1a",background:"#fff",color:"#1a3a1a",fontSize:18,fontWeight:800,cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:"14px 16px",WebkitOverflowScrolling:"touch"}}>
+          {raceList.length===0&&(
+            <p className="sy" style={{fontSize:16,color:"#000",textAlign:"center",padding:"30px 10px",lineHeight:1.5}}>You haven't got any open bets right now. Pick a race to place one.</p>
+          )}
+          {raceList.map(race=>(
+            <div key={race.id} style={{marginBottom:16}}>
+              <div className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a",marginBottom:2}}>{race.name}</div>
+              <div className="sy" style={{fontSize:13,color:"#000",marginBottom:8}}>{race.venue}{race.raceTime?` · ${race.raceTime.substring(0,5)}`:""}</div>
+              {byRace[race.id].map(b=>{
+                const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                const lines = describe(b, race);
+                return (
+                  <div key={b.id} style={{background:"#fff",border:"2px solid #1a3a1a",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4}}>
+                      <span className="sy" style={{fontSize:15,fontWeight:800,color:"#1a3a1a"}}>{d?.label||b.type}</span>
+                      <span className="sy" style={{fontSize:15,fontWeight:800,color:"#000"}}>{fmt(b.stake)}</span>
+                    </div>
+                    {lines.map((l,i)=><div key={i} className="sy" style={{fontSize:15,color:"#000",lineHeight:1.45}}>{l}</div>)}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <div style={{padding:"12px 16px calc(12px + env(safe-area-inset-bottom, 0px))",borderTop:"1px solid #e5dfc8",flexShrink:0}}>
+          <button className="sy" onClick={onSeeAll} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#1a3a1a",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer"}}>See all my bets →</button>
+        </div>
+      </div>
     </div>
   );
 }
