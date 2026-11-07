@@ -1759,36 +1759,6 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
     <div className="fu" style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 260px",gap:20,alignItems:"start"}}>
       <div>
 
-        {reminderRaces.length>0&&(()=>{
-          const r=reminderRaces[0], others=reminderRaces.slice(1,4);
-          const mins=Math.max(1,Math.round((new Date(`${r.date}T${r.raceTime}:00`).getTime()-Date.now())/60000));
-          const inText=mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins} min`;
-          return(
-            <div style={{background:"#fff",border:"2px solid #f5c542",borderRadius:16,boxShadow:"0 4px 18px rgba(245,197,66,.25)",marginBottom:isMobile?12:16,overflow:"hidden"}}>
-              <div style={{background:"linear-gradient(135deg,#fde68a,#f5c542)",padding:isMobile?"9px 14px":"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-                <span className="sy" style={{fontSize:14,fontWeight:900,color:"#1a3a1a",letterSpacing:".06em",textTransform:"uppercase"}}>⏰ No bet yet</span>
-                <span className="sy" style={{fontSize:14,fontWeight:900,color:"#1a3a1a",whiteSpace:"nowrap"}}>Closes in {inText}</span>
-              </div>
-              <div style={{padding:isMobile?"14px":"16px 18px"}}>
-                <div className="cg" style={{fontSize:isMobile?22:26,fontWeight:900,color:"#1a3a1a",lineHeight:1.15}}>{r.name}</div>
-                <div className="sy" style={{fontSize:16,color:"#000",marginTop:4}}>Betting closes at <strong>{clock12(r.raceTime)}</strong>{r.venue?` · ${r.venue}`:""}</div>
-                <button className="sy" onClick={()=>onSelect(r.id)} style={{marginTop:12,width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#1a3a1a,#2d5a2d)",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(26,58,26,.3)"}}>Place your bet →</button>
-                <div className="sy" style={{fontSize:14,color:"#000",marginTop:10,lineHeight:1.45}}>No bet means an automatic $24 win bet on the number 1 horse.</div>
-                {others.length>0&&(
-                  <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #f1e6b8"}}>
-                    <div className="sy" style={{fontSize:13,fontWeight:800,color:"#1a3a1a",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Also still to bet on</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                      {others.map(o=>(
-                        <button key={o.id} className="sy" onClick={()=>onSelect(o.id)} style={{padding:"8px 12px",borderRadius:20,border:"2px solid #1a3a1a",background:"#fff",color:"#1a3a1a",fontSize:14,fontWeight:800,cursor:"pointer"}}>{o.name} · {clock12(o.raceTime)}</button>
-                      ))}
-                      {reminderRaces.length>4&&<span className="sy" style={{fontSize:14,fontWeight:700,color:"#000",alignSelf:"center"}}>+{reminderRaces.length-4} more</span>}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* ── Hero header ── */}
         <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d6a4f 100%)",borderRadius:isMobile?14:16,padding:isMobile?"15px 16px":"22px 28px",marginBottom:isMobile?12:16,position:"relative",overflow:"hidden",boxShadow:"0 8px 28px rgba(15,32,16,.28), inset 0 1px 0 rgba(255,255,255,.06)"}}>
