@@ -1388,7 +1388,7 @@ export default function App() {
             })}
           </nav>
 
-          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onSeeAll={()=>{
+          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onCancelBet={cancelBet} onSeeAll={()=>{
             setSlipOpen(false);
             setScreen("mybets");
             // wait for My Bets to render, then jump to the Upcoming Bets section
@@ -4030,7 +4030,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
 }
 
 // Slide-out bet slip: shows the player's open bets, opened from the header button
-function BetSlip({open, onClose, bets, races, onSeeAll}) {
+function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet}) {
   if(!open) return null;
   const mine = bets.filter(b=>b.won===null);
   const byRace = {};
@@ -4090,6 +4090,12 @@ function BetSlip({open, onClose, bets, races, onSeeAll}) {
                       <span className="sy" style={{fontSize:15,fontWeight:800,color:"#000"}}>{fmt(b.stake)}</span>
                     </div>
                     {lines.map((l,i)=><div key={i} className="sy" style={{fontSize:15,color:"#000",lineHeight:1.45}}>{l}</div>)}
+                    {race.status==="upcoming"?(
+                      <button className="sy" onClick={()=>{if(window.confirm("Cancel this bet? You can then place a new one before the race closes."))onCancelBet(b.id);}}
+                        style={{marginTop:8,width:"100%",padding:"9px",borderRadius:8,border:"2px solid #dc2626",background:"#fff",color:"#dc2626",fontSize:14,fontWeight:800,cursor:"pointer"}}>Cancel bet</button>
+                    ):(
+                      <div className="sy" style={{marginTop:8,fontSize:13,fontWeight:700,color:"#1a3a1a"}}>🔒 Betting closed – waiting for the result</div>
+                    )}
                   </div>
                 );
               })}
