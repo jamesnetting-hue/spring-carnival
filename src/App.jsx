@@ -604,7 +604,7 @@ export default function App() {
           loadedAccounts = accs.map(a => ({
             id: a.id, name: a.name, email: a.email, pin: a.pin,
             totalWon: parseFloat(a.total_won||0), totalStaked: parseFloat(a.total_staked||0),
-            createdAt: a.created_at,
+            createdAt: a.created_at, paid: a.paid===true,
           }));
           setAccounts(loadedAccounts);
         }
@@ -666,6 +666,7 @@ export default function App() {
           id: a.id, name: a.name, email: a.email, pin: a.pin,
           totalWon: parseFloat(a.total_won || 0),
           totalStaked: parseFloat(a.total_staked || 0),
+          createdAt: a.created_at, paid: a.paid===true,
         })));
       }
       // sb.select returns [] when a request fails, so an empty list is treated as a
@@ -728,6 +729,15 @@ export default function App() {
       return updated;
     });
   },[]);
+
+  const togglePaid = async (id, paid) => {
+    setAccounts(prev => prev.map(a => a.id===id ? {...a, paid} : a));
+    const res = await sb.update("accounts", id, { paid });
+    if (!res) {
+      setAccounts(prev => prev.map(a => a.id===id ? {...a, paid: !paid} : a));
+      showToast("Couldn't save the paid tick - please try again", "err");
+    }
+  };
 
   const liveAccount = accounts.find(a=>a.id===session)||null;
 
@@ -1161,7 +1171,7 @@ export default function App() {
     }
   };
 
-  const cancelBet = async (betId) => {
+  const cancelBet = async (betId, silent=false) => {
     const bet = bets.find(b => b.id === betId);
     if (!bet || bet.won !== null) return;
     const race = races.find(r => r.id === bet.raceId);
@@ -1173,8 +1183,37 @@ export default function App() {
     try {
       await fetch(`${SUPA_URL}/rest/v1/bets?id=eq.${betId}`, { method:"DELETE", headers: sb.h });
     } catch(e) {}
-    showToast("Bet cancelled - your budget has been refunded");
+    if(!silent) showToast("Bet cancelled - your budget has been refunded");
   };
+
+  // CHANGE BET: the bet is lifted out of the slip and loaded into the bet builder.
+  // The original is remembered; if the player leaves the race page without placing
+  // a replacement, it is put back automatically.
+  const [editingBet, setEditingBet] = useState(null);
+  const changeBet = (b) => {
+    const race = races.find(r=>r.id===b.raceId);
+    if (!race || race.status!=="upcoming" || b.won!==null) return;
+    setEditingBet({ raceId:b.raceId, type:b.type, horses:b.horses, stake:b.stake, nonce:Date.now() });
+    cancelBet(b.id, true);
+    setSlipOpen(false);
+    setRaceId(b.raceId);
+    setScreen("race");
+  };
+  const restoreEditing = (quiet=false) => {
+    const e = editingBet;
+    if (!e) return;
+    setEditingBet(null);
+    const race = races.find(r=>r.id===e.raceId);
+    if (race && race.status==="upcoming") {
+      queueBet(e.raceId, e.type, e.horses, e.stake);
+      if (quiet) showToast("Your original bet has been put back");
+    } else {
+      showToast("Betting closed before you placed the new bet, so the original bet could not be put back", "err");
+    }
+  };
+  useEffect(() => {
+    if (editingBet && !(screen==="race" && raceId===editingBet.raceId)) restoreEditing(true);
+  }, [screen, raceId, editingBet]);
 
   const [scratchAlert, setScratchAlert] = useState(null); // {horseName, raceName, affectedBets}
 
@@ -1388,7 +1427,7 @@ export default function App() {
             })}
           </nav>
 
-          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onCancelBet={cancelBet} onSeeAll={()=>{
+          <BetSlip open={slipOpen&&screen!=="auth"} onClose={()=>setSlipOpen(false)} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} onCancelBet={cancelBet} onChangeBet={changeBet} onSeeAll={()=>{
             setSlipOpen(false);
             setScreen("mybets");
             // wait for My Bets to render, then jump to the Upcoming Bets section
@@ -1440,10 +1479,10 @@ export default function App() {
 
       {screen!=="auth"&&<main style={{maxWidth:1100,margin:"0 auto",padding:`${isOffline?54:14}px ${window.innerWidth<700?"12px":"24px"} ${window.innerWidth<700?"76px":"48px"}`}}>
         {screen==="lobby"&&<LobbyScreen races={races.filter(r=>r.status!=="archived"&&r.status!=="deleted")} bets={bets} account={liveAccount} leaderboard={leaderboard} getRaceBalance={getRaceBalance} onSelect={id=>{setRaceId(id);setScreen("race");}} seasonMessage={seasonMessage} accounts={accounts}/>}
-        {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet} allBets={bets} accounts={accounts}/>}
+        {screen==="race"&&selectedRace&&<RaceScreen race={selectedRace} account={liveAccount} bets={bets} getRaceBalance={getRaceBalance} myBets={bets.filter(b=>b.raceId===raceId&&b.playerId===liveAccount?.id)} onBack={()=>setScreen("lobby")} onQueue={queueBet} onCancelBet={cancelBet} allBets={bets} accounts={accounts} editing={editingBet?.raceId===raceId?editingBet:null} onRestoreEdit={()=>restoreEditing(false)} onEditDone={()=>setEditingBet(null)}/>}
         {screen==="leaderboard"&&<LeaderboardScreen accounts={leaderboard} bets={bets} races={races} getMovement={getMovement} myAccount={liveAccount}/>}
         {screen==="mybets"&&<MyBetsScreen account={liveAccount} bets={bets.filter(b=>b.playerId===liveAccount?.id)} races={races} getRaceBalance={getRaceBalance} onChangePin={doChangePin} onCancelBet={cancelBet}/>}
-        {screen==="admin"&&<AdminScreen races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onAddHorses={addHorsesToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
+        {screen==="admin"&&<AdminScreen onTogglePaid={togglePaid} races={races} accounts={accounts} bets={bets} adminUnlocked={adminUnlocked} setAdminUnlocked={setAdminUnlocked} onSettle={settleRace} onScratch={scratchHorse} onResetPin={doAdminResetPin} onAddRace={addRace} onAddHorse={addHorseToRace} onAddHorses={addHorsesToRace} onDeleteRace={deleteRace} onEditRace={editRace} onEditHorse={editHorse} seasonMessage={seasonMessage} onSeasonMessage={(next)=>{
           setSeasonMessage(next);
           localStorage.setItem("sc_season_msg", JSON.stringify(next));
           // Debounce the actual database write — saving on every keystroke means
@@ -1693,6 +1732,18 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
   const w = useWindowWidth();
   const isMobile = w < 700;
   const myBets = bets.filter(b=>b.playerId===account?.id);
+  const [,setNowTick]=useState(0);
+  useEffect(()=>{const i=setInterval(()=>setNowTick(t=>t+1),30000);return()=>clearInterval(i);},[]);
+  // Reminder: races starting in the next 24h that this player hasn't bet on
+  const reminderRaces = account ? races.filter(r=>{
+    if(r.status!=="upcoming"||!r.raceTime||!r.date) return false;
+    const start=new Date(`${r.date}T${r.raceTime}:00`).getTime();
+    if(isNaN(start)) return false;
+    const ms=start-Date.now();
+    if(ms<=0||ms>24*60*60*1000) return false;
+    return !myBets.some(b=>b.raceId===r.id);
+  }).sort((a,b)=>`${a.date}${a.raceTime}`.localeCompare(`${b.date}${b.raceTime}`)) : [];
+  const clock12 = t => { const [h,m]=t.split(":").map(Number); return `${((h+11)%12)+1}:${String(m).padStart(2,"0")} ${h<12?"am":"pm"}`; };
   const grouped={};
   races.forEach(r=>{if(!grouped[r.date])grouped[r.date]=[];grouped[r.date].push(r);});
   const upcoming = races.filter(r=>r.status==="upcoming").length;
@@ -1707,6 +1758,21 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
   return (
     <div className="fu" style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 260px",gap:20,alignItems:"start"}}>
       <div>
+
+        {reminderRaces.length>0&&(()=>{
+          const r=reminderRaces[0], more=reminderRaces.length-1;
+          return(
+            <div style={{background:"#fff8dc",border:"2px solid #f5c542",borderRadius:14,padding:isMobile?"12px 14px":"14px 18px",marginBottom:isMobile?12:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:200}}>
+                <div className="sy" style={{fontSize:isMobile?16:17,fontWeight:800,color:"#1a3a1a",lineHeight:1.3}}>⏰ You haven't bet on {r.name} yet</div>
+                <div className="sy" style={{fontSize:isMobile?15:15,color:"#000",marginTop:3,lineHeight:1.4}}>
+                  Betting closes at {clock12(r.raceTime)}. If you don't bet, you'll get an automatic $24 win bet on the number 1 horse.{more>0?` (${more} more race${more===1?"":"s"} to bet on too.)`:""}
+                </div>
+              </div>
+              <button className="sy" onClick={()=>onSelect(r.id)} style={{padding:"11px 18px",borderRadius:10,border:"none",background:"#1a3a1a",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",flexShrink:0}}>Place a bet →</button>
+            </div>
+          );
+        })()}
 
         {/* ── Hero header ── */}
         <div style={{background:"linear-gradient(135deg,#1a3a1a 0%,#2d6a4f 100%)",borderRadius:isMobile?14:16,padding:isMobile?"15px 16px":"22px 28px",marginBottom:isMobile?12:16,position:"relative",overflow:"hidden",boxShadow:"0 8px 28px rgba(15,32,16,.28), inset 0 1px 0 rgba(255,255,255,.06)"}}>
@@ -2072,7 +2138,7 @@ function LobbyScreen({races,bets,account,leaderboard,getRaceBalance,onSelect,sea
 }
 
 // --- RACE SCREEN --------------------------------------------------------------
-function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCancelBet,allBets,accounts}) {
+function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCancelBet,allBets,accounts,editing,onRestoreEdit,onEditDone}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [betType,setBetType]=useState("win");
@@ -2083,6 +2149,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const [placeSel,setPlaceSel]=useState(null);
   const [showBetPanel,setShowBetPanel]=useState(false);
   const [showPopularity,setShowPopularity]=useState(false);
+  const [showBackers,setShowBackers]=useState(true);
   const [sheetDragY,setSheetDragY]=useState(0);
   const sheetDragRef=useRef({startY:0,dragging:false});
   const stakeInputRef=useRef(null);
@@ -2154,6 +2221,29 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
   const stake=parseFloat(stakeStr)||0;
 
   const changeType=id=>{setBetType(id);setSel({});setWinSel(null);setPlaceSel(null);};
+
+  // Load a bet being changed (from the bet slip) into the bet builder
+  const appliedEditRef=useRef(null);
+  useEffect(()=>{
+    if(!editing||appliedEditRef.current===editing.nonce) return;
+    appliedEditRef.current=editing.nonce;
+    const base=BASE_TYPE(editing.type), hs=editing.horses||[];
+    setBetType(base); setBoxed(false); setWinSel(null); setPlaceSel(null);
+    if(base==="win"||base==="place"||base==="eachway"){
+      if(base==="place") setPlaceSel(hs[0]); else setWinSel(hs[0]);
+      setSel({0:[hs[0]]});
+    } else if(IS_TRUE_BOX(editing.type)){
+      setBoxed(true); setSel({0:[...new Set(hs)]});
+    } else if(MULTI_SHAPE(editing.type)){
+      const shape=MULTI_SHAPE(editing.type); let idx=0; const next={};
+      shape.forEach((count,i)=>{next[i]=hs.slice(idx,idx+count); idx+=count;});
+      setSel(next);
+    } else {
+      const next={}; hs.forEach((n,i)=>{next[i]=[n];}); setSel(next);
+    }
+    setStakeStr(String(editing.stake));
+    setShowBetPanel(true);
+  },[editing]);
 
   // Sync winSel/placeSel - sel so combo counting works for win/place/eachway
   const effectiveSelNum = winSel||placeSel;
@@ -2265,6 +2355,7 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
     setWinSel(null);
     setPlaceSel(null);
     setStakeStr("");
+    if(editing&&onEditDone) onEditDone();
   };
 
   // Describes a bet's horses for display — shows ordinal order (1st/2nd/3rd...)
@@ -2304,6 +2395,14 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
         <button className="sy" style={{marginBottom:14,fontSize:13,padding:"7px 14px",fontWeight:600,background:"transparent",border:"none",color:"#1a3a1a",cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:5,paddingLeft:0}} onClick={onBack}>
           ← Back
         </button>
+
+        {editing&&(
+          <div style={{background:"#fff8dc",border:"2px solid #f5c542",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+            <div className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a",marginBottom:4}}>✏️ Changing your bet</div>
+            <div className="sy" style={{fontSize:15,color:"#000",lineHeight:1.45,marginBottom:10}}>Your bet has been loaded below. Change it, then confirm it. If you leave this page without confirming, your original bet is put back automatically.</div>
+            <button className="sy" onClick={onRestoreEdit} style={{padding:"9px 14px",borderRadius:8,border:"2px solid #1a3a1a",background:"#fff",color:"#1a3a1a",fontSize:14,fontWeight:800,cursor:"pointer"}}>Keep my original bet</button>
+          </div>
+        )}
 
         {/* Race hero header */}
         <div style={{borderRadius:16,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.12)"}}>
@@ -2429,6 +2528,49 @@ function RaceScreen({race,account,bets,myBets,getRaceBalance,onBack,onQueue,onCa
               })}
             </div>
           )}
+          {/* Who backed what - only once betting has closed */}
+          {race.status!=="upcoming"&&allBets&&(()=>{
+            const raceAll=allBets.filter(b=>b.raceId===race.id);
+            if(raceAll.length===0) return null;
+            const byHorse={};
+            raceAll.forEach(b=>{
+              const isAuto=String(b.id).startsWith("auto_");
+              [...new Set(b.horses)].forEach(n=>{
+                const list=byHorse[n]=byHorse[n]||{};
+                const cur=list[b.playerId];
+                list[b.playerId]={auto:(cur?cur.auto:true)&&isAuto};
+              });
+            });
+            const nameOf=id=>accounts?.find(a=>a.id===id)?.name||"Unknown";
+            const rows=race.horses.filter(h=>byHorse[h.number]).map(h=>({h,ids:Object.keys(byHorse[h.number]),info:byHorse[h.number]}))
+              .sort((a,b)=>b.ids.length-a.ids.length||a.h.number-b.h.number);
+            const winnerNum=race.result?.first;
+            return(
+              <div style={{marginTop:10}}>
+                <button onClick={()=>setShowBackers(v=>!v)} className="sy" style={{width:"100%",padding:"11px",borderRadius:10,background:showBackers?"#1a3a1a":"#fff",border:"2px solid #1a3a1a",color:showBackers?"#fff":"#1a3a1a",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                  👀 {showBackers?"Hide":"See"} who backed what
+                </button>
+                {showBackers&&(
+                  <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
+                    {rows.map(({h,ids,info})=>(
+                      <div key={h.number} style={{background:"#fff",border:`2px solid ${h.number===winnerNum?"#16a34a":"#d9d2b6"}`,borderRadius:12,padding:"10px 12px"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:5}}>
+                          <span className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a"}}>#{h.number} {h.name}{h.number===winnerNum?" 🏆":""}</span>
+                          <span className="sy" style={{fontSize:14,fontWeight:800,color:"#000",flexShrink:0}}>{ids.length} player{ids.length===1?"":"s"}</span>
+                        </div>
+                        <div className="sy" style={{fontSize:15,color:"#000",lineHeight:1.5}}>
+                          {ids.map((id,i)=>{
+                            const me=id===account?.id;
+                            return <span key={id} style={{fontWeight:me?800:400,color:me?"#15803d":"#000"}}>{me?"You":nameOf(id)}{info[id].auto?" (auto)":""}{i<ids.length-1?", ":""}</span>;
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {myBets.length>0&&(
             <div style={{marginTop:10,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
               <p className="sy" style={{fontSize:12,fontWeight:700,color:"#000",textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Your Bets on This Race</p>
@@ -4030,7 +4172,7 @@ function ProfileScreen({account,bets,races,getRaceBalance,onChangePin,onCancelBe
 }
 
 // Slide-out bet slip: shows the player's open bets, opened from the header button
-function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet}) {
+function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet, onChangeBet}) {
   if(!open) return null;
   const mine = bets.filter(b=>b.won===null);
   const byRace = {};
@@ -4038,6 +4180,17 @@ function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet}) {
   const raceList = Object.keys(byRace).map(id=>races.find(r=>String(r.id)===id)).filter(Boolean)
     .sort((a,b)=>`${a.date||""}${a.raceTime||""}`.localeCompare(`${b.date||""}${b.raceTime||""}`));
   const total = mine.reduce((s,b)=>s+(parseFloat(b.stake)||0),0);
+
+  // Just-finished races (started within the last 12 hours) so players can see how they went
+  const recentRaces = [...new Set(bets.filter(b=>b.won!==null).map(b=>String(b.raceId)))]
+    .map(id=>races.find(r=>String(r.id)===id)).filter(r=>{
+      if(!r||r.status==="upcoming") return false;
+      if(!r.date) return false;
+      const start = new Date(`${r.date}T${r.raceTime||"23:59"}:00`).getTime();
+      if(isNaN(start)) return false;
+      const age = Date.now()-start;
+      return age>=0 && age<=12*60*60*1000;
+    }).sort((a,b)=>`${b.date}${b.raceTime||""}`.localeCompare(`${a.date}${a.raceTime||""}`));
 
   const describe = (b, race) => {
     const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
@@ -4067,15 +4220,49 @@ function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet}) {
           <div>
             <div className="sy" style={{fontSize:20,fontWeight:900,color:"#1a3a1a"}}>🎟️ Your Bets</div>
             <div className="sy" style={{fontSize:14,fontWeight:600,color:"#1a3a1a",marginTop:2}}>
-              {mine.length===0?"No open bets":`${mine.length} open bet${mine.length===1?"":"s"} · ${fmt(total)} staked`}
+              {mine.length===0?(recentRaces.length>0?"Your latest results":"No open bets"):`${mine.length} open bet${mine.length===1?"":"s"} · ${fmt(total)} staked`}
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" style={{width:36,height:36,borderRadius:18,border:"2px solid #1a3a1a",background:"#fff",color:"#1a3a1a",fontSize:18,fontWeight:800,cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"14px 16px",WebkitOverflowScrolling:"touch"}}>
-          {raceList.length===0&&(
+          {raceList.length===0&&recentRaces.length===0&&(
             <p className="sy" style={{fontSize:16,color:"#000",textAlign:"center",padding:"30px 10px",lineHeight:1.5}}>You haven't got any open bets right now. Pick a race to place one.</p>
           )}
+          {recentRaces.length>0&&(
+            <div style={{marginBottom:18}}>
+              <div className="sy" style={{fontSize:13,fontWeight:800,color:"#1a3a1a",textTransform:"uppercase",letterSpacing:".08em",marginBottom:8}}>Just finished</div>
+              {recentRaces.map(race=>{
+                const rb = bets.filter(b=>String(b.raceId)===String(race.id)&&b.won!==null);
+                const won = rb.filter(b=>b.won===true).reduce((s,b)=>s+(b.payout||0),0);
+                const staked = rb.reduce((s,b)=>s+(parseFloat(b.stake)||0),0);
+                const anyWin = rb.some(b=>b.won===true);
+                return (
+                  <div key={race.id} style={{background:anyWin?"#ecfdf3":"#fff",border:`2px solid ${anyWin?"#16a34a":"#d9d2b6"}`,borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                    <div className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a"}}>{race.name}</div>
+                    <div className="sy" style={{fontSize:17,fontWeight:800,color:anyWin?"#15803d":"#b91c1c",margin:"4px 0 8px"}}>
+                      {anyWin?`🎉 You won ${fmt(won)}`:"No luck this time"}
+                      {anyWin&&won-staked<0?<span style={{fontSize:13,fontWeight:600,color:"#000"}}> (staked {fmt(staked)})</span>:null}
+                    </div>
+                    {rb.map(b=>{
+                      const d = BET_TYPES.find(t=>t.id===BASE_TYPE(b.type));
+                      const lines = describe(b, race);
+                      return (
+                        <div key={b.id} style={{borderTop:"1px solid #e5dfc8",paddingTop:7,marginTop:7}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                            <span className="sy" style={{fontSize:15,fontWeight:800,color:"#1a3a1a"}}>{d?.label||b.type} · {fmt(b.stake)}</span>
+                            <span className="sy" style={{fontSize:15,fontWeight:800,color:b.won?"#15803d":"#b91c1c"}}>{b.won?`Won ${fmt(b.payout||0)}`:"Lost"}</span>
+                          </div>
+                          {lines.map((l,i)=><div key={i} className="sy" style={{fontSize:14,color:"#000",lineHeight:1.4}}>{l}</div>)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {raceList.length>0&&recentRaces.length>0&&<div className="sy" style={{fontSize:13,fontWeight:800,color:"#1a3a1a",textTransform:"uppercase",letterSpacing:".08em",marginBottom:8}}>Open bets</div>}
           {raceList.map(race=>(
             <div key={race.id} style={{marginBottom:16}}>
               <div className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a",marginBottom:2}}>{race.name}</div>
@@ -4091,8 +4278,12 @@ function BetSlip({open, onClose, bets, races, onSeeAll, onCancelBet}) {
                     </div>
                     {lines.map((l,i)=><div key={i} className="sy" style={{fontSize:15,color:"#000",lineHeight:1.45}}>{l}</div>)}
                     {race.status==="upcoming"?(
-                      <button className="sy" onClick={()=>{if(window.confirm("Cancel this bet? You can then place a new one before the race closes."))onCancelBet(b.id);}}
-                        style={{marginTop:8,width:"100%",padding:"9px",borderRadius:8,border:"2px solid #dc2626",background:"#fff",color:"#dc2626",fontSize:14,fontWeight:800,cursor:"pointer"}}>Cancel bet</button>
+                      <div style={{display:"flex",gap:8,marginTop:8}}>
+                        <button className="sy" onClick={()=>onChangeBet(b)}
+                          style={{flex:1,padding:"9px",borderRadius:8,border:"2px solid #1a3a1a",background:"#1a3a1a",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>Change bet</button>
+                        <button className="sy" onClick={()=>{if(window.confirm("Cancel this bet? You can then place a new one before the race closes."))onCancelBet(b.id);}}
+                          style={{flex:1,padding:"9px",borderRadius:8,border:"2px solid #dc2626",background:"#fff",color:"#dc2626",fontSize:14,fontWeight:800,cursor:"pointer"}}>Cancel bet</button>
+                      </div>
                     ):(
                       <div className="sy" style={{marginTop:8,fontSize:13,fontWeight:700,color:"#1a3a1a"}}>🔒 Betting closed – waiting for the result</div>
                     )}
@@ -5454,7 +5645,7 @@ function HealthPanel({races, onSettle, onRefresh, toast}) {
   );
 }
 
-function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace, onRefresh}) {
+function AdminScreen({onTogglePaid, races, accounts, bets, adminUnlocked, setAdminUnlocked, onSettle, onScratch, onResetPin, onAddRace, onAddHorse, onAddHorses, onDeleteRace, onEditRace, onEditHorse, seasonMessage, onSeasonMessage, toast, onLockRace, onRefresh}) {
   const w = useWindowWidth();
   const isMobile = w < 700;
   const [inputs, setInputs] = useState({});
@@ -5462,6 +5653,7 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminTab, setAdminTab] = useState("races");
   const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
   const [resetPinFor, setResetPinFor] = useState(null);
   const [resetPinVal, setResetPinVal] = useState("");
   const [resetPinStep, setResetPinStep] = useState("new");
@@ -5741,7 +5933,16 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
             </div>
           ) : (
             <div style={{display:"flex", flexDirection:"column", gap:10}}>
-              {accounts.map(player => {
+              {(()=>{
+                const paidCount = accounts.filter(a=>a.paid).length;
+                return (
+                  <div className="card" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",background:"#fff8dc",border:"2px solid #f5c542"}}>
+                    <div className="sy" style={{fontSize:16,fontWeight:800,color:"#1a3a1a"}}>💰 Entry fees: {paidCount} of {accounts.length} paid · {accounts.length-paidCount} to go</div>
+                    <button className="sy" onClick={()=>setUnpaidOnly(v=>!v)} style={{padding:"8px 14px",borderRadius:8,border:"2px solid #1a3a1a",background:unpaidOnly?"#1a3a1a":"#fff",color:unpaidOnly?"#fff":"#1a3a1a",fontSize:14,fontWeight:800,cursor:"pointer"}}>{unpaidOnly?"Showing unpaid only":"Show unpaid only"}</button>
+                  </div>
+                );
+              })()}
+              {accounts.filter(a=>!unpaidOnly||!a.paid).map(player => {
                 const playerBets  = bets.filter(b => b.playerId === player.id);
                 const activeBets  = playerBets.filter(b => b.won === null);
                 const wonBets     = playerBets.filter(b => b.won === true);
@@ -5764,6 +5965,10 @@ function AdminScreen({races, accounts, bets, adminUnlocked, setAdminUnlocked, on
                           <span className="cg" style={{fontSize:18, fontWeight:700}}>{player.name}</span>
                           {activeBets.length > 0 && <span className="badge sy" style={{background:C.blueBg, color:C.blue, border:`1px solid ${C.blueBd}`}}>{activeBets.length} pending</span>}
                           {racesUnbet.length > 0 && <span className="badge sy" style={{background:C.redBg, color:C.red, border:`1px solid ${C.redBd}`}}>{racesUnbet.length} race{racesUnbet.length>1?"s":""} unbet</span>}
+                          <button className="sy" style={{fontSize:13,padding:"3px 10px",borderRadius:6,border:`2px solid ${player.paid?"#16a34a":"#dc2626"}`,background:player.paid?"#ecfdf3":"#fef2f2",color:player.paid?"#15803d":"#b91c1c",cursor:"pointer",fontWeight:800}}
+                            onClick={e=>{e.stopPropagation();onTogglePaid(player.id,!player.paid);}}>
+                            {player.paid?"✓ Paid":"Not paid"}
+                          </button>
                           <button className="sy" style={{fontSize:12,padding:"2px 8px",borderRadius:5,border:`1px solid ${C.border}`,background:"#f4f5f7",color:C.soft,cursor:"pointer",fontWeight:600}}
                             onClick={e=>{e.stopPropagation();setResetPinFor(player.id);setResetPinVal("");setResetPinVal2("");setResetPinStep("new");setResetPinErr("");}}>
                             🔑 Reset PIN
